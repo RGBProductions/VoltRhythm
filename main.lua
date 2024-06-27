@@ -7,7 +7,7 @@ function TimeBPM(t,bpm)
     return secPerSixteenth*t
 end
 
-Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%┌─┐│└┘├┤┴┬█▓▒░┊┈╬○◇▷◁║")
+Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%┌─┐│└┘├┤┴┬█▓▒░┊┈╬○◇▷◁║¤")
 
 function DrawBox(x,y,w,h)
     love.graphics.print("┌"..("──"):rep(w).."┐\n"..("│"..("  "):rep(w).."│\n"):rep(h).."└"..("──"):rep(w).."┘", x*8, y*16)
@@ -69,6 +69,8 @@ for _=1,32 do
     table.insert(BackgroundBoxes,{x,y,w,h,color})
 end
 
+Particles = {}
+
 Charge = 0
 PressAmounts = {0,0,0,0}
 HitAmounts = {0,0,0,0}
@@ -91,6 +93,12 @@ function love.keypressed(k)
         local pos = note.time-chart.time
         if math.abs(pos) <= 0.2 and k == Keybinds[note.lane+1] then
             Charge = Charge + 1*(1-(math.abs(pos)/0.2))
+            local c = math.floor(Charge/chart.totalCharge*100)
+            local x = (16+c/2)*8
+            Particles = {}
+            for _=1,8 do
+                table.insert(Particles, {x = x, y = 24*16+8, vx = love.math.random()*8, vy = (love.math.random()*2-1)*32, life = (love.math.random()*0.5+0.5)*0.25, color = 14, char = "¤"})
+            end
             if note.length <= 0 then
                 table.remove(chart.notes, i)
             else
@@ -127,51 +135,70 @@ function love.update(dt)
     end
     lastTime = lastTime + dt
 
-    local i = 1
-    local num = #chart.notes
-    while i <= num do
-        local note = chart.notes[i]
-        local pos = note.time-chart.time
-        if Autoplay then
-            if pos <= 0 then
-                Charge = Charge + 1
-                if note.length <= 0 then
-                    table.remove(chart.notes, i)
-                    i = i - 1
-                end
-                HitAmounts[note.lane+1] = 1
-                PressAmounts[note.lane+1] = 1
-            end
-        end
-        if pos <= 0 then
-            if note.length > 0 then
-                if love.keyboard.isDown(Keybinds[note.lane+1]) then
-                    local lastHeldFor = note.heldFor or 0
-                    note.heldFor = math.min(note.length, lastHeldFor + dt)
-                    Charge = Charge + (note.heldFor-lastHeldFor)
-                    HitAmounts[note.lane+1] = 1
-                    if note.heldFor >= note.length then
+    do
+        local i = 1
+        local num = #chart.notes
+        while i <= num do
+            local note = chart.notes[i]
+            local pos = note.time-chart.time
+            if Autoplay then
+                if pos <= 0 then
+                    Charge = Charge + 1
+                    if note.length <= 0 then
                         table.remove(chart.notes, i)
                         i = i - 1
                     end
+                    HitAmounts[note.lane+1] = 1
+                    PressAmounts[note.lane+1] = 1
+                end
+            end
+            if pos <= 0 then
+                if note.length > 0 then
+                    if love.keyboard.isDown(Keybinds[note.lane+1]) then
+                        local lastHeldFor = note.heldFor or 0
+                        note.heldFor = math.min(note.length, lastHeldFor + dt)
+                        Charge = Charge + (note.heldFor-lastHeldFor)
+                        HitAmounts[note.lane+1] = 1
+                        if note.heldFor >= note.length then
+                            table.remove(chart.notes, i)
+                            i = i - 1
+                        end
+                    else
+                        MissTime = 1
+                    end
+                end
+            end
+            if pos <= -0.5 then
+                if note.length <= 0 then
+                    table.remove(chart.notes, i)
+                    i = i - 1
                 else
-                    MissTime = 1
+                    if not love.keyboard.isDown(Keybinds[note.lane+1]) then
+                        MissTime = 1
+                    end
                 end
+                MissTime = 1
             end
+            i = i + 1
+            num = #chart.notes
         end
-        if pos <= -0.5 then
-            if note.length <= 0 then
-                table.remove(chart.notes, i)
+    end
+
+    do
+        local i = 1
+        local num = #Particles
+        while i <= num do
+            local particle = Particles[i]
+            particle.x = particle.x + particle.vx * dt
+            particle.y = particle.y + particle.vy * dt
+            particle.life = particle.life - dt
+            if particle.life <= 0 then
+                table.remove(Particles, i)
                 i = i - 1
-            else
-                if not love.keyboard.isDown(Keybinds[note.lane+1]) then
-                    MissTime = 1
-                end
             end
-            MissTime = 1
+            i = i + 1
+            num = #Particles
         end
-        i = i + 1
-        num = #chart.notes
     end
 
     MissTime = math.max(0,MissTime - dt * 8)
@@ -237,6 +264,11 @@ function love.draw()
         if t and type(t.draw) == "function" then
             t.draw(note,chart.time,Speed)
         end
+    end
+
+    for _,particle in ipairs(Particles) do
+        love.graphics.setColor(TerminalColors[particle.color + 1])
+        love.graphics.print(particle.char, particle.x-4, particle.y-8)
     end
 
     love.graphics.setColor(TerminalColors[16])

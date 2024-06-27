@@ -67,16 +67,12 @@ local chart = Chart:new({
     Note:new(TimeBPM(174,223),0,0,"normal",{}),
     
     Note:new(TimeBPM(176,223),3,0,"normal",{}),
-    -- Note:new(TimeBPM(176,223),2,0,"normal",{}),
     Note:new(TimeBPM(178,223),1,0,"normal",{}),
     Note:new(TimeBPM(180,223),2,0,"normal",{}),
-    -- Note:new(TimeBPM(180,223),0,0,"normal",{}),
     Note:new(TimeBPM(182,223),3,0,"normal",{}),
     Note:new(TimeBPM(184,223),1,0,"normal",{}),
-    -- Note:new(TimeBPM(184,223),2,0,"normal",{}),
     Note:new(TimeBPM(186,223),0,0,"normal",{}),
     Note:new(TimeBPM(188,223),1,0,"normal",{}),
-    -- Note:new(TimeBPM(188,223),3,0,"normal",{}),
     Note:new(TimeBPM(190,223),2,0,"normal",{}),
 })
 -- chart.time = -TimeBPM(16,223)
