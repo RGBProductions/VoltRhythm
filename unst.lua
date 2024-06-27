@@ -3,7 +3,7 @@ local chart = Chart:new({
     Note:new(TimeBPM(66,223),2,0,"normal",{}),
     Note:new(TimeBPM(68,223),1,0,"normal",{}),
     Note:new(TimeBPM(70,223),3,0,"normal",{}),
-    Note:new(TimeBPM(70,223),3,0,"normal",{}),
+    Note:new(TimeBPM(72,223),1,0,"normal",{}),
     Note:new(TimeBPM(74,223),2,0,"normal",{}),
     Note:new(TimeBPM(76,223),1,0,"normal",{}),
     Note:new(TimeBPM(78,223),0,0,"normal",{}),
