@@ -57,7 +57,7 @@ end
 local chart = require "unst" -- TEMPORARY, TO REPLACE WITH JSON LATER
 Speed = 25
 ChartName = "UNRAVELING STASIS"
-local song = love.audio.newSource("UnravelingStasis.ogg", "stream")
+local song = love.audio.newSource("unst.ogg", "stream")
 
 love.math.setRandomSeed(0)
 BackgroundBoxes = {}
