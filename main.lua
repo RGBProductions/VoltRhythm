@@ -7,7 +7,12 @@ function TimeBPM(t,bpm)
     return secPerSixteenth*t
 end
 
-Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%┌─┐│└┘├┤┴┬█▓▒░┊┈╬○◇▷◁║¤")
+function WhichSixteenth(t,bpm)
+    local secPerSixteenth = 15/bpm
+    return t/secPerSixteenth
+end
+
+Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%.┌─┐│└┘├┤┴┬█▓▒░┊┈╬○◇▷◁║¤")
 
 function DrawBox(x,y,w,h)
     love.graphics.print("┌"..("──"):rep(w).."┐\n"..("│"..("  "):rep(w).."│\n"):rep(h).."└"..("──"):rep(w).."┘", x*8, y*16)
@@ -34,11 +39,17 @@ Bloom = love.graphics.newCanvas()
 Final = love.graphics.newCanvas()
 Partial = love.graphics.newCanvas()
 
+CurveStrength = 0.5
+CurveModifier = 1
+
+Chromatic = 0
+
 ScreenShader = love.graphics.newShader("screen.frag")
-ScreenShader:send("curveStrength", 0.5)
+ScreenShader:send("curveStrength", CurveStrength*CurveModifier)
 ScreenShader:send("scanlineStrength", 0.5)
 ScreenShader:send("textureSize", {Display:getDimensions()})
 ScreenShader:send("tearStrength", 0)
+ScreenShader:send("chromaticStrength", Chromatic)
 ScreenShader:send("horizBlurStrength", 0.5)
 ScreenShader:send("tearTime", love.timer.getTime())
 
@@ -57,7 +68,6 @@ end
 local chart = require "unst" -- TEMPORARY, TO REPLACE WITH JSON LATER
 Speed = 25
 ChartName = "UNRAVELING STASIS"
-local song = love.audio.newSource("unst.ogg", "stream")
 
 love.math.setRandomSeed(0)
 BackgroundBoxes = {}
@@ -77,7 +87,7 @@ HitAmounts = {0,0,0,0}
 
 MissTime = 0
 
-Autoplay = false
+Autoplay = true
 
 function love.keypressed(k)
     if k == "f11" then
@@ -89,24 +99,26 @@ function love.keypressed(k)
     if k == "space" then
         love.graphics.captureScreenshot("lol.png")
     end
-    for i,note in ipairs(chart.notes) do
-        local pos = note.time-chart.time
-        if math.abs(pos) <= 0.2 and k == Keybinds[note.lane+1] then
-            Charge = Charge + 1*(1-(math.abs(pos)/0.2))
-            local c = math.floor(Charge/chart.totalCharge*100)
-            local x = (16+c/2)*8
-            Particles = {}
-            for _=1,8 do
-                table.insert(Particles, {x = x, y = 24*16+8, vx = love.math.random()*8, vy = (love.math.random()*2-1)*32, life = (love.math.random()*0.5+0.5)*0.25, color = 14, char = "¤"})
+    if not Autoplay then
+        for i,note in ipairs(chart.notes) do
+            local pos = note.time-chart.time
+            if math.abs(pos) <= 0.2 and k == Keybinds[note.lane+1] then
+                Charge = Charge + 1*(1-(math.abs(pos)/0.2))
+                local c = math.floor(Charge/chart.totalCharge*100)
+                local x = (16+c/2)*8
+                Particles = {}
+                for _=1,8 do
+                    table.insert(Particles, {x = x, y = 24*16+8, vx = love.math.random()*32, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = (c < 80 and ColorID.YELLOW) or (OverchargeColors[love.math.random(1,#OverchargeColors)]), char = "¤"})
+                end
+                if note.length <= 0 then
+                    table.remove(chart.notes, i)
+                else
+                    note.holding = true
+                    note.heldFor = 0
+                end
+                HitAmounts[note.lane+1] = 1
+                break
             end
-            if note.length <= 0 then
-                table.remove(chart.notes, i)
-            else
-                note.holding = true
-                note.heldFor = 0
-            end
-            HitAmounts[note.lane+1] = 1
-            break
         end
     end
 end
@@ -129,9 +141,9 @@ function love.update(dt)
     chart.time = chart.time + dt
     if chart.time > 0 then
         if lastTime <= 0 then
-            song:play()
+            chart.song:play()
         end
-        chart.time = song:tell("seconds")
+        chart.time = chart.song:tell("seconds")
     end
     lastTime = lastTime + dt
 
@@ -144,6 +156,12 @@ function love.update(dt)
             if Autoplay then
                 if pos <= 0 then
                     Charge = Charge + 1
+                    local c = math.floor(Charge/chart.totalCharge*100)
+                    local x = (16+c/2)*8
+                    Particles = {}
+                    for _=1,8 do
+                        table.insert(Particles, {x = x, y = 24*16+8, vx = love.math.random()*32, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = (c < 80 and ColorID.YELLOW) or (OverchargeColors[love.math.random(1,#OverchargeColors)]), char = "¤"})
+                    end
                     if note.length <= 0 then
                         table.remove(chart.notes, i)
                         i = i - 1
@@ -186,6 +204,25 @@ function love.update(dt)
 
     do
         local i = 1
+        local num = #chart.effects
+        while i <= num do
+            local effect = chart.effects[i]
+            local pos = effect.time-chart.time
+            if pos <= 0 then
+                local t = EffectTypes[effect.type]
+                if type(t) == "function" then
+                    t(effect)
+                end
+                table.remove(chart.effects, i)
+                i = i - 1
+            end
+            i = i + 1
+            num = #chart.effects
+        end
+    end
+
+    do
+        local i = 1
         local num = #Particles
         while i <= num do
             local particle = Particles[i]
@@ -199,6 +236,17 @@ function love.update(dt)
             i = i + 1
             num = #Particles
         end
+    end
+
+    do
+        local blend = math.pow(0.01,dt)
+        CurveModifier = blend*(CurveModifier-1)+1
+        ScreenShader:send("curveStrength", CurveStrength*CurveModifier)
+    end
+    do
+        local blend = math.pow(0.05,dt)
+        Chromatic = blend*Chromatic
+        ScreenShader:send("chromaticStrength", Chromatic)
     end
 
     MissTime = math.max(0,MissTime - dt * 8)
@@ -218,10 +266,10 @@ function love.update(dt)
         moveBoxTime = moveBoxTime - 1/20
     end
 
-    PressAmounts[1] = math.max(0, math.min(1, PressAmounts[1] + dt*8*(love.keyboard.isDown("d") and 1/dt or -1/dt)))
-    PressAmounts[2] = math.max(0, math.min(1, PressAmounts[2] + dt*8*(love.keyboard.isDown("f") and 1/dt or -1/dt)))
-    PressAmounts[3] = math.max(0, math.min(1, PressAmounts[3] + dt*8*(love.keyboard.isDown("j") and 1/dt or -1/dt)))
-    PressAmounts[4] = math.max(0, math.min(1, PressAmounts[4] + dt*8*(love.keyboard.isDown("k") and 1/dt or -1/dt)))
+    PressAmounts[1] = math.max(0, math.min(1, PressAmounts[1] + dt*8*((love.keyboard.isDown("d") and not Autoplay) and 1/dt or -1/dt)))
+    PressAmounts[2] = math.max(0, math.min(1, PressAmounts[2] + dt*8*((love.keyboard.isDown("f") and not Autoplay) and 1/dt or -1/dt)))
+    PressAmounts[3] = math.max(0, math.min(1, PressAmounts[3] + dt*8*((love.keyboard.isDown("j") and not Autoplay) and 1/dt or -1/dt)))
+    PressAmounts[4] = math.max(0, math.min(1, PressAmounts[4] + dt*8*((love.keyboard.isDown("k") and not Autoplay) and 1/dt or -1/dt)))
     HitAmounts[1] = math.max(0, math.min(1, HitAmounts[1] - dt*8))
     HitAmounts[2] = math.max(0, math.min(1, HitAmounts[2] - dt*8))
     HitAmounts[3] = math.max(0, math.min(1, HitAmounts[3] - dt*8))
@@ -237,15 +285,26 @@ function love.draw()
         DrawBox(box[1],box[2],box[3],box[4])
     end
     love.graphics.setColor(TerminalColors[16])
+    love.graphics.print("Time " .. chart.time, 50*8, 5*16)
+    love.graphics.print("Beat " .. math.floor(WhichSixteenth(chart.time, chart.bpm)/4), 50*8, 6*16)
+    love.graphics.print("Sixteenth " .. math.floor(WhichSixteenth(chart.time, chart.bpm)), 50*8, 7*16)
+    love.graphics.print("BPM " .. chart.bpm, 50*8, 8*16)
     DrawBoxHalfWidth(32, 4, 15, 16)
     DrawBoxHalfWidth(15, 23, 50, 1)
     love.graphics.print("┌─" .. ("─"):rep(#ChartName) .. "─┐\n│ " .. ChartName .. " │\n└─" .. ("─"):rep(#ChartName) .. "─┘", ((80-(#ChartName+3))/2)*8, 1*16)
     if Autoplay then love.graphics.print("┬──────────┬\n│ AUTOPLAY │\n┴──────────┴", 34*8, 21*16) end
     love.graphics.print("┌──────────┐\n│  CHARGE  │\n├──────────┴", 15*8, 21*16)
     local c = math.floor(Charge/chart.totalCharge*100)
-    love.graphics.print("┌──────────┐\n│  " .. (" "):rep(5-#tostring(math.floor(Charge))) .. math.floor(Charge) .."C  │\n┴──────────┤", 55*8, 21*16)
+    love.graphics.print(" ", 63*8, 22*16)
+    love.graphics.print("┌──────────┐\n│  " .. (" "):rep(5-#tostring(math.floor(Charge))) .. math.floor(Charge) .."¤  │\n┴──────────┤", 55*8, 21*16)
+    love.graphics.print("┬\n\n┴", 56*8, 23*16)
     love.graphics.setColor(TerminalColors[(c < 40 and 5) or (c < 80 and 15) or 11])
-    love.graphics.print(("█"):rep(c/2), 16*8, 24*16)
+    love.graphics.print(("█"):rep(math.min(41,c/2)), 16*8, 24*16)
+    for i = 1, math.max(0,c/2-41) do
+        local chunkColor = (math.floor(-love.timer.getTime()*#OverchargeColors)+i-1)%#OverchargeColors
+        love.graphics.setColor(TerminalColors[OverchargeColors[chunkColor+1]])
+        love.graphics.print("█", (56+i)*8, 24*16)
+    end
     love.graphics.setColor(TerminalColors[9])
     love.graphics.print(("   ┊\n"):rep(13).."┈┈┈╬┈┈┈\n"..("   ┊\n"):rep(2), 33*8, 5*16)
     love.graphics.print(("   ┊\n"):rep(13).."┈┈┈╬┈┈┈\n"..("   ┊\n"):rep(2), 37*8, 5*16)
@@ -267,7 +326,7 @@ function love.draw()
     end
 
     for _,particle in ipairs(Particles) do
-        love.graphics.setColor(TerminalColors[particle.color + 1])
+        love.graphics.setColor(TerminalColors[particle.color])
         love.graphics.print(particle.char, particle.x-4, particle.y-8)
     end
 

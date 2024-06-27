@@ -50,6 +50,15 @@ NoteTypes = {
     }
 }
 
+EffectTypes = {
+    modify_curve = function(self)
+        CurveModifier = self.data.strength
+    end,
+    chromatic = function(self)
+        Chromatic = self.data.strength
+    end
+}
+
 Note = {}
 Note.__index = Note
 
@@ -65,14 +74,34 @@ function Note:new(time,lane,length,noteType,extra)
     return note
 end
 
+Effect = {}
+Effect.__index = Effect
+
+function Effect:new(time,effectType,data)
+    local note = setmetatable({}, self)
+
+    note.time = time
+    note.type = effectType
+    note.data = data
+
+    return note
+end
+
 Chart = {}
 Chart.__index = Chart
 
-function Chart:new(notes)
+function Chart:new(song, bpm, notes, effects)
     local chart = setmetatable({}, self)
+
+    chart.song = song
+    chart.bpm = bpm
 
     chart.notes = notes or {}
     table.sort(chart.notes or {}, function (a, b)
+        return a.time < b.time
+    end)
+    chart.effects = effects or {}
+    table.sort(chart.effects or {}, function (a, b)
         return a.time < b.time
     end)
     chart.time = 0
@@ -82,4 +111,8 @@ function Chart:new(notes)
     end
 
     return chart
+end
+
+function Chart.fromFile(path)
+    
 end

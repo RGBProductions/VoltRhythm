@@ -1,4 +1,4 @@
-local chart = Chart:new({
+local chart = Chart:new(love.audio.newSource("unst.ogg", "stream"), 223, {
     Note:new(TimeBPM(64,223),0,0,"normal",{}),
     Note:new(TimeBPM(66,223),2,0,"normal",{}),
     Note:new(TimeBPM(68,223),1,0,"normal",{}),
@@ -9,7 +9,7 @@ local chart = Chart:new({
     Note:new(TimeBPM(78,223),0,0,"normal",{}),
     
     Note:new(TimeBPM(80,223),1,0,"normal",{}),
-    Note:new(TimeBPM(80,223),3,0,"normal",{}),
+    -- Note:new(TimeBPM(80,223),3,0,"normal",{}),
     Note:new(TimeBPM(82,223),2,0,"normal",{}),
     Note:new(TimeBPM(84,223),1,0,"normal",{}),
     Note:new(TimeBPM(86,223),3,0,"normal",{}),
@@ -18,7 +18,7 @@ local chart = Chart:new({
     Note:new(TimeBPM(92,223),3,0,"normal",{}),
     Note:new(TimeBPM(94,223),2,0,"normal",{}),
     
-    Note:new(TimeBPM(96,223),0,0,"normal",{}),
+    -- Note:new(TimeBPM(96,223),0,0,"normal",{}),
     Note:new(TimeBPM(96,223),3,0,"normal",{}),
     Note:new(TimeBPM(98,223),1,0,"normal",{}),
     Note:new(TimeBPM(100,223),2,0,"normal",{}),
@@ -28,7 +28,7 @@ local chart = Chart:new({
     Note:new(TimeBPM(108,223),2,0,"normal",{}),
     Note:new(TimeBPM(110,223),3,0,"normal",{}),
     
-    Note:new(TimeBPM(112,223),1,0,"normal",{}),
+    -- Note:new(TimeBPM(112,223),1,0,"normal",{}),
     Note:new(TimeBPM(112,223),2,0,"normal",{}),
     Note:new(TimeBPM(114,223),0,0,"normal",{}),
     Note:new(TimeBPM(116,223),3,0,"normal",{}),
@@ -74,6 +74,11 @@ local chart = Chart:new({
     Note:new(TimeBPM(186,223),0,0,"normal",{}),
     Note:new(TimeBPM(188,223),1,0,"normal",{}),
     Note:new(TimeBPM(190,223),2,0,"normal",{}),
+}, {
+    Effect:new(TimeBPM(64,223), "chromatic", {strength = 1}),
+    Effect:new(TimeBPM(64+32,223), "chromatic", {strength = 1}),
+    Effect:new(TimeBPM(64+64,223), "chromatic", {strength = 1}),
+    Effect:new(TimeBPM(64+96,223), "chromatic", {strength = 1})
 })
 -- chart.time = -TimeBPM(16,223)
 chart.time = 0
