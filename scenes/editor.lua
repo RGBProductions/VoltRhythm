@@ -44,7 +44,7 @@ function scene.mousepressed(x,y,b)
         if b == 1 then
             local found = false
             for i,note in ipairs(scene.chart.notes) do
-                if math.abs(note.time-time) <= 0.0625 and note.lane == lane then
+                if math.abs(note.time-time) <= 0.0625/scene.zoom and note.lane == lane then
                     found = true
                     break
                 end
@@ -59,7 +59,7 @@ function scene.mousepressed(x,y,b)
             for i,note in ipairs(scene.chart.notes) do
                 local drawPos = chartPos+chartHeight-(note.time-scene.chart.time)*(scene.speed*scene.zoom)
                 drawPos = drawPos*16-8
-                if math.abs(note.time-time) <= 0.0625 and note.lane == lane then
+                if math.abs(note.time-time) <= 0.0625/scene.zoom and note.lane == lane then
                     table.remove(scene.chart.notes, i)
                     for _=1,8 do
                         table.insert(Particles, {x = x, y = y, vx = (love.math.random()*2-1)*64, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = ColorID.RED, char = "¤"})
@@ -81,7 +81,7 @@ function scene.wheelmoved(x,y)
         for i,note in ipairs(scene.chart.notes) do
             local drawPos = chartPos+chartHeight-(note.time-scene.chart.time)*(scene.speed*scene.zoom)
             drawPos = drawPos*16-8
-            if math.abs(note.time-time) <= 0.0625 and note.lane == lane then
+            if math.abs(note.time-time) <= 0.0625/scene.zoom and note.lane == lane then
                 note.length = math.max(0,note.length+TimeBPM(y,scene.chart.bpm)/scene.zoom)
                 break
             end
@@ -133,7 +133,7 @@ function scene.keypressed(k)
         scene.zoom = scene.zoom + 1
     end
     if k == "[" then
-        scene.zoom = scene.zoom - 1
+        scene.zoom = math.max(1,scene.zoom - 1)
     end
     if k == "s" and love.keyboard.isDown("lctrl") then
         scene.chart:save("editor_chart.json")
@@ -180,7 +180,7 @@ function scene.keypressed(k)
             for i,note in ipairs(scene.chart.notes) do
                 local drawPos = chartPos+chartHeight-(note.time-scene.chart.time)*(scene.speed*scene.zoom)
                 drawPos = drawPos*16-8
-                if math.abs(note.time-time) <= 0.0625 and note.lane == lane then
+                if math.abs(note.time-time) <= 0.0625/scene.zoom and note.lane == lane then
                     if note.lane+1 < 4 then
                         if note.type == "normal" then
                             note.type = "swap"
@@ -205,7 +205,7 @@ function scene.keypressed(k)
             for i,note in ipairs(scene.chart.notes) do
                 local drawPos = chartPos+chartHeight-(note.time-scene.chart.time)*(scene.speed*scene.zoom)
                 drawPos = drawPos*16-8
-                if math.abs(note.time-time) <= 0.0625 and note.lane == lane then
+                if math.abs(note.time-time) <= 0.0625/scene.zoom and note.lane == lane then
                     if note.lane-1 >= 0 then
                         if note.type == "normal" then
                             note.type = "swap"

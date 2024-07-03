@@ -102,6 +102,9 @@ function love.keypressed(k)
     if k == "f1" then
         UseShaders = not UseShaders
     end
+    if k == "f5" then
+        love.mouse.setRelativeMode(not love.mouse.getRelativeMode())
+    end
     if k == "space" then
         love.graphics.captureScreenshot("lol.png")
     end
@@ -111,8 +114,6 @@ end
 
 MouseX = Display:getWidth()/2
 MouseY = Display:getHeight()/2
-
--- love.mouse.setRelativeMode(true)
 
 function love.mousemoved(x,y,dx,dy)
     local s = math.min(love.graphics.getWidth()/Display:getWidth(), love.graphics.getHeight()/Display:getHeight())

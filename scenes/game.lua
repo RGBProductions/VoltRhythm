@@ -103,19 +103,25 @@ function scene.update(dt)
                         end
                     end
                 end
-                if pos <= -0.5 then
+                if pos <= -0.25 then
                     if note.length <= 0 then
                         note.destroyed = true
                         i = i - 1
                         Hits = Hits + 1
                         MissTime = 1
                     else
-                        if not love.keyboard.isDown(Keybinds[note.lane+1]) then
-                            MissTime = 1
-                        end
-                        if pos <= -0.5-note.length then
+                        if pos <= -0.25-note.length then
                             note.destroyed = true
                             i = i - 1
+                        else
+                            if not love.keyboard.isDown(Keybinds[note.lane+1]) and not Autoplay then
+                                if pos <= -0.25-(note.length-0.4) then
+                                    note.destroyed = true
+                                    i = i - 1
+                                else
+                                    MissTime = 1
+                                end
+                            end
                         end
                     end
                 end
@@ -217,9 +223,10 @@ function scene.draw()
     local acc = math.floor(Accuracy/math.max(Hits,1)*100)
     love.graphics.print("┬──────────┬\n│ ACC " .. (" "):rep(3-#tostring(acc))..acc.. "% │\n└──────────┘", 34*8, 25*16)
     love.graphics.print("┌──────────┐\n│  CHARGE  │\n├──────────┴", 15*8, 21*16)
-    local c = math.floor(Charge/scene.chart.totalCharge*100)
+    local c = Charge/scene.chart.totalCharge*100
     love.graphics.print(" ", 63*8, 22*16)
     love.graphics.print("┌──────────┐\n│  " .. (" "):rep(5-#tostring(math.floor(c/100*ChargeYield))) .. math.floor(c/100*ChargeYield) .."¤  │\n┴──────────┤", 55*8, 21*16)
+    c = math.floor(Charge/scene.chart.totalCharge*100)
     love.graphics.print("┬\n\n┴", 56*8, 23*16)
     love.graphics.setColor(TerminalColors[(c < 40 and 5) or (c < 80 and 15) or 11])
     love.graphics.print(("█"):rep(math.min(41,c/2)), 16*8, 24*16)
