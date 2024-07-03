@@ -95,7 +95,9 @@ Chart.__index = Chart
 function Chart:new(song, bpm, notes, effects)
     local chart = setmetatable({}, self)
 
-    chart.song = love.audio.newSource(song, "stream")
+    if love.filesystem.getInfo(song) then
+        chart.song = love.audio.newSource(song, "stream")
+    end
     chart.songPath = song
     chart.bpm = bpm
 

@@ -86,6 +86,8 @@ end
 Particles = {}
 
 Charge = 0
+Accuracy = 0
+Hits = 0
 PressAmounts = {0,0,0,0}
 HitAmounts = {0,0,0,0}
 

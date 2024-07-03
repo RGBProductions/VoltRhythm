@@ -8,7 +8,9 @@ function scene.load(args)
     end
     scene.speed = 25
     scene.chartName = "UNRAVELING STASIS"
-    
+    Charge = 0
+    Hits = 0
+    Accuracy = 0
     scene.lastTime = scene.chart.time
     scene.moveBoxTime = 0
 end
@@ -29,6 +31,8 @@ function scene.keypressed(k)
                 local accuracy = (math.abs(pos)/0.2)
                 accuracy = math.max(0,math.min(1,(1/(1-t))*accuracy - ((1/(1-t))-1)))
                 Charge = Charge + (1-accuracy)
+                Hits = Hits + 1
+                Accuracy = Accuracy + (1-accuracy)
                 local c = math.floor(Charge/scene.chart.totalCharge*100)
                 local x = (16+c/2)*8
                 Particles = {}
@@ -96,8 +100,6 @@ function scene.update(dt)
                                 note.destroyed = true
                                 i = i - 1
                             end
-                        elseif pos <= -0.5 then
-                            MissTime = 1
                         end
                     end
                 end
@@ -105,6 +107,8 @@ function scene.update(dt)
                     if note.length <= 0 then
                         note.destroyed = true
                         i = i - 1
+                        Hits = Hits + 1
+                        MissTime = 1
                     else
                         if not love.keyboard.isDown(Keybinds[note.lane+1]) then
                             MissTime = 1
@@ -114,7 +118,6 @@ function scene.update(dt)
                             i = i - 1
                         end
                     end
-                    MissTime = 1
                 end
             end
             ::continue::
@@ -211,6 +214,8 @@ function scene.draw()
     DrawBoxHalfWidth(15, 23, 50, 1)
     love.graphics.print("┌─" .. ("─"):rep(#scene.chartName) .. "─┐\n│ " .. scene.chartName .. " │\n└─" .. ("─"):rep(#scene.chartName) .. "─┘", ((80-(#scene.chartName+3))/2)*8, 1*16)
     if Autoplay then love.graphics.print("┬──────────┬\n│ AUTOPLAY │\n┴──────────┴", 34*8, 21*16) end
+    local acc = math.floor(Accuracy/math.max(Hits,1)*100)
+    love.graphics.print("┬──────────┬\n│ ACC " .. (" "):rep(3-#tostring(acc))..acc.. "% │\n└──────────┘", 34*8, 25*16)
     love.graphics.print("┌──────────┐\n│  CHARGE  │\n├──────────┴", 15*8, 21*16)
     local c = math.floor(Charge/scene.chart.totalCharge*100)
     love.graphics.print(" ", 63*8, 22*16)

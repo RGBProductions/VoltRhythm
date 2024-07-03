@@ -25,6 +25,11 @@ function scene.load(args)
     else
         scene.chart = Chart:new(songPath,songBpm,{},{})
     end
+    if EditorTime then
+        scene.chart.time = EditorTime
+    else
+        EditorTime = 0
+    end
     scene.zoom = 1
     scene.paused = true
     scene.speed = 25
@@ -151,6 +156,7 @@ function scene.keypressed(k)
         scene.chart = Chart:new(songPath,songBpm,{},{})
     end
     if k == "f9" then
+        EditorTime = scene.chart.time
         if scene.chart.song then
             scene.chart.song:stop()
             scene.chart.time = 0
