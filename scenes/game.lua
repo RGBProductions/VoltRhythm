@@ -106,6 +106,10 @@ function scene.update(dt)
                         if not love.keyboard.isDown(Keybinds[note.lane+1]) then
                             MissTime = 1
                         end
+                        if pos <= -0.5-note.length then
+                            note.destroyed = true
+                            i = i - 1
+                        end
                     end
                     MissTime = 1
                 end

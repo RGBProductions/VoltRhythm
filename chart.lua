@@ -9,7 +9,7 @@ NoteTypes = {
             chartPos = chartPos or 5
             local drawPos = chartPos+chartHeight-pos*speed
             if useSteps then drawPos = math.floor(drawPos) end
-            if drawPos >= chartPos and drawPos < chartPos+(chartHeight+1) then
+            if drawPos >= chartPos and drawPos < chartPos+(chartHeight+1) and (self.heldFor or 0) <= 0 then
                 love.graphics.setColor(TerminalColors[NoteColors[self.lane+1][3]])
                 love.graphics.print("○", (34+self.lane*4)*8, drawPos*16-8)
             end
@@ -34,7 +34,7 @@ NoteTypes = {
             local visualLane = self.lane - self.extra.dir*laneOffset
             local symbol = (math.abs(visualLane-self.lane) <= 1/4 and "○") or (math.abs(visualLane-(self.lane-self.extra.dir)) <= 1/4 and (self.extra.dir == 1 and "▷" or "◁")) or "◇"
             if useSteps then drawPos = math.floor(drawPos) end
-            if drawPos >= chartPos and drawPos < chartPos+(chartHeight+1) then
+            if drawPos >= chartPos and drawPos < chartPos+(chartHeight+1) and (self.heldFor or 0) <= 0 then
                 love.graphics.setColor(TerminalColors[NoteColors[self.lane+1][3]])
                 love.graphics.print(symbol, (34+visualLane*4)*8, drawPos*16-8)
             end
@@ -124,6 +124,7 @@ end
 function Chart:resetAllNotes()
     for _,note in ipairs(self.notes) do
         note.destroyed = false
+        note.heldFor = nil
     end
 end
 
