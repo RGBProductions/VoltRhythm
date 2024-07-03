@@ -25,6 +25,7 @@ function scene.load(args)
     else
         scene.chart = Chart:new(songPath,songBpm,{},{})
     end
+    scene.zoom = 1
     scene.paused = true
     scene.speed = 25
 end
@@ -32,9 +33,9 @@ end
 function scene.mousepressed(x,y,b)
     local lane = math.floor((x/8-34)/4+0.5)
     if lane >= 0 and lane < 4 then
-        local time = -((y+8)/16-chartPos-chartHeight)/scene.speed+scene.chart.time
+        local time = -((y+8)/16-chartPos-chartHeight)/(scene.speed*scene.zoom)+scene.chart.time
         local bpmTime = TimeBPM(1,scene.chart.bpm)
-        time = math.floor(time/bpmTime + 0.5)*bpmTime
+        time = math.floor(time/bpmTime*scene.zoom + 0.5)*bpmTime/scene.zoom
         if b == 1 then
             local found = false
             for i,note in ipairs(scene.chart.notes) do
@@ -51,7 +52,7 @@ function scene.mousepressed(x,y,b)
             end
         elseif b == 2 then
             for i,note in ipairs(scene.chart.notes) do
-                local drawPos = chartPos+chartHeight-(note.time-scene.chart.time)*scene.speed
+                local drawPos = chartPos+chartHeight-(note.time-scene.chart.time)*(scene.speed*scene.zoom)
                 drawPos = drawPos*16-8
                 if math.abs(note.time-time) <= 0.0625 and note.lane == lane then
                     table.remove(scene.chart.notes, i)
@@ -68,15 +69,15 @@ end
 function scene.wheelmoved(x,y)
     local lane = math.floor((MouseX/8-34)/4+0.5)
     if lane >= 0 and lane < 4 then
-        local time = -((MouseY+8)/16-chartPos-chartHeight)/scene.speed+scene.chart.time
+        local time = -((MouseY+8)/16-chartPos-chartHeight)/(scene.speed*scene.zoom)+scene.chart.time
         local bpmTime = TimeBPM(1,scene.chart.bpm)
-        time = math.floor(time/bpmTime + 0.5)*bpmTime
+        time = math.floor(time/bpmTime*scene.zoom + 0.5)*bpmTime/scene.zoom
 
         for i,note in ipairs(scene.chart.notes) do
-            local drawPos = chartPos+chartHeight-(note.time-scene.chart.time)*scene.speed
+            local drawPos = chartPos+chartHeight-(note.time-scene.chart.time)*(scene.speed*scene.zoom)
             drawPos = drawPos*16-8
             if math.abs(note.time-time) <= 0.0625 and note.lane == lane then
-                note.length = math.max(0,note.length+TimeBPM(y,scene.chart.bpm))
+                note.length = math.max(0,note.length+TimeBPM(y,scene.chart.bpm)/scene.zoom)
                 break
             end
         end
@@ -108,14 +109,14 @@ function scene.update(dt)
     end
 
     if love.keyboard.isDown("up") then
-        scene.chart.time = scene.chart.time + dt*(love.keyboard.isDown("lshift") and 2 or 1)
+        scene.chart.time = scene.chart.time + dt*(love.keyboard.isDown("lshift") and 2 or 1)/scene.zoom
         if scene.chart.song then
             scene.chart.song:stop()
         end
     end
 
     if love.keyboard.isDown("down") then
-        scene.chart.time = math.max(0,scene.chart.time - dt*(love.keyboard.isDown("lshift") and 2 or 1))
+        scene.chart.time = math.max(0,scene.chart.time - dt*(love.keyboard.isDown("lshift") and 2 or 1)/scene.zoom)
         if scene.chart.song then
             scene.chart.song:stop()
         end
@@ -123,6 +124,12 @@ function scene.update(dt)
 end
 
 function scene.keypressed(k)
+    if k == "]" then
+        scene.zoom = scene.zoom + 1
+    end
+    if k == "[" then
+        scene.zoom = scene.zoom - 1
+    end
     if k == "s" and love.keyboard.isDown("lctrl") then
         scene.chart:save("editor_chart.json")
     end
@@ -168,16 +175,16 @@ function scene.draw()
 
     local t = 15/scene.chart.bpm
     for i = 0, 3 do
-        drawLine(TimeBPM(i*4+0-0.5+math.floor(scene.chart.time/t/4)*4,scene.chart.bpm),scene.chart.time,scene.speed,8)
-        drawLine(TimeBPM(i*4+1-0.5+math.floor(scene.chart.time/t/4)*4,scene.chart.bpm),scene.chart.time,scene.speed,9)
-        drawLine(TimeBPM(i*4+2-0.5+math.floor(scene.chart.time/t/4)*4,scene.chart.bpm),scene.chart.time,scene.speed,9)
-        drawLine(TimeBPM(i*4+3-0.5+math.floor(scene.chart.time/t/4)*4,scene.chart.bpm),scene.chart.time,scene.speed,9)
+        local steps = scene.zoom*4
+        for j = 0, steps-1 do
+            drawLine(TimeBPM(i*4+j/(steps/4)-0.5/scene.zoom+math.floor(scene.chart.time/t/4)*4,scene.chart.bpm),scene.chart.time,(scene.speed*scene.zoom),j==0 and 8 or 9)
+        end
     end
 
     for _,note in ipairs(scene.chart.notes) do
         local T = NoteTypes[note.type]
         if T and type(T.draw) == "function" then
-            T.draw(note,scene.chart.time,scene.speed,chartPos,chartHeight)
+            T.draw(note,scene.chart.time,(scene.speed*scene.zoom),chartPos,chartHeight)
         end
     end
 
@@ -190,10 +197,10 @@ function scene.draw()
         local x,y = MouseX, MouseY
         local lane = math.floor((x/8-34)/4+0.5)
         if lane >= 0 and lane < 4 then
-            local time = -((y+8)/16-chartPos-chartHeight)/scene.speed+scene.chart.time
+            local time = -((y+8)/16-chartPos-chartHeight)/(scene.speed*scene.zoom)+scene.chart.time
             local bpmTime = TimeBPM(1,scene.chart.bpm)
-            time = math.floor(time/bpmTime + 0.5)*bpmTime
-            NoteTypes.normal.draw({time=time,lane=lane,length=0,type="normal",extra={}}, scene.chart.time, scene.speed,chartPos,chartHeight)
+            time = math.floor(time/bpmTime*scene.zoom + 0.5)*bpmTime/scene.zoom
+            NoteTypes.normal.draw({time=time,lane=lane,length=0,type="normal",extra={}}, scene.chart.time, (scene.speed*scene.zoom),chartPos,chartHeight)
         end
     end
 

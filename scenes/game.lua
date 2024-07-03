@@ -67,7 +67,7 @@ function scene.update(dt)
                 local pos = note.time-scene.chart.time
                 if Autoplay then
                     if pos <= 0 then
-                        Charge = Charge + 1
+                        if (note.heldFor or 0) <= 0 then Charge = Charge + 1 end
                         local c = math.floor(Charge/scene.chart.totalCharge*100)
                         local x = (16+c/2)*8
                         Particles = {}
@@ -84,7 +84,7 @@ function scene.update(dt)
                 end
                 if pos <= 0 then
                     if note.length > 0 then
-                        if love.keyboard.isDown(Keybinds[note.lane+1]) then
+                        if love.keyboard.isDown(Keybinds[note.lane+1]) or Autoplay then
                             local lastHeldFor = note.heldFor or 0
                             note.heldFor = math.min(note.length, lastHeldFor + dt)
                             Charge = Charge + (note.heldFor-lastHeldFor)
