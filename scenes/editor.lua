@@ -164,6 +164,60 @@ function scene.keypressed(k)
         scene.chart.time = TimeBPM(-16,scene.chart.bpm)
         SceneManager.LoadScene("scenes/game", {chart = scene.chart})
     end
+    if k == "left" then
+        local lane = math.floor((MouseX/8-34)/4+0.5)
+        if lane >= 0 and lane < 4 then
+            local time = -((MouseY+8)/16-chartPos-chartHeight)/(scene.speed*scene.zoom)+scene.chart.time
+            local bpmTime = TimeBPM(1,scene.chart.bpm)
+            time = math.floor(time/bpmTime*scene.zoom + 0.5)*bpmTime/scene.zoom
+    
+            for i,note in ipairs(scene.chart.notes) do
+                local drawPos = chartPos+chartHeight-(note.time-scene.chart.time)*(scene.speed*scene.zoom)
+                drawPos = drawPos*16-8
+                if math.abs(note.time-time) <= 0.0625 and note.lane == lane then
+                    if note.lane-1 >= 0 then
+                        if note.type == "normal" then
+                            note.type = "swap"
+                            note.lane = note.lane - 1
+                            note.extra.dir = -1
+                        else
+                            note.type = "normal"
+                            note.lane = note.lane - 1
+                            note.extra.dir = nil
+                        end
+                    end
+                    break
+                end
+            end
+        end
+    end
+    if k == "right" then
+        local lane = math.floor((MouseX/8-34)/4+0.5)
+        if lane >= 0 and lane < 4 then
+            local time = -((MouseY+8)/16-chartPos-chartHeight)/(scene.speed*scene.zoom)+scene.chart.time
+            local bpmTime = TimeBPM(1,scene.chart.bpm)
+            time = math.floor(time/bpmTime*scene.zoom + 0.5)*bpmTime/scene.zoom
+    
+            for i,note in ipairs(scene.chart.notes) do
+                local drawPos = chartPos+chartHeight-(note.time-scene.chart.time)*(scene.speed*scene.zoom)
+                drawPos = drawPos*16-8
+                if math.abs(note.time-time) <= 0.0625 and note.lane == lane then
+                    if note.lane+1 < 4 then
+                        if note.type == "normal" then
+                            note.type = "swap"
+                            note.lane = note.lane + 1
+                            note.extra.dir = 1
+                        else
+                            note.type = "normal"
+                            note.lane = note.lane + 1
+                            note.extra.dir = nil
+                        end
+                    end
+                    break
+                end
+            end
+        end
+    end
 end
 
 function scene.draw()

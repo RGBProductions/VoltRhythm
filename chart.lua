@@ -41,7 +41,7 @@ NoteTypes = {
             local cells = self.length * speed
             for i = 1, cells do
                 local extPos = drawPos-i
-                if extPos >= chartPos and extPos < chartPos+14 then
+                if extPos >= chartPos and extPos < chartPos+(chartHeight-1) then
                     love.graphics.setColor(TerminalColors[NoteColors[self.lane+1][3]])
                     love.graphics.print("║", (34+visualLane*4)*8, extPos*16-8)
                 end

@@ -93,7 +93,7 @@ function scene.update(dt)
                                 note.destroyed = true
                                 i = i - 1
                             end
-                        else
+                        elseif pos <= -0.5 then
                             MissTime = 1
                         end
                     end
