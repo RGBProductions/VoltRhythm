@@ -24,8 +24,11 @@ function scene.keypressed(k)
     if not Autoplay then
         for i,note in ipairs(scene.chart.notes) do
             local pos = note.time-scene.chart.time
-            if math.abs(pos) <= 0.2 and k == Keybinds[note.lane+1] then
-                Charge = Charge + 1*(1-(math.abs(pos)/0.2))
+            if math.abs(pos) <= 0.2 and k == Keybinds[note.lane+1] and not note.destroyed then
+                local t = 0.125
+                local accuracy = (math.abs(pos)/0.2)
+                accuracy = math.max(0,math.min(1,(1/(1-t))*accuracy - ((1/(1-t))-1)))
+                Charge = Charge + (1-accuracy)
                 local c = math.floor(Charge/scene.chart.totalCharge*100)
                 local x = (16+c/2)*8
                 Particles = {}
