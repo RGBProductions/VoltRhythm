@@ -3,7 +3,7 @@ local useSteps = false
 NoteTypes = {
     normal = {
         ---@param self {time: number, lane: number, length: number, type: string, extra: table, heldFor: number?}
-        draw = function (self,time,speed,chartPos,chartHeight)
+        draw = function (self,time,speed,chartPos,chartHeight,isEditor)
             local pos = self.time-time
             chartHeight = chartHeight or 15
             chartPos = chartPos or 5
@@ -25,7 +25,7 @@ NoteTypes = {
     },
     swap = {
         ---@param self {time: number, lane: number, length: number, type: string, extra: table, heldFor: number?}
-        draw = function (self,time,speed,chartPos,chartHeight)
+        draw = function (self,time,speed,chartPos,chartHeight,isEditor)
             local pos = self.time-time
             chartHeight = chartHeight or 15
             chartPos = chartPos or 5
@@ -35,6 +35,8 @@ NoteTypes = {
             local symbol = (math.abs(visualLane-self.lane) <= 1/4 and "○") or (math.abs(visualLane-(self.lane-self.extra.dir)) <= 1/4 and (self.extra.dir == 1 and "▷" or "◁")) or "◇"
             if useSteps then drawPos = math.floor(drawPos) end
             if drawPos >= chartPos and drawPos < chartPos+(chartHeight+1) and (self.heldFor or 0) <= 0 then
+                love.graphics.setColor(TerminalColors[NoteColors[self.lane+1][3]])
+                love.graphics.print("¤", (34+self.lane*4)*8, drawPos*16-8)
                 love.graphics.setColor(TerminalColors[NoteColors[self.lane+1][3]])
                 love.graphics.print(symbol, (34+visualLane*4)*8, drawPos*16-8)
             end

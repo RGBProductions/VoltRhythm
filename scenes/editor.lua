@@ -175,14 +175,12 @@ function scene.keypressed(k)
                 local drawPos = chartPos+chartHeight-(note.time-scene.chart.time)*(scene.speed*scene.zoom)
                 drawPos = drawPos*16-8
                 if math.abs(note.time-time) <= 0.0625 and note.lane == lane then
-                    if note.lane-1 >= 0 then
+                    if note.lane+1 < 4 then
                         if note.type == "normal" then
                             note.type = "swap"
-                            note.lane = note.lane - 1
                             note.extra.dir = -1
                         else
                             note.type = "normal"
-                            note.lane = note.lane - 1
                             note.extra.dir = nil
                         end
                     end
@@ -202,14 +200,12 @@ function scene.keypressed(k)
                 local drawPos = chartPos+chartHeight-(note.time-scene.chart.time)*(scene.speed*scene.zoom)
                 drawPos = drawPos*16-8
                 if math.abs(note.time-time) <= 0.0625 and note.lane == lane then
-                    if note.lane+1 < 4 then
+                    if note.lane-1 >= 0 then
                         if note.type == "normal" then
                             note.type = "swap"
-                            note.lane = note.lane + 1
                             note.extra.dir = 1
                         else
                             note.type = "normal"
-                            note.lane = note.lane + 1
                             note.extra.dir = nil
                         end
                     end
@@ -238,7 +234,7 @@ function scene.draw()
     for _,note in ipairs(scene.chart.notes) do
         local T = NoteTypes[note.type]
         if T and type(T.draw) == "function" then
-            T.draw(note,scene.chart.time,(scene.speed*scene.zoom),chartPos,chartHeight)
+            T.draw(note,scene.chart.time,(scene.speed*scene.zoom),chartPos,chartHeight,true)
         end
     end
 
