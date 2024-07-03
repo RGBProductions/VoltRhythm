@@ -137,9 +137,17 @@ function scene.keypressed(k)
         end
     end
     if k == "n" and love.keyboard.isDown("lctrl") then
+        if scene.chart.song then
+            scene.chart.song:stop()
+            scene.chart.time = 0
+        end
         scene.chart = Chart:new(songPath,songBpm,{},{})
     end
     if k == "f9" then
+        if scene.chart.song then
+            scene.chart.song:stop()
+            scene.chart.time = 0
+        end
         if love.keyboard.isDown("lshift") then
             Autoplay = true
         else
