@@ -3,6 +3,8 @@ require "chart"
 json = require "json"
 texture = require "texture"
 
+ChargeYield = 200
+
 function TimeBPM(t,bpm)
     local secPerSixteenth = 15/bpm
     return secPerSixteenth*t
@@ -113,13 +115,17 @@ MouseY = Display:getHeight()/2
 function love.mousemoved(x,y,dx,dy)
     local s = math.min(love.graphics.getWidth()/Display:getWidth(), love.graphics.getHeight()/Display:getHeight())
     local omx,omy = MouseX,MouseY
-    MouseX = math.max(0,math.min(Display:getWidth(), MouseX + dx/s))
-    MouseY = math.max(0,math.min(Display:getHeight(), MouseY + dy/s))
+    MouseX = math.max(0,math.min(Display:getWidth(), MouseX + dx))
+    MouseY = math.max(0,math.min(Display:getHeight(), MouseY + dy))
     SceneManager.MouseMoved(MouseX,MouseY,MouseX-omx,MouseY-omy)
 end
 
 function love.mousepressed(x,y,b)
     SceneManager.MousePressed(MouseX,MouseY,b)
+end
+
+function love.wheelmoved(x,y)
+    SceneManager.WheelMoved(x,y)
 end
 
 function love.update(dt)

@@ -65,6 +65,24 @@ function scene.mousepressed(x,y,b)
     end
 end
 
+function scene.wheelmoved(x,y)
+    local lane = math.floor((MouseX/8-34)/4+0.5)
+    if lane >= 0 and lane < 4 then
+        local time = -((MouseY+8)/16-chartPos-chartHeight)/scene.speed+scene.chart.time
+        local bpmTime = TimeBPM(1,scene.chart.bpm)
+        time = math.floor(time/bpmTime + 0.5)*bpmTime
+
+        for i,note in ipairs(scene.chart.notes) do
+            local drawPos = chartPos+chartHeight-(note.time-scene.chart.time)*scene.speed
+            drawPos = drawPos*16-8
+            if math.abs(note.time-time) <= 0.0625 and note.lane == lane then
+                note.length = math.max(0,note.length+TimeBPM(y,scene.chart.bpm))
+                break
+            end
+        end
+    end
+end
+
 function scene.update(dt)
     do
         local i = 1
@@ -120,7 +138,6 @@ function scene.keypressed(k)
     end
     if k == "n" and love.keyboard.isDown("lctrl") then
         scene.chart = Chart:new(songPath,songBpm,{},{})
-        scene.chart:save("editor_chart.json")
     end
     if k == "f9" then
         if love.keyboard.isDown("lshift") then
@@ -150,9 +167,9 @@ function scene.draw()
     end
 
     for _,note in ipairs(scene.chart.notes) do
-        local t = NoteTypes[note.type]
-        if t and type(t.draw) == "function" then
-            t.draw(note,scene.chart.time,scene.speed,chartPos,chartHeight)
+        local T = NoteTypes[note.type]
+        if T and type(T.draw) == "function" then
+            T.draw(note,scene.chart.time,scene.speed,chartPos,chartHeight)
         end
     end
 
@@ -171,6 +188,15 @@ function scene.draw()
             NoteTypes.normal.draw({time=time,lane=lane,length=0,type="normal",extra={}}, scene.chart.time, scene.speed,chartPos,chartHeight)
         end
     end
+
+    love.graphics.setColor(TerminalColors[16])
+    love.graphics.print("F9 to playtest", 0, 48)
+    love.graphics.print("F8 to return here", 0, 64)
+    love.graphics.print("CTRL S to save chart", 0, 80)
+    love.graphics.print("CTRL N to make a new chart", 0, 96)
+    love.graphics.print("Left click to place note", 0, 128)
+    love.graphics.print("Right click to remove note", 0, 144)
+    love.graphics.print("Scroll to change note length", 0, 160)
 
     -- Mouse pointer
     love.graphics.setColor(TerminalColors[16])
