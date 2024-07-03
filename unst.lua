@@ -1,4 +1,4 @@
-local chart = Chart:new(love.audio.newSource("unst.ogg", "stream"), 223, {
+local chart = Chart:new("unst.ogg", 223, {
     Note:new(TimeBPM(64,223),0,0,"normal",{}),
     Note:new(TimeBPM(66,223),2,0,"normal",{}),
     Note:new(TimeBPM(68,223),1,0,"normal",{}),

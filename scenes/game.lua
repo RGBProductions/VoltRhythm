@@ -1,26 +1,39 @@
-GameScene = {}
+local scene = {}
 
-local chart = require "unst" -- TEMPORARY, TO REPLACE WITH JSON LATER
-Speed = 25
-ChartName = "UNRAVELING STASIS"
+function scene.load(args)
+    if args.chart then
+        scene.chart = args.chart
+    else
+        scene.chart = require "unst" -- TEMPORARY, TO REPLACE WITH JSON LATER
+    end
+    scene.speed = 25
+    scene.chartName = "UNRAVELING STASIS"
+    
+    scene.lastTime = scene.chart.time
+    scene.moveBoxTime = 0
+end
 
-local lastTime = chart.time
-local moveBoxTime = 0
-
-function GameScene.keypressed(k)
+function scene.keypressed(k)
+    if k == "f8" then
+        if scene.chart.song then scene.chart.song:stop() end
+        scene.chart.time = 0
+        scene.chart:resetAllNotes()
+        Charge = 0
+        SceneManager.LoadScene("scenes/editor", {chart = scene.chart})
+    end
     if not Autoplay then
-        for i,note in ipairs(chart.notes) do
-            local pos = note.time-chart.time
+        for i,note in ipairs(scene.chart.notes) do
+            local pos = note.time-scene.chart.time
             if math.abs(pos) <= 0.2 and k == Keybinds[note.lane+1] then
                 Charge = Charge + 1*(1-(math.abs(pos)/0.2))
-                local c = math.floor(Charge/chart.totalCharge*100)
+                local c = math.floor(Charge/scene.chart.totalCharge*100)
                 local x = (16+c/2)*8
                 Particles = {}
                 for _=1,8 do
                     table.insert(Particles, {x = x, y = 24*16+8, vx = love.math.random()*32, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = (c < 80 and ColorID.YELLOW) or (OverchargeColors[love.math.random(1,#OverchargeColors)]), char = "¤"})
                 end
                 if note.length <= 0 then
-                    table.remove(chart.notes, i)
+                    note.destroyed = true
                 else
                     note.holding = true
                     note.heldFor = 0
@@ -32,87 +45,93 @@ function GameScene.keypressed(k)
     end
 end
 
-function GameScene.update(dt)
-    chart.time = chart.time + dt
-    if chart.time > 0 then
-        if lastTime <= 0 then
-            chart.song:play()
+function scene.update(dt)
+    scene.chart.time = scene.chart.time + dt
+    if scene.chart.time > 0 then
+        if scene.lastTime <= 0 then
+            if scene.chart.song then scene.chart.song:play() end
         end
-        chart.time = chart.song:tell("seconds")
+        scene.chart.time = (scene.chart.song ~= nil and scene.chart.song:tell("seconds")) or (scene.chart.time+dt)
     end
-    lastTime = lastTime + dt
+    scene.lastTime = scene.lastTime + dt
 
     do
         local i = 1
-        local num = #chart.notes
+        local num = #scene.chart.notes
         while i <= num do
-            local note = chart.notes[i]
-            local pos = note.time-chart.time
-            if Autoplay then
-                if pos <= 0 then
-                    Charge = Charge + 1
-                    local c = math.floor(Charge/chart.totalCharge*100)
-                    local x = (16+c/2)*8
-                    Particles = {}
-                    for _=1,8 do
-                        table.insert(Particles, {x = x, y = 24*16+8, vx = love.math.random()*32, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = (c < 80 and ColorID.YELLOW) or (OverchargeColors[love.math.random(1,#OverchargeColors)]), char = "¤"})
-                    end
-                    if note.length <= 0 then
-                        table.remove(chart.notes, i)
-                        i = i - 1
-                    end
-                    HitAmounts[note.lane+1] = 1
-                    PressAmounts[note.lane+1] = 1
-                end
+            local note = scene.chart.notes[i]
+            if note.destroyed then
+                goto continue
             end
-            if pos <= 0 then
-                if note.length > 0 then
-                    if love.keyboard.isDown(Keybinds[note.lane+1]) then
-                        local lastHeldFor = note.heldFor or 0
-                        note.heldFor = math.min(note.length, lastHeldFor + dt)
-                        Charge = Charge + (note.heldFor-lastHeldFor)
-                        HitAmounts[note.lane+1] = 1
-                        if note.heldFor >= note.length then
-                            table.remove(chart.notes, i)
+            do
+                local pos = note.time-scene.chart.time
+                if Autoplay then
+                    if pos <= 0 then
+                        Charge = Charge + 1
+                        local c = math.floor(Charge/scene.chart.totalCharge*100)
+                        local x = (16+c/2)*8
+                        Particles = {}
+                        for _=1,8 do
+                            table.insert(Particles, {x = x, y = 24*16+8, vx = love.math.random()*32, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = (c < 80 and ColorID.YELLOW) or (OverchargeColors[love.math.random(1,#OverchargeColors)]), char = "¤"})
+                        end
+                        if note.length <= 0 then
+                            note.destroyed = true
                             i = i - 1
                         end
+                        HitAmounts[note.lane+1] = 1
+                        PressAmounts[note.lane+1] = 1
+                    end
+                end
+                if pos <= 0 then
+                    if note.length > 0 then
+                        if love.keyboard.isDown(Keybinds[note.lane+1]) then
+                            local lastHeldFor = note.heldFor or 0
+                            note.heldFor = math.min(note.length, lastHeldFor + dt)
+                            Charge = Charge + (note.heldFor-lastHeldFor)
+                            HitAmounts[note.lane+1] = 1
+                            if note.heldFor >= note.length then
+                                note.destroyed = true
+                                i = i - 1
+                            end
+                        else
+                            MissTime = 1
+                        end
+                    end
+                end
+                if pos <= -0.5 then
+                    if note.length <= 0 then
+                        note.destroyed = true
+                        i = i - 1
                     else
-                        MissTime = 1
+                        if not love.keyboard.isDown(Keybinds[note.lane+1]) then
+                            MissTime = 1
+                        end
                     end
+                    MissTime = 1
                 end
             end
-            if pos <= -0.5 then
-                if note.length <= 0 then
-                    table.remove(chart.notes, i)
-                    i = i - 1
-                else
-                    if not love.keyboard.isDown(Keybinds[note.lane+1]) then
-                        MissTime = 1
-                    end
-                end
-                MissTime = 1
-            end
+            ::continue::
             i = i + 1
-            num = #chart.notes
+            num = #scene.chart.notes
         end
     end
 
     do
         local i = 1
-        local num = #chart.effects
+        local num = #scene.chart.effects
         while i <= num do
-            local effect = chart.effects[i]
-            local pos = effect.time-chart.time
+            local effect = scene.chart.effects[i]
+            local pos = effect.time-scene.chart.time
             if pos <= 0 then
                 local t = EffectTypes[effect.type]
                 if type(t) == "function" then
                     t(effect)
                 end
-                table.remove(chart.effects, i)
+                table.remove(scene.chart.effects, i)
                 i = i - 1
             end
             i = i + 1
-            num = #chart.effects
+            num = #scene.chart.effects
         end
     end
 
@@ -149,8 +168,8 @@ function GameScene.update(dt)
     
     ScreenShader:send("tearTime", love.timer.getTime())
 
-    moveBoxTime = moveBoxTime + dt
-    while moveBoxTime >= 1/20 do
+    scene.moveBoxTime = scene.moveBoxTime + dt
+    while scene.moveBoxTime >= 1/20 do
         local move = love.math.random(1,#BackgroundBoxes)
         local color = love.math.random(2,8)
         local x1,y1 = love.math.random(0,79),love.math.random(0,29)
@@ -158,7 +177,7 @@ function GameScene.update(dt)
         local x,y,w,h = math.min(x1,x2),math.min(y1,y2),(math.abs(x2-x1)-2)/2,(math.abs(y2-y1)-2)/2
         table.insert(BackgroundBoxes,{x,y,w,h,color})
         table.remove(BackgroundBoxes, move)
-        moveBoxTime = moveBoxTime - 1/20
+        scene.moveBoxTime = scene.moveBoxTime - 1/20
     end
 
     PressAmounts[1] = math.max(0, math.min(1, PressAmounts[1] + dt*8*((love.keyboard.isDown("d") and not Autoplay) and 1/dt or -1/dt)))
@@ -171,28 +190,28 @@ function GameScene.update(dt)
     HitAmounts[4] = math.max(0, math.min(1, HitAmounts[4] - dt*8))
 end
 
-function GameScene.draw()
+function scene.draw()
     for _,box in ipairs(BackgroundBoxes) do
         love.graphics.setColor(TerminalColors[box[5]])
         DrawBox(box[1],box[2],box[3],box[4])
     end
     love.graphics.setColor(TerminalColors[16])
-    love.graphics.print("Time " .. chart.time, 50*8, 5*16)
-    love.graphics.print("Beat " .. math.floor(WhichSixteenth(chart.time, chart.bpm)/4), 50*8, 6*16)
-    love.graphics.print("Sixteenth " .. math.floor(WhichSixteenth(chart.time, chart.bpm)), 50*8, 7*16)
-    love.graphics.print("BPM " .. chart.bpm, 50*8, 8*16)
+    love.graphics.print("Time " .. scene.chart.time, 50*8, 5*16)
+    love.graphics.print("Beat " .. math.floor(WhichSixteenth(scene.chart.time, scene.chart.bpm)/4), 50*8, 6*16)
+    love.graphics.print("Sixteenth " .. math.floor(WhichSixteenth(scene.chart.time, scene.chart.bpm)), 50*8, 7*16)
+    love.graphics.print("BPM " .. scene.chart.bpm, 50*8, 8*16)
     DrawBoxHalfWidth(32, 4, 15, 16)
     DrawBoxHalfWidth(15, 23, 50, 1)
-    love.graphics.print("┌─" .. ("─"):rep(#ChartName) .. "─┐\n│ " .. ChartName .. " │\n└─" .. ("─"):rep(#ChartName) .. "─┘", ((80-(#ChartName+3))/2)*8, 1*16)
+    love.graphics.print("┌─" .. ("─"):rep(#scene.chartName) .. "─┐\n│ " .. scene.chartName .. " │\n└─" .. ("─"):rep(#scene.chartName) .. "─┘", ((80-(#scene.chartName+3))/2)*8, 1*16)
     if Autoplay then love.graphics.print("┬──────────┬\n│ AUTOPLAY │\n┴──────────┴", 34*8, 21*16) end
     love.graphics.print("┌──────────┐\n│  CHARGE  │\n├──────────┴", 15*8, 21*16)
-    local c = math.floor(Charge/chart.totalCharge*100)
+    local c = math.floor(Charge/scene.chart.totalCharge*100)
     love.graphics.print(" ", 63*8, 22*16)
     love.graphics.print("┌──────────┐\n│  " .. (" "):rep(5-#tostring(math.floor(Charge))) .. math.floor(Charge) .."¤  │\n┴──────────┤", 55*8, 21*16)
     love.graphics.print("┬\n\n┴", 56*8, 23*16)
     love.graphics.setColor(TerminalColors[(c < 40 and 5) or (c < 80 and 15) or 11])
     love.graphics.print(("█"):rep(math.min(41,c/2)), 16*8, 24*16)
-    for i = 1, math.max(0,c/2-41) do
+    for i = 1, math.min(10,math.max(0,c/2-41)) do
         local chunkColor = (math.floor(-love.timer.getTime()*#OverchargeColors)+i-1)%#OverchargeColors
         love.graphics.setColor(TerminalColors[OverchargeColors[chunkColor+1]])
         love.graphics.print("█", (56+i)*8, 24*16)
@@ -210,10 +229,12 @@ function GameScene.draw()
     love.graphics.setColor(TerminalColors[NoteColors[4][math.ceil(PressAmounts[4]+HitAmounts[4]*2)+1]])
     love.graphics.print("███", 45*8, 19*16)
 
-    for _,note in ipairs(chart.notes) do
-        local t = NoteTypes[note.type]
-        if t and type(t.draw) == "function" then
-            t.draw(note,chart.time,Speed)
+    for _,note in ipairs(scene.chart.notes) do
+        if not note.destroyed then
+            local t = NoteTypes[note.type]
+            if t and type(t.draw) == "function" then
+                t.draw(note,scene.chart.time,scene.speed)
+            end
         end
     end
 
@@ -222,3 +243,5 @@ function GameScene.draw()
         love.graphics.print(particle.char, particle.x-4, particle.y-8)
     end
 end
+
+return scene

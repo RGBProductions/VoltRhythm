@@ -1,5 +1,6 @@
 require "colors"
 require "chart"
+json = require "json"
 texture = require "texture"
 
 function TimeBPM(t,bpm)
@@ -26,10 +27,9 @@ function DrawBoxHalfWidth(x,y,w,h)
     love.graphics.print("┌"..("─"):rep(w).."┐\n"..("│"..(" "):rep(w).."│\n"):rep(h).."└"..("─"):rep(w).."┘", x*8, y*16)
 end
 
-require "scenes.editor"
-require "scenes.game"
+require "scenemanager"
 
-Scene = GameScene
+SceneManager.LoadScene("scenes/editor")
 
 Keybinds = {
     "d","f","j","k"
@@ -69,7 +69,7 @@ function love.resize(w,h)
     Partial = love.graphics.newCanvas(w,h)
 end
 
--- unraveling stasis for testing, will be removed later
+love.mouse.setRelativeMode(true)
 
 love.math.setRandomSeed(0)
 BackgroundBoxes = {}
@@ -89,7 +89,7 @@ HitAmounts = {0,0,0,0}
 
 MissTime = 0
 
-Autoplay = true
+Autoplay = false
 
 function love.keypressed(k)
     if k == "f11" then
@@ -101,9 +101,8 @@ function love.keypressed(k)
     if k == "space" then
         love.graphics.captureScreenshot("lol.png")
     end
-    if Scene and type(Scene.keypressed) == "function" then
-        Scene.keypressed(k)
-    end
+
+    SceneManager.KeyPressed(k)
 end
 
 MouseX = Display:getWidth()/2
@@ -113,23 +112,25 @@ MouseY = Display:getHeight()/2
 
 function love.mousemoved(x,y,dx,dy)
     local s = math.min(love.graphics.getWidth()/Display:getWidth(), love.graphics.getHeight()/Display:getHeight())
+    local omx,omy = MouseX,MouseY
     MouseX = math.max(0,math.min(Display:getWidth(), MouseX + dx/s))
     MouseY = math.max(0,math.min(Display:getHeight(), MouseY + dy/s))
+    SceneManager.MouseMoved(MouseX,MouseY,MouseX-omx,MouseY-omy)
+end
+
+function love.mousepressed(x,y,b)
+    SceneManager.MousePressed(MouseX,MouseY,b)
 end
 
 function love.update(dt)
-    if Scene and type(Scene.update) == "function" then
-        Scene.update(dt)
-    end
+    SceneManager.Update(dt)
 end
 
 function love.draw()
     love.graphics.setCanvas(Display)
     love.graphics.clear(0,0,0)
 
-    if Scene and type(Scene.draw) == "function" then
-        Scene.draw()
-    end
+    SceneManager.Draw()
 
     love.graphics.setColor(TerminalColors[16])
     -- love.graphics.print("▒", MouseX-4, MouseY-8)
