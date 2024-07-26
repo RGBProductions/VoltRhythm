@@ -1,34 +1,44 @@
 local useSteps = false
 
+Waviness = 0
+WavinessTarget = 0
+WavinessSmoothing = 0
+
 NoteTypes = {
     normal = {
         ---@param self {time: number, lane: number, length: number, type: string, extra: table, heldFor: number?}
-        draw = function (self,time,speed,chartPos,chartHeight,isEditor)
-            local pos = self.time-time
+        draw = function (self,time,speed,chartPos,chartHeight,chartX,isEditor)
+            local mainpos = self.time-time
+            local pos = mainpos
             chartHeight = chartHeight or 15
             chartPos = chartPos or 5
+            if not isEditor then pos = pos+math.sin(pos*8)*Waviness/speed end
             local drawPos = chartPos+chartHeight-pos*speed
             if useSteps then drawPos = math.floor(drawPos) end
             if drawPos >= chartPos and drawPos < chartPos+(chartHeight+1) and (self.heldFor or 0) <= 0 then
-                love.graphics.setColor(TerminalColors[NoteColors[self.lane+1][3]])
-                love.graphics.print("○", (34+self.lane*4)*8, drawPos*16-8)
+                love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][3]])
+                love.graphics.print("○", (chartX+self.lane*4)*8, math.floor(drawPos*16-8))
             end
             local cells = self.length * speed
             for i = 1, cells do
-                local extPos = drawPos-i
+                local barPos = mainpos+i/speed
+                if not isEditor then barPos = barPos+math.sin(barPos*8)*Waviness/speed end
+                local extPos = chartPos+chartHeight-barPos*speed
                 if extPos >= chartPos and extPos < chartPos+(chartHeight-1) then
-                    love.graphics.setColor(TerminalColors[NoteColors[self.lane+1][3]])
-                    love.graphics.print("║", (34+self.lane*4)*8, extPos*16-8)
+                    love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][3]])
+                    love.graphics.print("║", (chartX+self.lane*4)*8, math.floor(extPos*16-8))
                 end
             end
         end
     },
     swap = {
         ---@param self {time: number, lane: number, length: number, type: string, extra: table, heldFor: number?}
-        draw = function (self,time,speed,chartPos,chartHeight,isEditor)
-            local pos = self.time-time
+        draw = function (self,time,speed,chartPos,chartHeight,chartX,isEditor)
+            local mainpos = self.time-time
+            local pos = mainpos
             chartHeight = chartHeight or 15
             chartPos = chartPos or 5
+            if not isEditor then pos = pos+math.sin(pos*8)*Waviness/speed end
             local drawPos = chartPos+chartHeight-pos*speed
             local laneOffset = math.max(0,math.min(1, ((pos*speed)-7)/4))
             local visualLane = self.lane - self.extra.dir*laneOffset
@@ -36,16 +46,18 @@ NoteTypes = {
             if useSteps then drawPos = math.floor(drawPos) end
             if drawPos >= chartPos and drawPos < chartPos+(chartHeight+1) and (self.heldFor or 0) <= 0 then
                 love.graphics.setColor(TerminalColors[NoteColors[self.lane+1][3]])
-                love.graphics.print("¤", (34+self.lane*4)*8, drawPos*16-8)
+                love.graphics.print("¤", (chartX+self.lane*4)*8, math.floor(drawPos*16-8))
                 love.graphics.setColor(TerminalColors[NoteColors[self.lane+1][3]])
-                love.graphics.print(symbol, (34+visualLane*4)*8, drawPos*16-8)
+                love.graphics.print(symbol, (chartX+visualLane*4)*8, math.floor(drawPos*16-8))
             end
             local cells = self.length * speed
             for i = 1, cells do
-                local extPos = drawPos-i
+                local barPos = mainpos+i/speed
+                if not isEditor then barPos = barPos+math.sin(barPos*8)*Waviness end
+                local extPos = chartPos+chartHeight-barPos*speed
                 if extPos >= chartPos and extPos < chartPos+(chartHeight-1) then
                     love.graphics.setColor(TerminalColors[NoteColors[self.lane+1][3]])
-                    love.graphics.print("║", (34+visualLane*4)*8, extPos*16-8)
+                    love.graphics.print("║", (chartX+visualLane*4)*8, math.floor(extPos*16-8))
                 end
             end
         end
@@ -58,6 +70,43 @@ EffectTypes = {
     end,
     chromatic = function(self)
         Chromatic = self.data.strength
+    end,
+    tear = function(self)
+        MissTime = self.data.strength
+    end,
+    scroll_speed = function(self)
+        ScrollSpeedTarget = self.data.speed
+        ScrollSpeedSmoothing = self.data.smoothing or 0
+    end,
+    offset = function(self)
+        ViewOffsetTarget = self.data.offset
+        ViewOffsetSmoothing = self.data.smoothing or 0
+    end,
+    edit_note = function(self,chart)
+        for _,note in ipairs(chart) do
+            if note.extra.id == self.data.id then
+                if self.data.time then
+                    note.timeTarget = self.data.time
+                end
+                if self.data.lane then
+                    note.laneTarget = self.data.lane
+                end
+                if self.data.type then
+                    note.type = self.data.type
+                end
+                if self.data.extra then
+                    for k,v in pairs(self.data.extra) do
+                        note.extra[k] = v
+                    end
+                end
+                if self.data.smoothing then
+                    note.smoothing = self.data.smoothing
+                else
+                    note.lane = note.laneTarget
+                    note.time = note.timeTarget
+                end
+            end
+        end
     end
 }
 
@@ -92,7 +141,7 @@ end
 Chart = {}
 Chart.__index = Chart
 
-function Chart:new(song, bpm, notes, effects)
+function Chart:new(song, bpm, notes, effects, name, lanes)
     local chart = setmetatable({}, self)
 
     if love.filesystem.getInfo(song) then
@@ -115,7 +164,19 @@ function Chart:new(song, bpm, notes, effects)
         chart.totalCharge = chart.totalCharge + 1 + (note.length or 0)
     end
 
+    chart.name = name or "Chart"
+    chart.lanes = lanes or 4
+
     return chart
+end
+
+function Chart:sort()
+    table.sort(self.notes or {}, function (a, b)
+        return a.time < b.time
+    end)
+    table.sort(self.effects or {}, function (a, b)
+        return a.time < b.time
+    end)
 end
 
 function Chart:recalculateCharge()
@@ -139,9 +200,9 @@ function Chart.fromFile(path)
         data.notes[i] = Note:new(note.time,note.lane,note.length,note.type,note.extra)
     end
     for i,effect in ipairs(data.effects) do
-        data.effects[i] = Effect:new(effect.time.effect.type,effect.data)
+        data.effects[i] = Effect:new(effect.time,effect.type,effect.data)
     end
-    return Chart:new(data.song,data.bpm,data.notes,data.effects)
+    return Chart:new(data.song,data.bpm,data.notes,data.effects,data.name,data.lanes)
 end
 
 function Chart:save(path)
@@ -154,6 +215,8 @@ function Chart:save(path)
         table.insert(effects, {time = effect.time, type = effect.type, data = effect.data})
     end
     love.filesystem.write(path, json.encode({
+        name = self.name,
+        lanes = self.lanes,
         song = self.songPath,
         bpm = self.bpm,
         notes = notes,

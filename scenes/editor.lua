@@ -135,6 +135,31 @@ function scene.keypressed(k)
     if k == "[" then
         scene.zoom = math.max(1,scene.zoom - 1)
     end
+    if k == "pageup" then
+        local a = TimeBPM(1,scene.chart.bpm)/scene.zoom
+        for _,note in ipairs(scene.chart.notes) do
+            note.time = note.time + a
+        end
+    end
+    if k == "pagedown" then
+        local a = TimeBPM(1,scene.chart.bpm)/scene.zoom
+        for _,note in ipairs(scene.chart.notes) do
+            note.time = note.time - a
+        end
+    end
+    if k == "home" then
+        scene.chart.time = 0
+        if scene.chart.song then
+            scene.chart.song:stop()
+        end
+    end
+    if k == "end" then
+        scene.chart:sort()
+        scene.chart.time = scene.chart.notes[#scene.chart.notes].time
+        if scene.chart.song then
+            scene.chart.song:stop()
+        end
+    end
     if k == "s" and love.keyboard.isDown("lctrl") then
         scene.chart:save("editor_chart.json")
     end
@@ -166,6 +191,7 @@ function scene.keypressed(k)
         else
             Autoplay = false
         end
+        scene.chart:sort()
         scene.chart:recalculateCharge()
         scene.chart.time = TimeBPM(-16,scene.chart.bpm)
         SceneManager.LoadScene("scenes/game", {chart = scene.chart})
@@ -240,7 +266,7 @@ function scene.draw()
     for _,note in ipairs(scene.chart.notes) do
         local T = NoteTypes[note.type]
         if T and type(T.draw) == "function" then
-            T.draw(note,scene.chart.time,(scene.speed*scene.zoom),chartPos,chartHeight,true)
+            T.draw(note,scene.chart.time,(scene.speed*scene.zoom),chartPos,chartHeight,34,true)
         end
     end
 
@@ -256,7 +282,7 @@ function scene.draw()
             local time = -((y+8)/16-chartPos-chartHeight)/(scene.speed*scene.zoom)+scene.chart.time
             local bpmTime = TimeBPM(1,scene.chart.bpm)
             time = math.floor(time/bpmTime*scene.zoom + 0.5)*bpmTime/scene.zoom
-            NoteTypes.normal.draw({time=time,lane=lane,length=0,type="normal",extra={}}, scene.chart.time, (scene.speed*scene.zoom),chartPos,chartHeight)
+            NoteTypes.normal.draw({time=time,lane=lane,length=0,type="normal",extra={}}, scene.chart.time, (scene.speed*scene.zoom),chartPos,chartHeight,34,true)
         end
     end
 

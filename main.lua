@@ -1,7 +1,10 @@
 require "colors"
 require "chart"
+require "save"
 json = require "json"
 texture = require "texture"
+
+Save.Load()
 
 ChargeYield = 200
 
@@ -15,7 +18,7 @@ function WhichSixteenth(t,bpm)
     return t/secPerSixteenth
 end
 
-Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%.┌─┐│└┘├┤┴┬█▓▒░┊┈╬○◇▷◁║¤")
+Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%.+-┌─┐│└┘├┤┴┬█▓▒░┊┈╬○◇▷◁║¤")
 
 function DrawBox(x,y,w,h)
     love.graphics.print("┌"..("──"):rep(w).."┐\n"..("│"..("  "):rep(w).."│\n"):rep(h).."└"..("──"):rep(w).."┘", x*8, y*16)
@@ -34,7 +37,8 @@ require "scenemanager"
 SceneManager.LoadScene("scenes/editor")
 
 Keybinds = {
-    "d","f","j","k"
+    [4] = {"d","f","j","k"},
+    [8] = {"s","d","f","b","n","j","k","l"}
 }
 
 Display = love.graphics.newCanvas(640,480)
@@ -85,11 +89,23 @@ end
 
 Particles = {}
 
+function RemoveParticlesByID(id)
+    local i,n = 1,#Particles
+    while i <= n do
+        if Particles[i].id == id then
+            table.remove(Particles, i)
+            i = i - 1
+        end
+        i = i + 1
+        n = #Particles
+    end
+end
+
 Charge = 0
 Accuracy = 0
 Hits = 0
-PressAmounts = {0,0,0,0}
-HitAmounts = {0,0,0,0}
+PressAmounts = {0,0,0,0,0,0,0,0}
+HitAmounts = {0,0,0,0,0,0,0,0}
 
 MissTime = 0
 
@@ -104,9 +120,6 @@ function love.keypressed(k)
     end
     if k == "f5" then
         love.mouse.setRelativeMode(not love.mouse.getRelativeMode())
-    end
-    if k == "space" then
-        love.graphics.captureScreenshot("lol.png")
     end
 
     SceneManager.KeyPressed(k)
@@ -162,4 +175,8 @@ function love.draw()
     end
     love.graphics.draw(Final)
     love.graphics.setShader()
+end
+
+function love.quit()
+    Save.Flush()
 end

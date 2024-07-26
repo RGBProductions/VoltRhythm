@@ -37,10 +37,14 @@ ColorID = {
 }
 
 NoteColors = {
-    {1,5,13,16},
-    {1,7,15,16},
-    {1,3,11,16},
-    {1,2,10,16}
+    {ColorID.BLACK,ColorID.RED,ColorID.LIGHT_RED,ColorID.WHITE},
+    {ColorID.BLACK,ColorID.GOLD,ColorID.YELLOW,ColorID.WHITE},
+    {ColorID.BLACK,ColorID.GREEN,ColorID.LIGHT_GREEN,ColorID.WHITE},
+    {ColorID.BLACK,ColorID.BLUE,ColorID.LIGHT_BLUE,ColorID.WHITE},
+    {ColorID.BLACK,ColorID.PURPLE,ColorID.MAGENTA,ColorID.WHITE},
+    {ColorID.BLACK,ColorID.CYAN,ColorID.AQUA,ColorID.WHITE},
+    {ColorID.BLACK,ColorID.DARK_GRAY,ColorID.LIGHT_GRAY,ColorID.WHITE},
+    {ColorID.BLACK,ColorID.LIGHT_GRAY,ColorID.WHITE,ColorID.WHITE}
 }
 
 OverchargeColors = {
