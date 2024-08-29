@@ -63,23 +63,44 @@ local ratings = {
 function scene.load(args)
     if args.chart then
         scene.chart = args.chart
-    else
-        scene.chart = require "unst" -- TEMPORARY, TO REPLACE WITH JSON LATER
+        if type(scene.chart) == "string" then
+            scene.chart = Chart.fromFile(scene.chart)
+            scene.chart.time = TimeBPM(-16,scene.chart.bpm)
+        end
     end
     ScrollSpeed = 25
-    ScrollSpeedTarget = 25
-    ScrollSpeedSmoothing = 0
+    ScrollSpeedMod = 1
+    ScrollSpeedModTarget = 1
+    ScrollSpeedModSmoothing = 0
+    NoteSpeedMods = {
+        {1,1,0},
+        {1,1,0},
+        {1,1,0},
+        {1,1,0}
+    }
     scene.chartName = "UNRAVELING STASIS"
     Charge = 0
     Hits = 0
     Accuracy = 0
     Combo = 0
+    ComboBreaks = 0
     ViewOffset = 0
     ViewOffsetTarget = 0
     ViewOffsetSmoothing = 16
+    ChartFrozen = false
     LastRating = 0
     scene.lastTime = scene.chart.time
     scene.moveBoxTime = 0
+    if scene.chart.video then
+        scene.chart.video:pause()
+        scene.chart.video:rewind()
+        scene.chart.video:getSource():setVolume(0)
+    end
+
+    RatingCounts = {}
+    for i,_ in ipairs(ratings) do
+        RatingCounts[i] = 0
+    end
 
     PressAmounts = {}
     HitAmounts = {}
@@ -100,7 +121,7 @@ function scene.keypressed(k)
     if not Autoplay then
         for i,note in ipairs(scene.chart.notes) do
             local pos = note.time-scene.chart.time
-            if math.abs(pos) <= 0.2 and k == (Keybinds[scene.chart.lanes] or Keybinds[8])[note.lane+1] and not note.destroyed then
+            if math.abs(pos) <= 0.2 and k == (Keybinds[scene.chart.lanes] or Keybinds[8])[note.lane+1] and not note.destroyed and not note.holding then
                 local t = 0.125
                 local accuracy = (math.abs(pos)/0.2)
                 accuracy = math.max(0,math.min(1,(1/(1-t))*accuracy - ((1/(1-t))-1)))
@@ -111,10 +132,13 @@ function scene.keypressed(k)
                         break
                     end
                 end
+                RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                 if LastRating == 1 then
+                    accuracy = 0 -- 100%
                     local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
                     for _=1, 4 do
-                        table.insert(Particles, {id = "powerhit", x = x*8+12, y = 19*16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
+                        local drawPos = (5)+(15)+(ViewOffset+ViewOffsetFreeze)*(ScrollSpeed*ScrollSpeedMod)
+                        table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
                     end
                 end
                 Charge = Charge + (1-accuracy)
@@ -134,8 +158,9 @@ function scene.keypressed(k)
                 end
                 HitAmounts[note.lane+1] = 1
                 Combo = Combo + 1
-                if LastRating == #ratings-1 then
+                if LastRating >= #ratings-1 then
                     Combo = 0
+                    ComboBreaks = ComboBreaks + 1
                 end
                 break
             end
@@ -144,10 +169,12 @@ function scene.keypressed(k)
 end
 
 function scene.update(dt)
+    local lastTime = scene.chart.time
     scene.chart.time = scene.chart.time + dt
     if scene.chart.time > 0 then
         if scene.lastTime <= 0 then
             if scene.chart.song then scene.chart.song:play() end
+            if scene.chart.video then scene.chart.video:play() end
         end
         if scene.chart.song then
             local st = scene.chart.song:tell("seconds")
@@ -156,6 +183,12 @@ function scene.update(dt)
                 scene.chart.time = scene.chart.song:tell("seconds")
             end
         end
+    end
+    local diff = scene.chart.time - lastTime
+    if ChartFrozen then
+        ViewOffsetFreeze = ViewOffsetFreeze - diff
+    else
+        ViewOffsetFreeze = 0
     end
     scene.lastTime = scene.lastTime + dt
 
@@ -175,9 +208,11 @@ function scene.update(dt)
                             Charge = Charge + 1
                             Combo = Combo + 1
                             LastRating = 1
+                            RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                             local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
                             for _=1, 4 do
-                                table.insert(Particles, {id = "powerhit", x = x*8+12, y = 19*16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
+                                local drawPos = (5)+(15)+(ViewOffset+ViewOffsetFreeze)*(ScrollSpeed*ScrollSpeedMod)
+                                table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
                             end
                             Accuracy = Accuracy + 1
                             Hits = Hits + 1
@@ -196,7 +231,7 @@ function scene.update(dt)
                         PressAmounts[note.lane+1] = 1
                     end
                 end
-                if pos <= 0 then
+                if note.holding and pos <= 0 then
                     if note.length > 0 then
                         if love.keyboard.isDown((Keybinds[scene.chart.lanes] or Keybinds[8])[note.lane+1]) or Autoplay then
                             local lastHeldFor = note.heldFor or 0
@@ -217,12 +252,14 @@ function scene.update(dt)
                         Hits = Hits + 1
                         MissTime = 1
                         Combo = 0
+                        ComboBreaks = ComboBreaks + 1
                         LastRating = #ratings
                     else
                         if pos <= -0.25-note.length then
-                            if note.heldFor == 0 or not note.heldFor then
+                            if not note.holding then
                                 MissTime = 1
                                 Combo = 0
+                                ComboBreaks = ComboBreaks + 1
                                 LastRating = #ratings
                             end
                             note.destroyed = true
@@ -233,6 +270,7 @@ function scene.update(dt)
                                     if note.heldFor == 0 or not note.heldFor then
                                         MissTime = 1
                                         Combo = 0
+                                        ComboBreaks = ComboBreaks + 1
                                         LastRating = #ratings
                                     end
                                     note.destroyed = true
@@ -240,6 +278,7 @@ function scene.update(dt)
                                 else
                                     MissTime = 1
                                     Combo = 0
+                                    ComboBreaks = ComboBreaks + 1
                                     LastRating = #ratings
                                 end
                             end
@@ -312,11 +351,20 @@ function scene.update(dt)
         end
     end
     do
-        if ScrollSpeedSmoothing == 0 then
-            ScrollSpeed = ScrollSpeedTarget
+        if ScrollSpeedModSmoothing == 0 then
+            ScrollSpeedMod = ScrollSpeedModTarget
         else
-            local blend = math.pow(1/ScrollSpeedSmoothing,dt)
-            ScrollSpeed = blend*(ScrollSpeed-ScrollSpeedTarget)+ScrollSpeedTarget
+            local blend = math.pow(1/ScrollSpeedModSmoothing,dt)
+            ScrollSpeedMod = blend*(ScrollSpeedMod-ScrollSpeedModTarget)+ScrollSpeedModTarget
+        end
+
+        for _,mod in ipairs(NoteSpeedMods) do
+            if mod[3] == 0 then
+                mod[1] = mod[2]
+            else
+                local blend = math.pow(1/mod[3],dt)
+                mod[1] = blend*(mod[1]-mod[2])+mod[2]
+            end
         end
     end
 
@@ -348,8 +396,15 @@ function scene.draw()
         love.graphics.setColor(TerminalColors[box[5]])
         DrawBox(box[1],box[2],box[3],box[4])
     end
+    if scene.chart.video then
+        if scene.chart.video:isPlaying() then
+            love.graphics.setColor(1,1,1)
+            local s = math.max(640/scene.chart.video:getWidth(), 480/scene.chart.video:getHeight())
+            love.graphics.draw(scene.chart.video, (640-scene.chart.video:getWidth()*s)/2, (480-scene.chart.video:getHeight()*s)/2, 0, s, s)
+        end
+    end
     love.graphics.setColor(TerminalColors[16])
-    love.graphics.print("VO " .. ViewOffset, 50*8, 5*16)
+    -- love.graphics.print("VO " .. ViewOffset, 50*8, 5*16)
     -- love.graphics.print("Time " .. scene.chart.time, 50*8, 5*16)
     -- love.graphics.print("Drift " .. math.abs(scene.chart.time-scene.chart.song:tell("seconds")), 50*8, 6*16)
     -- love.graphics.print("Beat " .. math.floor(WhichSixteenth(scene.chart.time, scene.chart.bpm)/4), 50*8, 7*16)
@@ -362,7 +417,7 @@ function scene.draw()
     DrawBoxHalfWidth(14, 23, 50, 1)
     love.graphics.print("┌─" .. ("─"):rep(#scene.chart.name) .. "─┐\n│ " .. scene.chart.name .. " │\n└─" .. ("─"):rep(#scene.chart.name) .. "─┘", ((80-(#scene.chart.name+4))/2)*8, 1*16)
     
-    if Autoplay then love.graphics.print("┬──────────┬\n│ AUTOPLAY │\n┴──────────┴", 34*8, 21*16) end
+    if Autoplay then love.graphics.print("┬──────────┬\n│ ".. (Showcase and "SHOWCASE" or "AUTOPLAY") .. " │\n┴──────────┴", 34*8, 21*16) end
     local acc = math.floor(Accuracy/math.max(Hits,1)*100)
     love.graphics.print("┬──────────┬\n│ ACC " .. (" "):rep(3-#tostring(acc))..acc.. "% │\n└──────────┘", 34*8, 25*16)
     love.graphics.print("┌──────────┐\n│  CHARGE  │\n├──────────┴", 14*8, 21*16)
@@ -382,14 +437,20 @@ function scene.draw()
         love.graphics.setColor(TerminalColors[9])
         local x = (80-(scene.chart.lanes*4-1))/2 - 1+(i-1)*4 + 1
         love.graphics.print(("   ┊\n"):rep(16), x*8, 5*16)
-        love.graphics.print("┈┈┈╬┈┈┈", x*8, 19*16)
+    end
+    do
+        local drawPos = (5)+(15)+(ViewOffset+ViewOffsetFreeze)*(ScrollSpeed*ScrollSpeedMod)
+        if drawPos >= 5 and drawPos <= 20 then
+            love.graphics.print("┈┈┈"..("╬┈┈┈"):rep(scene.chart.lanes-1), ((80-(scene.chart.lanes*4-1))/2 - 1+(1-1)*4 + 1)*8, drawPos*16-16)
+        end
     end
     for i = 1, scene.chart.lanes do
         local x = (80-(scene.chart.lanes*4-1))/2 - 1+(i-1)*4 + 1
         local v = math.ceil(PressAmounts[i]+HitAmounts[i]*2)
         if v > 0 then
+            local drawPos = (5)+(15)+(ViewOffset+ViewOffsetFreeze)*(ScrollSpeed*ScrollSpeedMod)
             love.graphics.setColor(TerminalColors[NoteColors[((i-1)%(#NoteColors))+1][v+1]])
-            love.graphics.print("███", x*8, 19*16)
+            love.graphics.print("███", x*8, drawPos*16-16)
         end
     end
 
@@ -397,7 +458,7 @@ function scene.draw()
         if not note.destroyed then
             local t = NoteTypes[note.type]
             if t and type(t.draw) == "function" then
-                t.draw(note,scene.chart.time+ViewOffset,ScrollSpeed,nil,nil,((80-(scene.chart.lanes*4-1))/2)+1)
+                t.draw(note,scene.chart.time,(ScrollSpeed*ScrollSpeedMod)*NoteSpeedMods[note.lane+1][1],nil,nil,((80-(scene.chart.lanes*4-1))/2)+1)
             end
         end
     end

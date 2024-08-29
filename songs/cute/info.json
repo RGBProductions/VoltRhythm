@@ -1,0 +1,13 @@
+{
+    "name": "CUTE",
+    "author": "joegran",
+    "charter": "RGB",
+    "bpm": 136,
+    "song": "cute.ogg",
+    "charts": {
+        "hard": {
+            "path": "hard.json",
+            "level": 12
+        }
+    }
+}

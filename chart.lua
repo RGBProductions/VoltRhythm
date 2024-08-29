@@ -13,7 +13,7 @@ NoteTypes = {
             chartHeight = chartHeight or 15
             chartPos = chartPos or 5
             if not isEditor then pos = pos+math.sin(pos*8)*Waviness/speed end
-            local drawPos = chartPos+chartHeight-pos*speed
+            local drawPos = chartPos+chartHeight-pos*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
             if useSteps then drawPos = math.floor(drawPos) end
             if drawPos >= chartPos and drawPos < chartPos+(chartHeight+1) and (self.heldFor or 0) <= 0 then
                 love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][3]])
@@ -23,8 +23,8 @@ NoteTypes = {
             for i = 1, cells do
                 local barPos = mainpos+i/speed
                 if not isEditor then barPos = barPos+math.sin(barPos*8)*Waviness/speed end
-                local extPos = chartPos+chartHeight-barPos*speed
-                if extPos >= chartPos and extPos < chartPos+(chartHeight-1) then
+                local extPos = chartPos+chartHeight-barPos*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+                if extPos >= chartPos and extPos-((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1) < chartPos+(chartHeight-1) then
                     love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][3]])
                     love.graphics.print("║", (chartX+self.lane*4)*8, math.floor(extPos*16-8))
                 end
@@ -75,8 +75,14 @@ EffectTypes = {
         MissTime = self.data.strength
     end,
     scroll_speed = function(self)
-        ScrollSpeedTarget = self.data.speed
-        ScrollSpeedSmoothing = self.data.smoothing or 0
+        ScrollSpeedModTarget = self.data.speed
+        ScrollSpeedModSmoothing = self.data.smoothing or 0
+    end,
+    note_speed = function(self)
+        if NoteSpeedMods[self.data.lane+1] then
+            NoteSpeedMods[self.data.lane+1][2] = self.data.speed
+            NoteSpeedMods[self.data.lane+1][3] = self.data.smoothing or 0
+        end
     end,
     offset = function(self)
         ViewOffsetTarget = self.data.offset
@@ -141,7 +147,7 @@ end
 Chart = {}
 Chart.__index = Chart
 
-function Chart:new(song, bpm, notes, effects, name, lanes)
+function Chart:new(song, bpm, notes, effects, name, lanes, video)
     local chart = setmetatable({}, self)
 
     if love.filesystem.getInfo(song) then
@@ -149,6 +155,11 @@ function Chart:new(song, bpm, notes, effects, name, lanes)
     end
     chart.songPath = song
     chart.bpm = bpm
+
+    if video and love.filesystem.getInfo(video) then
+        chart.video = love.graphics.newVideo(video)
+    end
+    chart.videoPath = video
 
     chart.notes = notes or {}
     table.sort(chart.notes or {}, function (a, b)
@@ -190,19 +201,29 @@ function Chart:resetAllNotes()
     for _,note in ipairs(self.notes) do
         note.destroyed = false
         note.heldFor = nil
+        note.holding = nil
+    end
+    for _,effect in ipairs(self.effects) do
+        effect.destroyed = false
     end
 end
 
 function Chart.fromFile(path)
     local s,data = pcall(json.decode, love.filesystem.read(path))
     if not s then return end
+    data.song = getPathOf(path).."/"..data.song
+    if data.song:sub(1,1) == "/" then data.song = data.song:sub(2,-1) end
+    if data.video then
+        data.video = getPathOf(path).."/"..data.video
+        if data.video:sub(1,1) == "/" then data.video = data.video:sub(2,-1) end
+    end
     for i,note in ipairs(data.notes) do
         data.notes[i] = Note:new(note.time,note.lane,note.length,note.type,note.extra)
     end
     for i,effect in ipairs(data.effects) do
         data.effects[i] = Effect:new(effect.time,effect.type,effect.data)
     end
-    return Chart:new(data.song,data.bpm,data.notes,data.effects,data.name,data.lanes)
+    return Chart:new(data.song,data.bpm,data.notes,data.effects,data.name,data.lanes,data.video)
 end
 
 function Chart:save(path)
@@ -218,8 +239,16 @@ function Chart:save(path)
         name = self.name,
         lanes = self.lanes,
         song = self.songPath,
+        video = self.videoPath,
         bpm = self.bpm,
         notes = notes,
         effects = effects
     }))
+end
+
+function Chart:getDensity()
+    if not self.song then
+        return 0
+    end
+    return #self.notes / self.song:getDuration("seconds")
 end

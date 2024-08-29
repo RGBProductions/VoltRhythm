@@ -1,3 +1,5 @@
+love.graphics.setDefaultFilter("nearest", "nearest")
+require "util"
 require "colors"
 require "chart"
 require "save"
@@ -34,6 +36,7 @@ end
 
 require "scenemanager"
 
+-- SceneManager.LoadScene("scenes/game", {chart = "songs/cute/hard.json"})
 SceneManager.LoadScene("scenes/editor")
 
 Keybinds = {
@@ -42,6 +45,7 @@ Keybinds = {
 }
 
 Display = love.graphics.newCanvas(640,480)
+Display:setFilter("linear", "linear")
 love.graphics.setLineWidth(1)
 love.graphics.setLineStyle("rough")
 love.graphics.setFont(Font)
@@ -110,6 +114,7 @@ HitAmounts = {0,0,0,0,0,0,0,0}
 MissTime = 0
 
 Autoplay = false
+Showcase = false
 
 function love.keypressed(k)
     if k == "f11" then

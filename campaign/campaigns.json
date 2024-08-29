@@ -1,0 +1,14 @@
+[
+    {
+        "name": "mainline",
+        "sections": [
+            "campaign/sections/section1"
+        ]
+    },
+    {
+        "name": "side",
+        "songs": [
+            "cute"
+        ]
+    }
+]
