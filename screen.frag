@@ -21,10 +21,15 @@ vec4 effect(vec4 c, Image t, vec2 tc, vec2 sc) {
     vec2 sample_r = ((sample*2.0-1.0)*(1 + 0.0125*chromaticStrength) + 1.0) * 0.5;
     vec2 sample_g = sample;
     vec2 sample_b = ((sample*2.0-1.0)*(1 - 0.0125*chromaticStrength) + 1.0) * 0.5;
+    vec3 scanlineVisibility = vec3(
+        abs(mod(sample_r.y*textureSize.y+0.5, 2) - 1),
+        abs(mod(sample_g.y*textureSize.y+0.5, 2) - 1),
+        abs(mod(sample_b.y*textureSize.y+0.5, 2) - 1)
+    );
     vec3 scanline = vec3(
-        1.0 - mod(floor(sample_r.y*textureSize.y+0.5),2.0)*scanlineStrength,
-        1.0 - mod(floor(sample_g.y*textureSize.y+0.5),2.0)*scanlineStrength,
-        1.0 - mod(floor(sample_b.y*textureSize.y+0.5),2.0)*scanlineStrength
+        mix(scanlineStrength,1,scanlineVisibility.r),
+        mix(scanlineStrength,1,scanlineVisibility.g),
+        mix(scanlineStrength,1,scanlineVisibility.b)
     );
     vec4 main = vec4(
         (Texel(t, sample_r)*c).r,
