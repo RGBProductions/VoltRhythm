@@ -68,6 +68,13 @@ function scene.load(args)
             scene.chart.time = TimeBPM(-16,scene.chart.bpm)
         end
     end
+    scene.chartName = "UNRAVELING STASIS"
+    Charge = 0
+    Hits = 0
+    Accuracy = 0
+    Combo = 0
+    ComboBreaks = 0
+    FullOvercharge = true
     ScrollSpeed = 25
     ScrollSpeedMod = 1
     ScrollSpeedModTarget = 1
@@ -78,13 +85,6 @@ function scene.load(args)
         {1,1,0},
         {1,1,0}
     }
-    scene.chartName = "UNRAVELING STASIS"
-    Charge = 0
-    Hits = 0
-    Accuracy = 0
-    Combo = 0
-    ComboBreaks = 0
-    FullOvercharge = true
     ViewOffset = 0
     ViewOffsetTarget = 0
     ViewOffsetSmoothing = 16
