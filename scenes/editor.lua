@@ -32,8 +32,10 @@ function scene.load(args)
     end
     MissTime = 0
     Chromatic = 0
-    ScreenShader:send("tearStrength", MissTime*8/Display:getWidth())
-    ScreenShader:send("chromaticStrength", Chromatic)
+    if ScreenShader then
+        ScreenShader:send("tearStrength", MissTime*8/Display:getWidth())
+        ScreenShader:send("chromaticStrength", Chromatic)
+    end
     scene.targetEffect = 0
     scene.zoom = 1
     scene.paused = true

@@ -36,8 +36,8 @@ end
 
 require "scenemanager"
 
--- SceneManager.LoadScene("scenes/game", {chart = "songs/cute/hard.json"})
-SceneManager.LoadScene("scenes/editor")
+SceneManager.LoadScene("scenes/game", {chart = "songs/cute/hard.json"})
+-- SceneManager.LoadScene("scenes/editor")
 
 Keybinds = {
     [4] = {"d","f","j","k"},
@@ -80,16 +80,6 @@ function love.resize(w,h)
 end
 
 love.mouse.setRelativeMode(true)
-
-love.math.setRandomSeed(0)
-BackgroundBoxes = {}
-for _=1,32 do
-    local color = love.math.random(2,8)
-    local x1,y1 = love.math.random(0,79),love.math.random(0,29)
-    local x2,y2 = math.min(79,x1+love.math.random(2,4)),math.min(29,y1+love.math.random(2,4))
-    local x,y,w,h = math.min(x1,x2),math.min(y1,y2),(math.abs(x2-x1)-2)/2,(math.abs(y2-y1)-2)/2
-    table.insert(BackgroundBoxes,{x,y,w,h,color})
-end
 
 Particles = {}
 

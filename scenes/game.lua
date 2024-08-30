@@ -1,5 +1,8 @@
 local scene = {}
 
+local background = require "boxesbg"
+background.init()
+
 local ratings = {
     {
         draw = function()
@@ -91,7 +94,6 @@ function scene.load(args)
     ChartFrozen = false
     LastRating = 0
     scene.lastTime = scene.chart.time
-    scene.moveBoxTime = 0
     if scene.chart.video then
         scene.chart.video:pause()
         scene.chart.video:rewind()
@@ -393,29 +395,15 @@ function scene.update(dt)
     
     ScreenShader:send("tearTime", love.timer.getTime())
 
-    scene.moveBoxTime = scene.moveBoxTime + dt
-    while scene.moveBoxTime >= 1/20 do
-        local move = love.math.random(1,#BackgroundBoxes)
-        local color = love.math.random(2,8)
-        local x1,y1 = love.math.random(0,79),love.math.random(0,29)
-        local x2,y2 = math.min(79,x1+love.math.random(2,4)),math.min(29,y1+love.math.random(2,4))
-        local x,y,w,h = math.min(x1,x2),math.min(y1,y2),(math.abs(x2-x1)-2)/2,(math.abs(y2-y1)-2)/2
-        table.insert(BackgroundBoxes,{x,y,w,h,color})
-        table.remove(BackgroundBoxes, move)
-        scene.moveBoxTime = scene.moveBoxTime - 1/20
-    end
-
     for i = 1, scene.chart.lanes do
         PressAmounts[i] = math.max(0, math.min(Autoplay and math.huge or 1, PressAmounts[i] + dt*8*((love.keyboard.isDown((Keybinds[scene.chart.lanes] or Keybinds[8])[i]) and not Autoplay) and 1/dt or -1/dt)))
         HitAmounts[i] = math.max(0, math.min(1, HitAmounts[i] - dt*8))
     end
+    background.update(dt)
 end
 
 function scene.draw()
-    for _,box in ipairs(BackgroundBoxes) do
-        love.graphics.setColor(TerminalColors[box[5]])
-        DrawBox(box[1],box[2],box[3],box[4])
-    end
+    background.draw()
     if scene.chart.video then
         if scene.chart.video:isPlaying() then
             love.graphics.setColor(1,1,1)

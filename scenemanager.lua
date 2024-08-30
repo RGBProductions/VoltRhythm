@@ -1,5 +1,5 @@
 SceneManager = {
-    ActiveScene = nil
+    ActiveScene = {}
 }
 
 function SceneManager.LoadScene(fn, args)
