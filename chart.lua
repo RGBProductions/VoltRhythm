@@ -151,7 +151,7 @@ end
 Chart = {}
 Chart.__index = Chart
 
-function Chart:new(song, bpm, notes, effects, name, lanes, video)
+function Chart:new(song, bpm, notes, effects, name, lanes, video, background, backgroundInit)
     local chart = setmetatable({}, self)
 
     if love.filesystem.getInfo(song) then
@@ -164,6 +164,25 @@ function Chart:new(song, bpm, notes, effects, name, lanes, video)
         chart.video = love.graphics.newVideo(video)
     end
     chart.videoPath = video
+
+    if background and love.filesystem.getInfo(background) then
+        local s,r = pcall(require, background:sub(1,-5))
+        if s then
+            chart.background = r
+            chart.backgroundPath = background
+        else
+            chart.background = require "boxesbg"
+            chart.backgroundPath = "boxesbg.lua"
+        end
+    else
+        chart.background = require "boxesbg"
+        chart.backgroundPath = "boxesbg.lua"
+    end
+
+    if chart.background then
+        chart.background.init(backgroundInit or {})
+    end
+    self.backgroundInit = backgroundInit or {}
 
     chart.notes = notes or {}
     table.sort(chart.notes or {}, function (a, b)
@@ -217,9 +236,21 @@ function Chart.fromFile(path)
     if not s then return end
     data.song = getPathOf(path).."/"..data.song
     if data.song:sub(1,1) == "/" then data.song = data.song:sub(2,-1) end
+    local video = data.video
     if data.video then
         data.video = getPathOf(path).."/"..data.video
         if data.video:sub(1,1) == "/" then data.video = data.video:sub(2,-1) end
+        if not love.filesystem.getInfo(data.video) then
+            data.video = video
+        end
+    end
+    local background = data.background
+    if data.background then
+        data.background = getPathOf(path).."/"..data.background
+        if data.background:sub(1,1) == "/" then data.background = data.background:sub(2,-1) end
+        if not love.filesystem.getInfo(data.background) then
+            data.background = background
+        end
     end
     for i,note in ipairs(data.notes) do
         data.notes[i] = Note:new(note.time,note.lane,note.length,note.type,note.extra)
@@ -227,7 +258,7 @@ function Chart.fromFile(path)
     for i,effect in ipairs(data.effects) do
         data.effects[i] = Effect:new(effect.time,effect.type,effect.data)
     end
-    return Chart:new(data.song,data.bpm,data.notes,data.effects,data.name,data.lanes,data.video)
+    return Chart:new(data.song,data.bpm,data.notes,data.effects,data.name,data.lanes,data.video,data.background,data.backgroundInit)
 end
 
 function Chart:save(path)
@@ -244,6 +275,8 @@ function Chart:save(path)
         lanes = self.lanes,
         song = self.songPath,
         video = self.videoPath,
+        background = self.backgroundPath,
+        backgroundInit = self.backgroundInit,
         bpm = self.bpm,
         notes = notes,
         effects = effects

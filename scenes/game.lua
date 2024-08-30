@@ -1,8 +1,5 @@
 local scene = {}
 
-local background = require "boxesbg"
-background.init()
-
 local ratings = {
     {
         draw = function()
@@ -399,11 +396,15 @@ function scene.update(dt)
         PressAmounts[i] = math.max(0, math.min(Autoplay and math.huge or 1, PressAmounts[i] + dt*8*((love.keyboard.isDown((Keybinds[scene.chart.lanes] or Keybinds[8])[i]) and not Autoplay) and 1/dt or -1/dt)))
         HitAmounts[i] = math.max(0, math.min(1, HitAmounts[i] - dt*8))
     end
-    background.update(dt)
+    if scene.chart.background and scene.chart.background.update then
+        scene.chart.background.update(dt)
+    end
 end
 
 function scene.draw()
-    background.draw()
+    if scene.chart.background and scene.chart.background.draw then
+        scene.chart.background.draw()
+    end
     if scene.chart.video then
         if scene.chart.video:isPlaying() then
             love.graphics.setColor(1,1,1)

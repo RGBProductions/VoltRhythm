@@ -1,6 +1,6 @@
 local background = {}
 
-function background.init()
+function background.init(init)
     background.moveBoxTime = 0
     background.boxes = {}
     for _=1,32 do

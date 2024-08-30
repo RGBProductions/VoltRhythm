@@ -25,14 +25,13 @@ voltex:send("dither",
 )
 voltex:send("ditherSize", 2)
 
-function background.init()
-    background.speed = 1
-    background.time = 0
-    background.speed = 0
-    background.opacity = 0
-    background.pulseSpeed = 0
-    background.pulseOpacity = 0
-    background.pulseDuration = 1
+function background.init(init)
+    background.time = init.time or 0
+    background.speed = init.speed or 1
+    background.opacity = init.opacity or 0
+    background.pulseSpeed = init.pulseSpeed or 0
+    background.pulseOpacity = init.pulseOpacity or 0
+    background.pulseDuration = init.pulseDuration or 1
 end
 
 function background.update(dt)
