@@ -222,13 +222,16 @@ function scene.update(dt)
                             for _=1,8 do
                                 table.insert(Particles, {id = "chargeup", x = x, y = 24*16+8, vx = love.math.random()*32, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = (c < 80 and ColorID.YELLOW) or (OverchargeColors[love.math.random(1,#OverchargeColors)]), char = "¤"})
                             end
+                            PressAmounts[note.lane+1] = 32
                         end
                         if note.length <= 0 then
                             note.destroyed = true
                             i = i - 1
+                        else
+                            note.holding = true
                         end
                         HitAmounts[note.lane+1] = 1
-                        PressAmounts[note.lane+1] = 1
+                        if not Autoplay then PressAmounts[note.lane+1] = 1 end
                     end
                 end
                 if note.holding and pos <= 0 then
@@ -242,6 +245,9 @@ function scene.update(dt)
                                 note.destroyed = true
                                 i = i - 1
                             end
+                        end
+                        if Autoplay then
+                            PressAmounts[note.lane+1] = 32
                         end
                     end
                 end
@@ -386,7 +392,7 @@ function scene.update(dt)
     end
 
     for i = 1, scene.chart.lanes do
-        PressAmounts[i] = math.max(0, math.min(1, PressAmounts[i] + dt*8*((love.keyboard.isDown((Keybinds[scene.chart.lanes] or Keybinds[8])[i]) and not Autoplay) and 1/dt or -1/dt)))
+        PressAmounts[i] = math.max(0, math.min(Autoplay and math.huge or 1, PressAmounts[i] + dt*8*((love.keyboard.isDown((Keybinds[scene.chart.lanes] or Keybinds[8])[i]) and not Autoplay) and 1/dt or -1/dt)))
         HitAmounts[i] = math.max(0, math.min(1, HitAmounts[i] - dt*8))
     end
 end
@@ -446,7 +452,7 @@ function scene.draw()
     end
     for i = 1, scene.chart.lanes do
         local x = (80-(scene.chart.lanes*4-1))/2 - 1+(i-1)*4 + 1
-        local v = math.ceil(PressAmounts[i]+HitAmounts[i]*2)
+        local v = math.ceil(math.min(1,PressAmounts[i])+HitAmounts[i]*2)
         if v > 0 then
             local drawPos = (5)+(15)+(ViewOffset+ViewOffsetFreeze)*(ScrollSpeed*ScrollSpeedMod)
             love.graphics.setColor(TerminalColors[NoteColors[((i-1)%(#NoteColors))+1][v+1]])
