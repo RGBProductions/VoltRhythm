@@ -3,8 +3,8 @@ local scene = {}
 local chartPos = 5
 local chartHeight = 20
 
-local songPath = "songs/cute/cute.ogg"
-local songBpm = 136
+local songPath = "unst.ogg"
+local songBpm = 223
 
 local function drawLine(time,chartTime,speed,col)
     local pos = time-chartTime

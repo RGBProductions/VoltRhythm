@@ -74,6 +74,10 @@ EffectTypes = {
     tear = function(self)
         MissTime = self.data.strength
     end,
+    wave = function(self)
+        WavinessTarget = self.data.strength
+        WavinessSmoothing = self.data.smoothing or 0
+    end,
     scroll_speed = function(self)
         ScrollSpeedModTarget = self.data.speed
         ScrollSpeedModSmoothing = self.data.smoothing or 0

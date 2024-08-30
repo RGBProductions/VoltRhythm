@@ -84,6 +84,7 @@ function scene.load(args)
     Accuracy = 0
     Combo = 0
     ComboBreaks = 0
+    FullOvercharge = true
     ViewOffset = 0
     ViewOffsetTarget = 0
     ViewOffsetSmoothing = 16
@@ -133,6 +134,7 @@ function scene.keypressed(k)
                     end
                 end
                 RatingCounts[LastRating] = RatingCounts[LastRating] + 1
+                if LastRating ~= 1 then FullOvercharge = false end
                 if LastRating == 1 then
                     accuracy = 0 -- 100%
                     local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
@@ -260,6 +262,7 @@ function scene.update(dt)
                         Combo = 0
                         ComboBreaks = ComboBreaks + 1
                         LastRating = #ratings
+                        FullOvercharge = false
                     else
                         if pos <= -0.25-note.length then
                             if not note.holding then
@@ -267,6 +270,7 @@ function scene.update(dt)
                                 Combo = 0
                                 ComboBreaks = ComboBreaks + 1
                                 LastRating = #ratings
+                                FullOvercharge = false
                             end
                             note.destroyed = true
                             i = i - 1
@@ -278,6 +282,7 @@ function scene.update(dt)
                                         Combo = 0
                                         ComboBreaks = ComboBreaks + 1
                                         LastRating = #ratings
+                                        FullOvercharge = false
                                     end
                                     note.destroyed = true
                                     i = i - 1
@@ -286,6 +291,7 @@ function scene.update(dt)
                                     Combo = 0
                                     ComboBreaks = ComboBreaks + 1
                                     LastRating = #ratings
+                                    FullOvercharge = false
                                 end
                             end
                         end
@@ -373,6 +379,14 @@ function scene.update(dt)
             end
         end
     end
+    do
+        if WavinessSmoothing == 0 then
+            Waviness = WavinessTarget
+        else
+            local blend = math.pow(1/WavinessSmoothing,dt)
+            Waviness = blend*(Waviness-WavinessTarget)+WavinessTarget
+        end
+    end
 
     MissTime = math.max(0,MissTime - dt * 8)
     ScreenShader:send("tearStrength", MissTime*8/Display:getWidth())
@@ -410,6 +424,8 @@ function scene.draw()
         end
     end
     love.graphics.setColor(TerminalColors[16])
+    love.graphics.print("Full Combo: " .. tostring(ComboBreaks == 0), 50*8, 5*16)
+    love.graphics.print("Full Overcharge: " .. tostring(FullOvercharge), 50*8, 6*16)
     -- love.graphics.print("VO " .. ViewOffset, 50*8, 5*16)
     -- love.graphics.print("Time " .. scene.chart.time, 50*8, 5*16)
     -- love.graphics.print("Drift " .. math.abs(scene.chart.time-scene.chart.song:tell("seconds")), 50*8, 6*16)
@@ -428,16 +444,21 @@ function scene.draw()
     love.graphics.print("┬──────────┬\n│ ACC " .. (" "):rep(3-#tostring(acc))..acc.. "% │\n└──────────┘", 34*8, 25*16)
     love.graphics.print("┌──────────┐\n│  CHARGE  │\n├──────────┴", 14*8, 21*16)
     local c = Charge/scene.chart.totalCharge*100
+    local chargeAmount = math.floor(c/100*ChargeYield)
+    if c ~= c then chargeAmount = 0 end
     love.graphics.print(" ", 62*8, 22*16) -- Empty space
-    love.graphics.print("┌──────────┐\n│  " .. (" "):rep(5-#tostring(math.floor(c/100*ChargeYield))) .. math.floor(c/100*ChargeYield) .."¤  │\n┴──────────┤", 54*8, 21*16)
+    love.graphics.print("┌──────────┐\n│  " .. (" "):rep(5-#tostring(chargeAmount)) .. chargeAmount .."¤  │\n┴──────────┤", 54*8, 21*16)
     c = math.floor(Charge/scene.chart.totalCharge*100)
     love.graphics.print("┬\n\n┴", 55*8, 23*16)
     love.graphics.setColor(TerminalColors[(c < 40 and 5) or (c < 80 and 15) or 11])
     love.graphics.print(("█"):rep(math.min(41,c/2)), 15*8, 24*16)
-    for i = 1, math.min(10,math.max(0,c/2-41)) do
-        local chunkColor = (math.floor(-love.timer.getTime()*#OverchargeColors)+i-1)%#OverchargeColors
-        love.graphics.setColor(TerminalColors[OverchargeColors[chunkColor+1]])
-        love.graphics.print("█", (55+i)*8, 24*16)
+    if c == c then
+        local ocChunks = math.min(10,math.max(0,c/2-41))
+        for i = 1, ocChunks do
+            local chunkColor = (math.floor(-love.timer.getTime()*#OverchargeColors)+i-1)%#OverchargeColors
+            love.graphics.setColor(TerminalColors[OverchargeColors[chunkColor+1]])
+            love.graphics.print("█", (55+i)*8, 24*16)
+        end
     end
     for i = 1, scene.chart.lanes-1 do
         love.graphics.setColor(TerminalColors[9])
