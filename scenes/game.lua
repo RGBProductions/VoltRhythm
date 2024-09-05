@@ -315,7 +315,7 @@ function scene.update(dt)
             if pos <= 0 then
                 local t = EffectTypes[effect.type]
                 if type(t) == "function" then
-                    t(effect)
+                    t(effect,scene.chart)
                 end
                 effect.destroyed = true
                 i = i - 1

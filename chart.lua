@@ -117,7 +117,12 @@ EffectTypes = {
                 end
             end
         end
-    end
+    end,
+    modify_bg = function(self,chart)
+        if chart.background then
+            chart.background[self.data.key] = self.data.value
+        end
+    end,
 }
 
 Note = {}
