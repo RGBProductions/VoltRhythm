@@ -39,6 +39,8 @@ require "scenemanager"
 SceneManager.LoadScene("scenes/game", {chart = "songs/cute/hard.json"})
 -- SceneManager.LoadScene("scenes/editor")
 
+border = require "borders.overcharged"
+
 Keybinds = {
     [4] = {"d","f","j","k"},
     [8] = {"s","d","f","b","n","j","k","l"}
@@ -116,6 +118,9 @@ function love.keypressed(k)
     if k == "f5" then
         love.mouse.setRelativeMode(not love.mouse.getRelativeMode())
     end
+    if k == "f2" then
+        love.graphics.captureScreenshot("screenshot" .. love.math.random(0,999999999) .. ".png")
+    end
 
     SceneManager.KeyPressed(k)
 end
@@ -140,6 +145,7 @@ function love.wheelmoved(x,y)
 end
 
 function love.update(dt)
+    border.update(dt)
     SceneManager.Update(dt)
 end
 
@@ -147,7 +153,10 @@ function love.draw()
     love.graphics.setCanvas(Display)
     love.graphics.clear(0,0,0)
 
+    love.graphics.setColor(1,1,1)
     SceneManager.Draw()
+    love.graphics.setColor(1,1,1)
+    border.draw()
 
     love.graphics.setColor(TerminalColors[16])
     -- love.graphics.print("▒", MouseX-4, MouseY-8)
