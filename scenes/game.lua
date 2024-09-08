@@ -2,58 +2,58 @@ local scene = {}
 
 local ratings = {
     {
-        draw = function()
+        draw = function(ox,oy,center)
             local txt = "OVERCHARGE"
             for x = 1, #txt do
                 local c = txt:sub(x,x)
                 love.graphics.setColor(TerminalColors[OverchargeColors[(x-1)%#OverchargeColors+1]])
-                love.graphics.print(c, ((80-(#txt))/2 + x-1)*8, 6*16)
+                love.graphics.print(c, ox+((center and (-(#txt)/2) or 0) + x-1)*8, oy)
             end
         end,
         min = 0.9,
         max = math.huge
     },
     {
-        draw = function()
+        draw = function(ox,oy,center)
             love.graphics.setColor(TerminalColors[ColorID.GOLD])
             local txt = "SURGE"
-            love.graphics.print(txt, ((80-(#txt))/2)*8, 6*16)
+            love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
         end,
         min = 0.8,
         max = 0.9
     },
     {
-        draw = function()
+        draw = function(ox,oy,center)
             love.graphics.setColor(TerminalColors[ColorID.YELLOW])
             local txt = "AMP"
-            love.graphics.print(txt, ((80-(#txt))/2)*8, 6*16)
+            love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
         end,
         min = 0.6,
         max = 0.8
     },
     {
-        draw = function()
+        draw = function(ox,oy,center)
             love.graphics.setColor(TerminalColors[ColorID.GREEN])
             local txt = "FLUX"
-            love.graphics.print(txt, ((80-(#txt))/2)*8, 6*16)
+            love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
         end,
         min = 0.4,
         max = 0.6
     },
     {
-        draw = function()
+        draw = function(ox,oy,center)
             love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
             local txt = "NULL"
-            love.graphics.print(txt, ((80-(#txt))/2)*8, 6*16)
+            love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
         end,
         min = 0.15,
         max = 0.4
     },
     {
-        draw = function()
+        draw = function(ox,oy,center)
             love.graphics.setColor(TerminalColors[ColorID.RED])
             local txt = "BREAK"
-            love.graphics.print(txt, ((80-(#txt))/2)*8, 6*16)
+            love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
         end,
         min = 0,
         max = 0.15
@@ -68,6 +68,7 @@ function scene.load(args)
             scene.chart.time = TimeBPM(-16,scene.chart.bpm)
         end
     end
+    scene.modifiers = args.modifiers or {}
     scene.chartName = "UNRAVELING STASIS"
     Charge = 0
     Hits = 0
@@ -171,11 +172,11 @@ end
 
 function scene.update(dt)
     local lastTime = scene.chart.time
-    scene.chart.time = scene.chart.time + dt
+    scene.chart.time = scene.chart.time + dt*(scene.modifiers.speed or 1)
     if scene.chart.time > 0 then
         if scene.lastTime <= 0 then
-            if scene.chart.song then scene.chart.song:play() end
-            if scene.chart.video then scene.chart.video:play() end
+            if scene.chart.song then scene.chart.song:setPitch(scene.modifiers.speed or 1); scene.chart.song:play() end
+            if scene.chart.video then scene.chart.video:getSource():setPitch(scene.modifiers.speed or 1); scene.chart.video:play() end
         end
         if scene.chart.song then
             local st = scene.chart.song:tell("seconds")
@@ -191,7 +192,7 @@ function scene.update(dt)
     else
         ViewOffsetFreeze = 0
     end
-    scene.lastTime = scene.lastTime + dt
+    scene.lastTime = scene.lastTime + dt*(scene.modifiers.speed or 1)
 
     do
         local i = 1
@@ -261,6 +262,7 @@ function scene.update(dt)
                         Combo = 0
                         ComboBreaks = ComboBreaks + 1
                         LastRating = #ratings
+                        RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                         FullOvercharge = false
                     else
                         if pos <= -0.25-note.length then
@@ -269,6 +271,7 @@ function scene.update(dt)
                                 Combo = 0
                                 ComboBreaks = ComboBreaks + 1
                                 LastRating = #ratings
+                                RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                                 FullOvercharge = false
                             end
                             note.destroyed = true
@@ -281,6 +284,7 @@ function scene.update(dt)
                                         Combo = 0
                                         ComboBreaks = ComboBreaks + 1
                                         LastRating = #ratings
+                                        RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                                         FullOvercharge = false
                                     end
                                     note.destroyed = true
@@ -290,6 +294,7 @@ function scene.update(dt)
                                     Combo = 0
                                     ComboBreaks = ComboBreaks + 1
                                     LastRating = #ratings
+                                    RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                                     FullOvercharge = false
                                 end
                             end
@@ -480,8 +485,17 @@ function scene.draw()
     end
 
     if ratings[LastRating] then
-        ratings[LastRating].draw()
+        local x,y = 40*8, 6*16
+        ratings[LastRating].draw(x,y,true)
     end
+
+    for i,rating in ipairs(ratings) do
+        local x,y = 32, (i+4)*16
+        ratings[i].draw(x,y,false)
+        love.graphics.setColor(TerminalColors[ColorID.WHITE])
+        love.graphics.print(RatingCounts[i], x+12*8, y)
+    end
+
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     local comboString = tostring(Combo)
     love.graphics.print(comboString, ((80-(#comboString))/2)*8, 7*16)

@@ -6,7 +6,10 @@ require "save"
 json = require "json"
 texture = require "texture"
 
+love.audio.setVolume(0.5)
+
 Save.Load()
+Version = (require "version")()
 
 ChargeYield = 200
 
@@ -157,6 +160,8 @@ function love.draw()
     SceneManager.Draw()
     love.graphics.setColor(1,1,1)
     border.draw()
+    love.graphics.setColor(1,1,1)
+    love.graphics.print(Version.name .. " v" .. Version.version, 16, 480-16-16)
 
     love.graphics.setColor(TerminalColors[16])
     -- love.graphics.print("▒", MouseX-4, MouseY-8)
