@@ -3,23 +3,23 @@ local scene = {}
 local ranks = {
     {
         image = love.graphics.newImage("images/rank/F.png"),
-        charge = 0.15
-    },
-    {
-        image = love.graphics.newImage("images/rank/D.png"),
         charge = 0.3
     },
     {
-        image = love.graphics.newImage("images/rank/B.png"),
-        charge = 0.5
+        image = love.graphics.newImage("images/rank/D.png"),
+        charge = 0.6
     },
     {
-        image = love.graphics.newImage("images/rank/A.png"),
+        image = love.graphics.newImage("images/rank/B.png"),
         charge = 0.7
     },
     {
+        image = love.graphics.newImage("images/rank/A.png"),
+        charge = 0.8
+    },
+    {
         image = love.graphics.newImage("images/rank/S.png"),
-        charge = 0.9
+        charge = 0.95
     },
     {
         image = love.graphics.newImage("images/rank/O.png"),
