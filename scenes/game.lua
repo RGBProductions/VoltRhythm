@@ -171,8 +171,14 @@ function scene.keypressed(k)
 end
 
 function scene.update(dt)
+    -- Update chart time and scroll chart
     local lastTime = scene.chart.time
     scene.chart.time = scene.chart.time + dt*(scene.modifiers.speed or 1)
+    if scene.chart.song then
+        if scene.chart.time >= scene.chart.song:getDuration("seconds") then
+            SceneManager.LoadScene("scenes/rating", {ratings = RatingCounts, charge = Charge/scene.chart.totalCharge})
+        end
+    end
     if scene.chart.time > 0 then
         if scene.lastTime <= 0 then
             if scene.chart.song then scene.chart.song:setPitch(scene.modifiers.speed or 1); scene.chart.song:play() end
@@ -186,12 +192,15 @@ function scene.update(dt)
             end
         end
     end
+
+    -- Freeze notes in place and move judgement line instead
     local diff = scene.chart.time - lastTime
     if ChartFrozen then
         ViewOffsetFreeze = ViewOffsetFreeze - diff
     else
         ViewOffsetFreeze = 0
     end
+
     scene.lastTime = scene.lastTime + dt*(scene.modifiers.speed or 1)
 
     do
@@ -407,6 +416,7 @@ function scene.update(dt)
 end
 
 function scene.draw()
+    -- Backgrounds
     if scene.chart.background and scene.chart.background.draw then
         scene.chart.background.draw()
     end
@@ -417,24 +427,22 @@ function scene.draw()
             love.graphics.draw(scene.chart.video, (640-scene.chart.video:getWidth()*s)/2, (480-scene.chart.video:getHeight()*s)/2, 0, s, s)
         end
     end
+
+    -- Debug info
     love.graphics.setColor(TerminalColors[16])
     love.graphics.print("Full Combo: " .. tostring(ComboBreaks == 0), 50*8, 5*16)
     love.graphics.print("Full Overcharge: " .. tostring(FullOvercharge), 50*8, 6*16)
-    -- love.graphics.print("VO " .. ViewOffset, 50*8, 5*16)
-    -- love.graphics.print("Time " .. scene.chart.time, 50*8, 5*16)
-    -- love.graphics.print("Drift " .. math.abs(scene.chart.time-scene.chart.song:tell("seconds")), 50*8, 6*16)
-    -- love.graphics.print("Beat " .. math.floor(WhichSixteenth(scene.chart.time, scene.chart.bpm)/4), 50*8, 7*16)
-    -- love.graphics.print("Sixteenth " .. math.floor(WhichSixteenth(scene.chart.time, scene.chart.bpm)), 50*8, 8*16)
-    -- love.graphics.print("BPM " .. scene.chart.bpm, 50*8, 9*16)
-    -- Chart
+
+    -- Chart and bar outlines
     DrawBoxHalfWidth((80-(scene.chart.lanes*4-1))/2 - 1, 4, scene.chart.lanes*4-1, 16)
-    -- Charge Bar
-    -- needs to be moved 0.5 over
     DrawBoxHalfWidth(14, 23, 50, 1)
+
+    -- Text Displays
     love.graphics.print("┌─" .. ("─"):rep(#scene.chart.name) .. "─┐\n│ " .. scene.chart.name .. " │\n└─" .. ("─"):rep(#scene.chart.name) .. "─┘", ((80-(#scene.chart.name+4))/2)*8, 1*16)
-    
+
     if Autoplay then love.graphics.print("┬──────────┬\n│ ".. (Showcase and "SHOWCASE" or "AUTOPLAY") .. " │\n┴──────────┴", 34*8, 21*16) end
     local acc = math.floor(Accuracy/math.max(Hits,1)*100)
+
     love.graphics.print("┬──────────┬\n│ ACC " .. (" "):rep(3-#tostring(acc))..acc.. "% │\n└──────────┘", 34*8, 25*16)
     love.graphics.print("┌──────────┐\n│  CHARGE  │\n├──────────┴", 14*8, 21*16)
     local c = Charge/scene.chart.totalCharge*100
@@ -442,10 +450,13 @@ function scene.draw()
     if c ~= c then chargeAmount = 0 end
     love.graphics.print(" ", 62*8, 22*16) -- Empty space
     love.graphics.print("┌──────────┐\n│  " .. (" "):rep(5-#tostring(chargeAmount)) .. chargeAmount .."¤  │\n┴──────────┤", 54*8, 21*16)
+
+    -- Bar fill
     c = math.floor(Charge/scene.chart.totalCharge*100)
     love.graphics.print("┬\n\n┴", 55*8, 23*16)
     love.graphics.setColor(TerminalColors[(c < 40 and 5) or (c < 80 and 15) or 11])
     love.graphics.print(("█"):rep(math.min(41,c/2)), 15*8, 24*16)
+    -- OVERCHARGE
     if c == c then
         local ocChunks = math.min(10,math.max(0,c/2-41))
         for i = 1, ocChunks do
@@ -454,6 +465,8 @@ function scene.draw()
             love.graphics.print("█", (55+i)*8, 24*16)
         end
     end
+
+    -- Lanes and judgement line
     for i = 1, scene.chart.lanes-1 do
         love.graphics.setColor(TerminalColors[9])
         local x = (80-(scene.chart.lanes*4-1))/2 - 1+(i-1)*4 + 1
@@ -465,6 +478,8 @@ function scene.draw()
             love.graphics.print("┈┈┈"..("╬┈┈┈"):rep(scene.chart.lanes-1), ((80-(scene.chart.lanes*4-1))/2 - 1+(1-1)*4 + 1)*8, drawPos*16-16)
         end
     end
+
+    -- Hit areas
     for i = 1, scene.chart.lanes do
         local x = (80-(scene.chart.lanes*4-1))/2 - 1+(i-1)*4 + 1
         local v = math.ceil(math.min(1,PressAmounts[i])+HitAmounts[i]*2)
@@ -475,6 +490,7 @@ function scene.draw()
         end
     end
 
+    -- Notes
     for _,note in ipairs(scene.chart.notes) do
         if not note.destroyed then
             local t = NoteTypes[note.type]
@@ -484,11 +500,16 @@ function scene.draw()
         end
     end
 
+    -- Last rating and combo
     if ratings[LastRating] then
         local x,y = 40*8, 6*16
         ratings[LastRating].draw(x,y,true)
     end
+    local comboString = tostring(Combo)
+    love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    love.graphics.print(comboString, ((80-(#comboString))/2)*8, 7*16)
 
+    -- Rating counts
     for i,rating in ipairs(ratings) do
         local x,y = 32, (i+4)*16
         ratings[i].draw(x,y,false)
@@ -496,10 +517,7 @@ function scene.draw()
         love.graphics.print(RatingCounts[i], x+12*8, y)
     end
 
-    love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    local comboString = tostring(Combo)
-    love.graphics.print(comboString, ((80-(#comboString))/2)*8, 7*16)
-
+    -- Particles
     for _,particle in ipairs(Particles) do
         love.graphics.setColor(TerminalColors[particle.color])
         love.graphics.print(particle.char, particle.x-4, particle.y-8)
