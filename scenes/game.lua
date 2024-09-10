@@ -64,6 +64,7 @@ function scene.load(args)
     if args.chart then
         scene.chart = args.chart
         if type(scene.chart) == "string" then
+            scene.chartPath = scene.chart
             scene.chart = Chart.fromFile(scene.chart)
             scene.chart.time = TimeBPM(-16,scene.chart.bpm)
         end
@@ -176,7 +177,7 @@ function scene.update(dt)
     scene.chart.time = scene.chart.time + dt*(scene.modifiers.speed or 1)
     if scene.chart.song then
         if scene.chart.time >= scene.chart.song:getDuration("seconds") then
-            SceneManager.LoadScene("scenes/rating", {ratings = RatingCounts, charge = Charge/scene.chart.totalCharge})
+            SceneManager.LoadScene("scenes/rating", {chart = scene.chartPath, ratings = RatingCounts, charge = Charge/scene.chart.totalCharge, fullCombo = ComboBreaks == 0, fullOvercharge = FullOvercharge})
         end
     end
     if scene.chart.time > 0 then
@@ -187,7 +188,8 @@ function scene.update(dt)
         if scene.chart.song then
             local st = scene.chart.song:tell("seconds")
             local drift = st-scene.chart.time
-            if math.abs(drift) >= 0.05 then
+            -- Only fix drift if we're NOT at the end of song AND we are too much offset
+            if math.abs(drift) >= 0.05 and drift > -scene.chart.song:getDuration("seconds") then
                 scene.chart.time = scene.chart.song:tell("seconds")
             end
         end

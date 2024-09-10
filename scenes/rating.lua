@@ -40,6 +40,8 @@ function scene.load(args)
     scene.rank = getRank(args.charge or 0)
     scene.charge = math.floor(math.min(args.charge, 0.8)*ChargeYield)
     scene.overcharge = math.floor(math.max(args.charge-0.8, 0)*ChargeYield)
+    scene.fullCombo = args.fullCombo
+    scene.fullOvercharge = args.fullOvercharge
 end
 
 function scene.draw()
@@ -49,7 +51,22 @@ function scene.draw()
     local chargeString = tostring(scene.charge)
     local overchargeString = tostring(scene.overcharge)
     love.graphics.print("CHARGE     " .. (" "):rep(3-#chargeString) .. "+" .. scene.charge .. "¤", 272, 64)
-    love.graphics.print("OVERCHARGE " .. (" "):rep(3-#overchargeString) .. "+" .. scene.overcharge .. "¤", 272, 64+16)
+    love.graphics.print("OVERCHARGE " .. (" "):rep(3-#overchargeString) .. "+" .. scene.overcharge .. "¤", 272, 80)
+
+    if scene.fullCombo then
+        love.graphics.setColor(TerminalColors[ColorID.MAGENTA])
+        love.graphics.print("FULL COMBO", 272, 112)
+        love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    end
+    if scene.fullOvercharge then
+        local text = "FULL OVERCHARGE"
+        for i = 1, #text do
+            local chunkColor = (math.floor(-love.timer.getTime()*#OverchargeColors)+i-1)%#OverchargeColors
+            love.graphics.setColor(TerminalColors[OverchargeColors[chunkColor+1]])
+            love.graphics.print(text:sub(i,i), 272+(i-1)*8, 128)
+        end
+        love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    end
 end
 
 return scene
