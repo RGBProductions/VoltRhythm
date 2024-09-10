@@ -71,6 +71,9 @@ function scene.load(args)
     end
     scene.modifiers = args.modifiers or {}
     scene.chartName = "UNRAVELING STASIS"
+    AudioOffset = 25/1000
+    HitOffset = 0
+    RealHits = 0
     Charge = 0
     Hits = 0
     Accuracy = 0
@@ -146,6 +149,8 @@ function scene.keypressed(k)
                 end
                 Charge = Charge + (1-accuracy)
                 Hits = Hits + 1
+                HitOffset = HitOffset + pos
+                RealHits = RealHits + 1
                 Accuracy = Accuracy + (1-accuracy)
                 local c = math.floor(Charge/scene.chart.totalCharge*100/2-1)
                 local x = (16+c)*8
@@ -176,21 +181,23 @@ function scene.update(dt)
     local lastTime = scene.chart.time
     scene.chart.time = scene.chart.time + dt*(scene.modifiers.speed or 1)
     if scene.chart.song then
-        if scene.chart.time >= scene.chart.song:getDuration("seconds") then
-            SceneManager.LoadScene("scenes/rating", {chart = scene.chartPath, ratings = RatingCounts, charge = Charge/scene.chart.totalCharge, fullCombo = ComboBreaks == 0, fullOvercharge = FullOvercharge})
+        if scene.chart.time >= scene.chart.song:getDuration("seconds")-AudioOffset then
+            SceneManager.LoadScene("scenes/rating", {offset = HitOffset/RealHits, chart = scene.chartPath, ratings = RatingCounts, charge = Charge/scene.chart.totalCharge, fullCombo = ComboBreaks == 0, fullOvercharge = FullOvercharge})
         end
     end
-    if scene.chart.time > 0 then
-        if scene.lastTime <= 0 then
+    if scene.chart.time > -AudioOffset then
+        if scene.lastTime <= -AudioOffset then
             if scene.chart.song then scene.chart.song:setPitch(scene.modifiers.speed or 1); scene.chart.song:play() end
             if scene.chart.video then scene.chart.video:getSource():setPitch(scene.modifiers.speed or 1); scene.chart.video:play() end
         end
         if scene.chart.song then
-            local st = scene.chart.song:tell("seconds")
-            local drift = st-scene.chart.time
-            -- Only fix drift if we're NOT at the end of song AND we are too much offset
-            if math.abs(drift) >= 0.05 and drift > -scene.chart.song:getDuration("seconds") then
-                scene.chart.time = scene.chart.song:tell("seconds")
+            if scene.chart.song:isPlaying() then
+                local st = scene.chart.song:tell("seconds")-AudioOffset
+                local drift = st-scene.chart.time
+                -- Only fix drift if we're NOT at the end of song AND we are too much offset
+                if math.abs(drift) >= 0.05 and drift > -scene.chart.song:getDuration("seconds") then
+                    scene.chart.time = scene.chart.song:tell("seconds")
+                end
             end
         end
     end
@@ -229,6 +236,8 @@ function scene.update(dt)
                             end
                             Accuracy = Accuracy + 1
                             Hits = Hits + 1
+                            HitOffset = HitOffset + 0
+                            RealHits = RealHits + 1
                             local c = math.floor(Charge/scene.chart.totalCharge*100/2-1)
                             local x = (16+c)*8
                             RemoveParticlesByID("chargeup")

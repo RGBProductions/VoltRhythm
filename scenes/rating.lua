@@ -42,6 +42,7 @@ function scene.load(args)
     scene.overcharge = math.floor(math.max(args.charge-0.8, 0)*ChargeYield)
     scene.fullCombo = args.fullCombo
     scene.fullOvercharge = args.fullOvercharge
+    scene.offset = math.floor(args.offset*1000)
 end
 
 function scene.draw()
