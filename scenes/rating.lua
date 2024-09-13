@@ -102,7 +102,7 @@ function scene.draw()
     local songName = "song"
     local artistName = "composer"
     local difficulty = "EASY"
-    local difficultyColor = TerminalColors[ColorID.RED]
+    local difficultyColor = TerminalColors[ColorID.LIGHT_GREEN]
     local level = 0
     local combinedDifficultyString = difficulty .. " " .. level
     love.graphics.setColor(1,1,1)
