@@ -56,6 +56,11 @@ function scene.load(args)
     scene.offset = math.floor(args.offset*1000)
     scene.chart = args.chart
     scene.ratings = args.ratings
+    if scene.chart.song then
+        scene.chart.song:stop()
+    end
+    MissTime = 0
+    ScreenShader:send("tearStrength", MissTime*8/Display:getWidth())
 end
 
 function scene.keypressed(k)

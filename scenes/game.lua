@@ -188,11 +188,6 @@ function scene.update(dt)
     -- Update chart time and scroll chart
     local lastTime = scene.chart.time
     scene.chart.time = scene.chart.time + dt*(scene.modifiers.speed or 1)
-    if scene.chart.song then
-        if scene.chart.time >= scene.chart.song:getDuration("seconds")-AudioOffset then
-            SceneManager.LoadScene("scenes/rating", {offset = HitOffset/RealHits, chart = scene.chart, ratings = RatingCounts, accuracy = Accuracy/math.max(Hits,1), charge = Charge/scene.chart.totalCharge, fullCombo = ComboBreaks == 0, fullOvercharge = FullOvercharge})
-        end
-    end
     if scene.chart.time > -AudioOffset then
         if scene.lastTime <= -AudioOffset then
             if scene.chart.song then scene.chart.song:setPitch(scene.modifiers.speed or 1); scene.chart.song:play() end
@@ -356,6 +351,12 @@ function scene.update(dt)
             ::continue::
             i = i + 1
             num = #scene.chart.effects
+        end
+    end
+
+    if scene.chart.song then
+        if scene.chart.time >= scene.chart.song:getDuration("seconds")-AudioOffset then
+            SceneManager.LoadScene("scenes/rating", {offset = HitOffset/RealHits, chart = scene.chart, ratings = RatingCounts, accuracy = Accuracy/math.max(Hits,1), charge = Charge/scene.chart.totalCharge, fullCombo = ComboBreaks == 0, fullOvercharge = FullOvercharge})
         end
     end
 
