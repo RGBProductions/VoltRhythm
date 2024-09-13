@@ -23,7 +23,7 @@ function WhichSixteenth(t,bpm)
     return t/secPerSixteenth
 end
 
-Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%.+-┌─┐│└┘├┤┴┬█▓▒░┊┈╬○◇▷◁║¤")
+Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%().,'\":+-┌─┐│└┘├┤┴┬█▓▒░┊┈╬○◇▷◁║¤")
 
 function DrawBox(x,y,w,h)
     love.graphics.print("┌"..("──"):rep(w).."┐\n"..("│"..("  "):rep(w).."│\n"):rep(h).."└"..("──"):rep(w).."┘", x*8, y*16)
@@ -148,7 +148,7 @@ function love.wheelmoved(x,y)
 end
 
 function love.update(dt)
-    border.update(dt)
+    if border then border.update(dt) end
     SceneManager.Update(dt)
 end
 
@@ -159,7 +159,7 @@ function love.draw()
     love.graphics.setColor(1,1,1)
     SceneManager.Draw()
     love.graphics.setColor(1,1,1)
-    border.draw()
+    if border then border.draw() end
     love.graphics.setColor(1,1,1)
     love.graphics.print(Version.name .. " v" .. Version.version, 16, 480-16-16)
 

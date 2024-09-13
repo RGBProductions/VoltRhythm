@@ -10,9 +10,12 @@ function SceneManager.LoadScene(fn, args)
     }
     if not sceneLoadEvent.cancelled then
         if love.filesystem.getInfo(fn .. ".lua") ~= nil then
-            SceneManager.ActiveScene = require(fn)
-            if SceneManager.ActiveScene.load ~= nil then
-                SceneManager.ActiveScene.load(args or {})
+            local c,e = love.filesystem.load(fn..".lua")
+            if c then
+                SceneManager.ActiveScene = c()
+                if SceneManager.ActiveScene.load ~= nil then
+                    SceneManager.ActiveScene.load(args or {})
+                end
             end
         end
     end

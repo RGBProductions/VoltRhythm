@@ -14,3 +14,15 @@ function getPathOf(file)
     table.remove(spl, #spl)
     return table.concat(spl, "/")
 end
+
+function table.merge(a,b)
+    for k,v in pairs(b) do
+        if type(v) == "table" and type(a[k]) == "table" then
+            a[k] = table.merge(a[k], v)
+        else
+            print(k, v)
+            a[k] = v
+        end
+    end
+    return a
+end

@@ -3,8 +3,8 @@ local scene = {}
 local chartPos = 5
 local chartHeight = 20
 
-local songPath = "unst.ogg"
-local songBpm = 223
+local songPath = "stargazers.ogg"
+local songBpm = 186
 
 local function drawLine(time,chartTime,speed,col)
     local pos = time-chartTime
@@ -23,7 +23,7 @@ function scene.load(args)
     elseif love.filesystem.getInfo("editor_chart.json") then
         scene.chart = Chart.fromFile("editor_chart.json")
     else
-        scene.chart = Chart:new(songPath,songBpm,{},{})
+        scene.chart = Chart:new(songPath,songBpm,{},{},nil,nil,"stargazers.ogv")
     end
     if EditorTime then
         scene.chart.time = EditorTime
@@ -227,7 +227,7 @@ function scene.keypressed(k)
             scene.chart.song:stop()
             scene.chart.time = 0
         end
-        scene.chart = Chart:new(songPath,songBpm,{},{})
+        scene.chart = Chart:new(songPath,songBpm,{},{},nil,nil,"stargazers.ogv")
     end
     if k == "f9" then
         print(scene.chart:getDensity())

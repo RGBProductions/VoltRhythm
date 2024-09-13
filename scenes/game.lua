@@ -1,6 +1,6 @@
 local scene = {}
 
-local ratings = {
+NoteRatings = {
     {
         draw = function(ox,oy,center)
             local txt = "OVERCHARGE"
@@ -93,6 +93,7 @@ function scene.load(args)
     ViewOffset = 0
     ViewOffsetTarget = 0
     ViewOffsetSmoothing = 16
+    ViewOffsetFreeze = 0
     ChartFrozen = false
     LastRating = 0
     scene.lastTime = scene.chart.time
@@ -103,7 +104,7 @@ function scene.load(args)
     end
 
     RatingCounts = {}
-    for i,_ in ipairs(ratings) do
+    for i,_ in ipairs(NoteRatings) do
         RatingCounts[i] = 0
     end
 
@@ -113,9 +114,16 @@ function scene.load(args)
         PressAmounts[i] = 0
         HitAmounts[i] = 0
     end
+
+    DisplayShift = {0,0}
+    DisplayScale = {1,1}
+    DisplayRotation = 0
 end
 
 function scene.keypressed(k)
+    if k == "]" then
+        scene.chart.time = math.huge
+    end
     if k == "f8" then
         if scene.chart.song then scene.chart.song:stop() end
         scene.chart.time = 0
@@ -131,7 +139,7 @@ function scene.keypressed(k)
                 local accuracy = (math.abs(pos)/0.2)
                 accuracy = math.max(0,math.min(1,(1/(1-t))*accuracy - ((1/(1-t))-1)))
                 local accValue = (1-accuracy)
-                for R,rating in ipairs(ratings) do
+                for R,rating in ipairs(NoteRatings) do
                     if accValue >= rating.min and accValue < rating.max then
                         LastRating = R
                         break
@@ -166,7 +174,7 @@ function scene.keypressed(k)
                 end
                 HitAmounts[note.lane+1] = 1
                 Combo = Combo + 1
-                if LastRating >= #ratings-1 then
+                if LastRating >= #NoteRatings-1 then
                     Combo = 0
                     ComboBreaks = ComboBreaks + 1
                 end
@@ -182,7 +190,7 @@ function scene.update(dt)
     scene.chart.time = scene.chart.time + dt*(scene.modifiers.speed or 1)
     if scene.chart.song then
         if scene.chart.time >= scene.chart.song:getDuration("seconds")-AudioOffset then
-            SceneManager.LoadScene("scenes/rating", {offset = HitOffset/RealHits, chart = scene.chartPath, ratings = RatingCounts, charge = Charge/scene.chart.totalCharge, fullCombo = ComboBreaks == 0, fullOvercharge = FullOvercharge})
+            SceneManager.LoadScene("scenes/rating", {offset = HitOffset/RealHits, chart = scene.chart, ratings = RatingCounts, accuracy = Accuracy/math.max(Hits,1), charge = Charge/scene.chart.totalCharge, fullCombo = ComboBreaks == 0, fullOvercharge = FullOvercharge})
         end
     end
     if scene.chart.time > -AudioOffset then
@@ -281,7 +289,7 @@ function scene.update(dt)
                         MissTime = 1
                         Combo = 0
                         ComboBreaks = ComboBreaks + 1
-                        LastRating = #ratings
+                        LastRating = #NoteRatings
                         RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                         FullOvercharge = false
                     else
@@ -290,7 +298,7 @@ function scene.update(dt)
                                 MissTime = 1
                                 Combo = 0
                                 ComboBreaks = ComboBreaks + 1
-                                LastRating = #ratings
+                                LastRating = #NoteRatings
                                 RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                                 FullOvercharge = false
                             end
@@ -303,7 +311,7 @@ function scene.update(dt)
                                         MissTime = 1
                                         Combo = 0
                                         ComboBreaks = ComboBreaks + 1
-                                        LastRating = #ratings
+                                        LastRating = #NoteRatings
                                         RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                                         FullOvercharge = false
                                     end
@@ -313,7 +321,7 @@ function scene.update(dt)
                                     MissTime = 1
                                     Combo = 0
                                     ComboBreaks = ComboBreaks + 1
-                                    LastRating = #ratings
+                                    LastRating = #NoteRatings
                                     RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                                     FullOvercharge = false
                                 end
@@ -439,6 +447,13 @@ function scene.draw()
         end
     end
 
+    love.graphics.push()
+    love.graphics.translate(DisplayShift[1], DisplayShift[2])
+    love.graphics.translate(320,240)
+    love.graphics.scale(DisplayScale[1], DisplayScale[2])
+    love.graphics.rotate(DisplayRotation)
+    love.graphics.translate(-320,-240)
+
     -- Debug info
     love.graphics.setColor(TerminalColors[16])
     love.graphics.print("Full Combo: " .. tostring(ComboBreaks == 0), 50*8, 5*16)
@@ -512,18 +527,18 @@ function scene.draw()
     end
 
     -- Last rating and combo
-    if ratings[LastRating] then
+    if NoteRatings[LastRating] then
         local x,y = 40*8, 6*16
-        ratings[LastRating].draw(x,y,true)
+        NoteRatings[LastRating].draw(x,y,true)
     end
     local comboString = tostring(Combo)
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     love.graphics.print(comboString, ((80-(#comboString))/2)*8, 7*16)
 
     -- Rating counts
-    for i,rating in ipairs(ratings) do
+    for i,rating in ipairs(NoteRatings) do
         local x,y = 32, (i+4)*16
-        ratings[i].draw(x,y,false)
+        NoteRatings[i].draw(x,y,false)
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
         love.graphics.print(RatingCounts[i], x+12*8, y)
     end
@@ -533,6 +548,8 @@ function scene.draw()
         love.graphics.setColor(TerminalColors[particle.color])
         love.graphics.print(particle.char, particle.x-4, particle.y-8)
     end
+
+    love.graphics.pop()
 end
 
 return scene
