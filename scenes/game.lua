@@ -1,4 +1,16 @@
+local utf8 = require "utf8"
+
 local scene = {}
+
+local defaultBg = Assets.Background("boxesbg.lua")
+if defaultBg then defaultBg.init() end
+
+PausedText = love.graphics.newImage("images/paused.png")
+Counter = {
+    love.graphics.newImage("images/counter1.png"),
+    love.graphics.newImage("images/counter2.png"),
+    love.graphics.newImage("images/counter3.png")
+}
 
 NoteRatings = {
     {
@@ -60,18 +72,27 @@ NoteRatings = {
     }
 }
 
+---@param args {songData: SongData, difficulty: string, modifiers: table}
 function scene.load(args)
-    if args.chart then
-        scene.chart = args.chart
-        if type(scene.chart) == "string" then
-            scene.chartPath = scene.chart
-            scene.chart = Chart.fromFile(scene.chart)
+    if args.songData then
+        scene.songData = args.songData
+        scene.difficulty = args.difficulty
+        scene.chart = scene.songData:loadChart(args.difficulty or "easy")
+        if scene.chart then
             scene.chart.time = TimeBPM(-16,scene.chart.bpm)
+        end
+    end
+    if scene.chart then
+        scene.song = Assets.Source(scene.chart.song)
+        scene.video = Assets.Video(scene.chart.video)
+        scene.background = Assets.Background(scene.chart.background) or defaultBg
+        if scene.background and type(scene.background.init) == "function" then
+            scene.background.init(scene.chart.backgroundInit or {})
         end
     end
     scene.modifiers = args.modifiers or {}
     scene.chartName = "UNRAVELING STASIS"
-    AudioOffset = 25/1000
+    AudioOffset = 0/1000
     HitOffset = 0
     RealHits = 0
     Charge = 0
@@ -97,10 +118,10 @@ function scene.load(args)
     ChartFrozen = false
     LastRating = 0
     scene.lastTime = scene.chart.time
-    if scene.chart.video then
-        scene.chart.video:pause()
-        scene.chart.video:rewind()
-        scene.chart.video:getSource():setVolume(0)
+    if scene.video then
+        scene.video:pause()
+        scene.video:rewind()
+        scene.video:getSource():setVolume(0)
     end
 
     RatingCounts = {}
@@ -116,20 +137,41 @@ function scene.load(args)
     end
 
     DisplayShift = {0,0}
+    DisplayShiftTarget = {0,0}
+    DisplayShiftSmoothing = 0
     DisplayScale = {1,1}
+    DisplayScaleTarget = {1,1}
+    DisplayScaleSmoothing = 0
     DisplayRotation = 0
+    DisplayRotationTarget = 0
+    DisplayRotationSmoothing = 0
+
+    PauseTimer = 0
+    Paused = false
+    SongStarted = false
 end
 
 function scene.keypressed(k)
-    if k == "]" then
-        scene.chart.time = math.huge
+    if k == "escape" then
+        if Paused then
+            Paused = false
+        elseif PauseTimer <= 0 then
+            if scene.song then scene.song:pause() end
+            if scene.video then scene.video:pause() end
+            Paused = true
+            PauseTimer = 1.5
+        end
     end
     if k == "f8" then
-        if scene.chart.song then scene.chart.song:stop() end
+        if scene.song then scene.song:stop() end
         scene.chart.time = 0
         scene.chart:resetAllNotes()
         Charge = 0
-        SceneManager.LoadScene("scenes/editor", {chart = scene.chart})
+        SceneManager.Transition("scenes/editor", {songData = scene.songData, difficulty = scene.difficulty})
+    end
+    if PauseTimer > 0 then return end
+    if k == "]" then
+        scene.chart.time = math.huge
     end
     if not Autoplay then
         for i,note in ipairs(scene.chart.notes) do
@@ -185,21 +227,33 @@ function scene.keypressed(k)
 end
 
 function scene.update(dt)
+    if Paused or SceneManager.TransitioningIn() then return end
+    if PauseTimer > 0 then
+        PauseTimer = PauseTimer - dt
+        if PauseTimer <= 0 then
+            if SongStarted then
+                if scene.song then scene.song:play() end
+                if scene.video and scene.chart.time < scene.video:getSource():getDuration("seconds") then scene.video:play() end
+            end
+        end
+        return
+    end
     -- Update chart time and scroll chart
     local lastTime = scene.chart.time
     scene.chart.time = scene.chart.time + dt*(scene.modifiers.speed or 1)
     if scene.chart.time > -AudioOffset then
         if scene.lastTime <= -AudioOffset then
-            if scene.chart.song then scene.chart.song:setPitch(scene.modifiers.speed or 1); scene.chart.song:play() end
-            if scene.chart.video then scene.chart.video:getSource():setPitch(scene.modifiers.speed or 1); scene.chart.video:play() end
+            SongStarted = true
+            if scene.song then scene.song:setPitch(scene.modifiers.speed or 1); scene.song:play() end
+            if scene.video then scene.video:getSource():setPitch(scene.modifiers.speed or 1); scene.video:play() end
         end
-        if scene.chart.song then
-            if scene.chart.song:isPlaying() then
-                local st = scene.chart.song:tell("seconds")-AudioOffset
+        if scene.song then
+            if scene.song:isPlaying() then
+                local st = scene.song:tell("seconds")-AudioOffset
                 local drift = st-scene.chart.time
                 -- Only fix drift if we're NOT at the end of song AND we are too much offset
-                if math.abs(drift) >= 0.05 and drift > -scene.chart.song:getDuration("seconds") then
-                    scene.chart.time = scene.chart.song:tell("seconds")
+                if math.abs(drift) >= 0.05 and drift > -scene.song:getDuration("seconds") then
+                    scene.chart.time = scene.song:tell("seconds")
                 end
             end
         end
@@ -354,9 +408,11 @@ function scene.update(dt)
         end
     end
 
-    if scene.chart.song then
-        if scene.chart.time >= scene.chart.song:getDuration("seconds")-AudioOffset then
-            SceneManager.LoadScene("scenes/rating", {offset = HitOffset/RealHits, chart = scene.chart, ratings = RatingCounts, accuracy = Accuracy/math.max(Hits,1), charge = Charge/scene.chart.totalCharge, fullCombo = ComboBreaks == 0, fullOvercharge = FullOvercharge})
+    if scene.song then
+        if scene.chart.time >= scene.song:getDuration("seconds")-AudioOffset then
+            if not SceneManager.TransitionState.Transitioning then
+                SceneManager.Transition("scenes/rating", {chart = scene.chart, songData = scene.songData, difficulty = scene.difficulty, offset = HitOffset/RealHits, ratings = RatingCounts, accuracy = Accuracy/math.max(Hits,1), charge = Charge/scene.chart.totalCharge, fullCombo = ComboBreaks == 0, fullOvercharge = FullOvercharge})
+            end
         end
     end
 
@@ -386,6 +442,34 @@ function scene.update(dt)
         local blend = math.pow(0.05,dt)
         Chromatic = blend*Chromatic
         ScreenShader:send("chromaticStrength", Chromatic)
+    end
+    do
+        if DisplayShiftSmoothing == 0 then
+            DisplayShift[1] = DisplayShiftTarget[1]
+            DisplayShift[2] = DisplayShiftTarget[2]
+        else
+            local blend = math.pow(1/DisplayShiftSmoothing,dt)
+            DisplayShift[1] = blend*(DisplayShift[1]-DisplayShiftTarget[1])+DisplayShiftTarget[1]
+            DisplayShift[2] = blend*(DisplayShift[2]-DisplayShiftTarget[2])+DisplayShiftTarget[2]
+        end
+    end
+    do
+        if DisplayScaleSmoothing == 0 then
+            DisplayScale[1] = DisplayScaleTarget[1]
+            DisplayScale[2] = DisplayScaleTarget[2]
+        else
+            local blend = math.pow(1/DisplayScaleSmoothing,dt)
+            DisplayScale[1] = blend*(DisplayScale[1]-DisplayScaleTarget[1])+DisplayScaleTarget[1]
+            DisplayScale[2] = blend*(DisplayScale[2]-DisplayScaleTarget[2])+DisplayScaleTarget[2]
+        end
+    end
+    do
+        if DisplayRotationSmoothing == 0 then
+            DisplayRotation = DisplayRotationTarget
+        else
+            local blend = math.pow(1/DisplayRotationSmoothing,dt)
+            DisplayRotation = blend*(DisplayRotation-DisplayRotationTarget)+DisplayRotationTarget
+        end
     end
     do
         if ViewOffsetSmoothing == 0 then
@@ -430,21 +514,21 @@ function scene.update(dt)
         PressAmounts[i] = math.max(0, math.min(Autoplay and math.huge or 1, PressAmounts[i] + dt*8*((love.keyboard.isDown((Keybinds[scene.chart.lanes] or Keybinds[8])[i]) and not Autoplay) and 1/dt or -1/dt)))
         HitAmounts[i] = math.max(0, math.min(1, HitAmounts[i] - dt*8))
     end
-    if scene.chart.background and scene.chart.background.update then
-        scene.chart.background.update(dt)
+    if scene.background and scene.background.update then
+        scene.background.update(dt)
     end
 end
 
 function scene.draw()
     -- Backgrounds
-    if scene.chart.background and scene.chart.background.draw then
-        scene.chart.background.draw()
+    if scene.background and scene.background.draw then
+        scene.background.draw()
     end
-    if scene.chart.video then
-        if scene.chart.video:isPlaying() then
+    if scene.video then
+        if SongStarted then
             love.graphics.setColor(1,1,1)
-            local s = math.max(640/scene.chart.video:getWidth(), 480/scene.chart.video:getHeight())
-            love.graphics.draw(scene.chart.video, (640-scene.chart.video:getWidth()*s)/2, (480-scene.chart.video:getHeight()*s)/2, 0, s, s)
+            local s = math.max(640/scene.video:getWidth(), 480/scene.video:getHeight())
+            love.graphics.draw(scene.video, (640-scene.video:getWidth()*s)/2, (480-scene.video:getHeight()*s)/2, 0, s, s)
         end
     end
 
@@ -465,7 +549,17 @@ function scene.draw()
     DrawBoxHalfWidth(14, 23, 50, 1)
 
     -- Text Displays
-    love.graphics.print("┌─" .. ("─"):rep(#scene.chart.name) .. "─┐\n│ " .. scene.chart.name .. " │\n└─" .. ("─"):rep(#scene.chart.name) .. "─┘", ((80-(#scene.chart.name+4))/2)*8, 1*16)
+    local difficultyName = SongDifficulty[scene.difficulty or "easy"].name or scene.difficulty:upper()
+    local difficultyColor = SongDifficulty[scene.difficulty or "easy"].color or TerminalColors[ColorID.WHITE]
+    local level = scene.songData:getLevel(scene.difficulty)
+    local fullText = scene.songData.name .. " - " .. difficultyName .. " " .. level
+    love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    love.graphics.print("┌─" .. ("─"):rep(utf8.len(fullText)) .. "─┐\n│ " .. (" "):rep(utf8.len(fullText)) .. " │\n└─" .. ("─"):rep(utf8.len(fullText)) .. "─┘", ((80-(utf8.len(fullText)+4))/2)*8, 1*16)
+    love.graphics.print(scene.songData.name .. " - ", ((80-(utf8.len(fullText)+4))/2 + 2)*8, 2*16)
+    love.graphics.setColor(difficultyColor)
+    love.graphics.print(difficultyName, ((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - "))*8, 2*16)
+    love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    love.graphics.print(tostring(level), ((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - " .. difficultyName .. " "))*8, 2*16)
 
     if Autoplay then love.graphics.print("┬──────────┬\n│ ".. (Showcase and "SHOWCASE" or "AUTOPLAY") .. " │\n┴──────────┴", 34*8, 21*16) end
     local acc = math.floor(Accuracy/math.max(Hits,1)*100)
@@ -537,12 +631,12 @@ function scene.draw()
     love.graphics.print(comboString, ((80-(#comboString))/2)*8, 7*16)
 
     -- Rating counts
-    for i,rating in ipairs(NoteRatings) do
-        local x,y = 32, (i+4)*16
-        NoteRatings[i].draw(x,y,false)
-        love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        love.graphics.print(RatingCounts[i], x+12*8, y)
-    end
+    -- for i,rating in ipairs(NoteRatings) do
+    --     local x,y = 32, (i+4)*16
+    --     NoteRatings[i].draw(x,y,false)
+    --     love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    --     love.graphics.print(RatingCounts[i], x+12*8, y)
+    -- end
 
     -- Particles
     for _,particle in ipairs(Particles) do
@@ -551,6 +645,20 @@ function scene.draw()
     end
 
     love.graphics.pop()
+
+    if Paused or PauseTimer > 0 then
+        love.graphics.setColor(0,0,0,0.75)
+        love.graphics.rectangle("fill", 0, 0, 640, 480)
+        love.graphics.setColor(TerminalColors[ColorID.WHITE])
+        if Paused then
+            love.graphics.draw(PausedText, 320, 240, 0, 1, 1, PausedText:getWidth()/2, PausedText:getHeight()/2)
+        else
+            local counterText = Counter[math.ceil(PauseTimer*2)]
+            if counterText then
+                love.graphics.draw(counterText, 320, 344, 0, 1, 1, counterText:getWidth()/2, 0)
+            end
+        end
+    end
 end
 
 return scene

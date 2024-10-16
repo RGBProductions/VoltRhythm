@@ -1,10 +1,16 @@
+-- currently broken. oops
+
 local scene = {}
 
 local chartPos = 5
 local chartHeight = 20
 
-local songPath = "stargazers.ogg"
-local songBpm = 186
+local songPath = "badapple.mp3"
+local songBpm = 138
+local songName = "BAD APPLE"
+local songAuthor = "???"
+local songDifficulty = "hard"
+local songLevel = 8
 
 local function drawLine(time,chartTime,speed,col)
     local pos = time-chartTime
@@ -18,12 +24,19 @@ local function drawLine(time,chartTime,speed,col)
 end
 
 function scene.load(args)
-    if args.chart then
-        scene.chart = args.chart
-    elseif love.filesystem.getInfo("editor_chart.json") then
-        scene.chart = Chart.fromFile("editor_chart.json")
+    if args.songData then
+        scene.songData = args.songData
+        scene.difficulty = args.difficulty
+        scene.chart = args.songData:loadChart(args.difficulty)
+    elseif love.filesystem.getInfo("editor_chart/info.json") then
+        scene.songData = LoadSongData("editor_chart")
+        scene.difficulty = "hard"
+        scene.chart = scene.songData:loadChart("hard")
     else
-        scene.chart = Chart:new(songPath,songBpm,{},{},nil,nil,"stargazers.ogv")
+        scene.difficulty = "hard"
+        scene.chart = Chart:new(songPath,songBpm,{},{},songName,nil)
+        scene.songData = SongData:new(songName, songAuthor, songBpm, songPath, {0,65536}, {hard = {path = "hard.json", level = songLevel, charter = "Charter"}})
+        scene.songData.path = "editor_chart"
     end
     if EditorTime then
         scene.chart.time = EditorTime
@@ -134,6 +147,7 @@ function scene.wheelmoved(x,y)
 end
 
 function scene.update(dt)
+    local song = Assets.Source(scene.chart.song)
     do
         local i = 1
         local num = #Particles
@@ -151,28 +165,35 @@ function scene.update(dt)
         end
     end
 
-    if scene.chart.song then
-        if scene.chart.song:isPlaying() then
-            scene.chart.time = scene.chart.song:tell("seconds")
+    if song then
+        if song:isPlaying() then
+            scene.chart.time = scene.chart.time + dt
+            local st = song:tell("seconds")
+            local drift = st-scene.chart.time
+            -- Only fix drift if we're NOT at the end of song AND we are too much offset
+            if math.abs(drift) >= 0.05 and drift > -song:getDuration("seconds") then
+                scene.chart.time = song:tell("seconds")
+            end
         end
     end
 
     if love.keyboard.isDown("up") then
-        scene.chart.time = scene.chart.time + dt*(love.keyboard.isDown("lshift") and 2 or 1)/scene.zoom
-        if scene.chart.song then
-            scene.chart.song:stop()
+        scene.chart.time = scene.chart.time + dt*(love.keyboard.isDown("lshift") and 2 or 1)*(love.keyboard.isDown("lctrl") and 4 or 1)/scene.zoom
+        if song then
+            song:stop()
         end
     end
 
     if love.keyboard.isDown("down") then
-        scene.chart.time = math.max(0,scene.chart.time - dt*(love.keyboard.isDown("lshift") and 2 or 1)/scene.zoom)
-        if scene.chart.song then
-            scene.chart.song:stop()
+        scene.chart.time = math.max(0,scene.chart.time - dt*(love.keyboard.isDown("lshift") and 2 or 1)*(love.keyboard.isDown("lctrl") and 4 or 1)/scene.zoom)
+        if song then
+            song:stop()
         end
     end
 end
 
 function scene.keypressed(k)
+    local song = Assets.Source(scene.chart.song)
     if k == "]" then
         scene.zoom = scene.zoom + 1
     end
@@ -193,47 +214,54 @@ function scene.keypressed(k)
     end
     if k == "home" then
         scene.chart.time = 0
-        if scene.chart.song then
-            scene.chart.song:stop()
+        if song then
+            song:stop()
         end
     end
     if k == "end" then
         scene.chart:sort()
         scene.chart.time = scene.chart.notes[#scene.chart.notes].time
-        if scene.chart.song then
-            scene.chart.song:stop()
+        if song then
+            song:stop()
         end
     end
     if k == "s" and love.keyboard.isDown("lctrl") then
-        scene.chart:save("editor_chart.json")
+        scene.songData:save(scene.songData.path)
+        -- scene.chart:save("editor_chart/hard.json")
+        -- love.filesystem.write(scene.songData.path.."/"..scene.songData.song, love.filesystem.read(scene.chart.songPath))
     end
     if k == "o" and love.keyboard.isDown("lctrl") then
-        if love.filesystem.getInfo("editor_chart.json") then
-            scene.chart = Chart.fromFile("editor_chart.json")
+        if love.filesystem.getInfo("editor_chart/info.json") then
+            scene.songData = LoadSongData("editor_chart")
+            scene.difficulty = "hard"
+            scene.chart = scene.songData:loadChart("hard")
         end
     end
     if k == "space" then
-        if scene.chart.song then
-            scene.chart.song:seek(scene.chart.time, "seconds")
-            if scene.chart.song:isPlaying() then
-                scene.chart.song:pause()
+        if song then
+            song:seek(scene.chart.time, "seconds")
+            if song:isPlaying() then
+                song:pause()
             else
-                scene.chart.song:play()
+                song:play()
             end
         end
     end
     if k == "n" and love.keyboard.isDown("lctrl") then
-        if scene.chart.song then
-            scene.chart.song:stop()
+        if song then
+            song:stop()
             scene.chart.time = 0
         end
-        scene.chart = Chart:new(songPath,songBpm,{},{},nil,nil,"stargazers.ogv")
+        scene.difficulty = "hard"
+        scene.chart = Chart:new(songPath,songBpm,{},{},songName,nil)
+        scene.songData = SongData:new(songName, songAuthor, songBpm, songPath, {0,65536}, {hard = scene.chart})
+        scene.songData.path = "editor_chart"
     end
     if k == "f9" then
         print(scene.chart:getDensity())
         EditorTime = scene.chart.time
-        if scene.chart.song then
-            scene.chart.song:stop()
+        if song then
+            song:stop()
             scene.chart.time = 0
         end
         if love.keyboard.isDown("lshift") then
@@ -250,7 +278,10 @@ function scene.keypressed(k)
         scene.chart:sort()
         scene.chart:recalculateCharge()
         scene.chart.time = TimeBPM(-16,scene.chart.bpm)
-        SceneManager.LoadScene("scenes/game", {chart = scene.chart})
+        -- scene.songData:save("editor_chart")
+        -- scene.chart:save("editor_chart/hard.json")
+        -- love.filesystem.write(scene.songData.path.."/"..scene.songData.song, love.filesystem.read(scene.chart.songPath))
+        SceneManager.Transition("scenes/game", {songData = scene.songData, difficulty = scene.difficulty})
     end
     if k == "left" then
         local lane = math.floor((MouseX/8-34)/4+0.5)

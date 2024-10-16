@@ -54,10 +54,12 @@ function scene.load(args)
     scene.fullCombo = args.fullCombo
     scene.fullOvercharge = args.fullOvercharge
     scene.offset = math.floor(args.offset*1000)
+    scene.songData = args.songData
+    scene.difficulty = args.difficulty
     scene.chart = args.chart
     scene.ratings = args.ratings
-    if scene.chart.song then
-        scene.chart.song:stop()
+    if Assets.Source(scene.chart.song) then
+        Assets.Source(scene.chart.song):stop()
     end
     MissTime = 0
     ScreenShader:send("tearStrength", MissTime*8/Display:getWidth())
@@ -69,7 +71,7 @@ function scene.keypressed(k)
         scene.chart:sort()
         scene.chart:recalculateCharge()
         scene.chart.time = TimeBPM(-16,scene.chart.bpm)
-        SceneManager.LoadScene("scenes/game", {chart = scene.chart})
+        SceneManager.Transition("scenes/game", {songData = scene.songData, difficulty = scene.difficulty})
     end
 end
 
@@ -104,11 +106,11 @@ function scene.draw()
         love.graphics.print(countString, 48+8*(20-utf8.len(countString)), y)
     end
 
-    local songName = "song"
-    local artistName = "composer"
-    local difficulty = "EASY"
-    local difficultyColor = TerminalColors[ColorID.LIGHT_GREEN]
-    local level = 0
+    local songName = scene.songData.name
+    local artistName = scene.songData.author
+    local difficulty = SongDifficulty[scene.difficulty or "easy"].name or scene.difficulty:upper()
+    local difficultyColor = SongDifficulty[scene.difficulty or "easy"].color or TerminalColors[ColorID.WHITE]
+    local level = scene.songData:getLevel(scene.difficulty or "easy")
     local combinedDifficultyString = difficulty .. " " .. level
     love.graphics.setColor(1,1,1)
     love.graphics.draw(defaultSongCover, 272, 224)
@@ -117,6 +119,7 @@ function scene.draw()
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     love.graphics.print(tostring(level), 232+8*((22-#combinedDifficultyString)/2 + #difficulty+1), 192)
     love.graphics.print(songName, 232+8*(22-#songName)/2, 320 + 16*1)
+    love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
     love.graphics.print(artistName, 232+8*(22-#artistName)/2, 320 + 16*2)
 
     love.graphics.setColor(1,1,1)

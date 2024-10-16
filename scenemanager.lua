@@ -1,5 +1,11 @@
 SceneManager = {
-    ActiveScene = {}
+    ActiveScene = {},
+    TransitionState = {
+        Transitioning = false,
+        Duration = 0.5,
+        Time = 0,
+        NextScene = {fn = "", args = {}}
+    }
 }
 
 function SceneManager.LoadScene(fn, args)
@@ -12,9 +18,15 @@ function SceneManager.LoadScene(fn, args)
         if love.filesystem.getInfo(fn .. ".lua") ~= nil then
             local c,e = love.filesystem.load(fn..".lua")
             if c then
-                SceneManager.ActiveScene = c()
-                if SceneManager.ActiveScene.load ~= nil then
-                    SceneManager.ActiveScene.load(args or {})
+                local s,nextScene = pcall(c)
+                if s then
+                    if SceneManager.ActiveScene.unload ~= nil then
+                        SceneManager.ActiveScene.unload()
+                    end
+                    SceneManager.ActiveScene = nextScene
+                    if SceneManager.ActiveScene.load ~= nil then
+                        SceneManager.ActiveScene.load(args or {})
+                    end
                 end
             end
         end
@@ -23,6 +35,39 @@ function SceneManager.LoadScene(fn, args)
     if s then
         love.mouse.setCursor(r)
     end
+end
+
+function SceneManager.Transition(fn, args)
+    SceneManager.TransitionState.Transitioning = true
+    SceneManager.TransitionState.NextScene = {fn = fn, args = args}
+end
+
+function SceneManager.UpdateTransition(dt)
+    if not SceneManager.TransitionState.Transitioning then return end
+    local lastTime = SceneManager.TransitionState.Time
+    SceneManager.TransitionState.Time = SceneManager.TransitionState.Time + dt
+    if lastTime < SceneManager.TransitionState.Duration and SceneManager.TransitionState.Time >= SceneManager.TransitionState.Duration then
+        SceneManager.LoadScene(SceneManager.TransitionState.NextScene.fn, SceneManager.TransitionState.NextScene.args or {})
+    end
+    if SceneManager.TransitionState.Time >= SceneManager.TransitionState.Duration*2 then
+        SceneManager.TransitionState.Transitioning = false
+        SceneManager.TransitionState.Time = 0
+    end
+end
+
+function SceneManager.DrawTransition()
+    if not SceneManager.TransitionState.Transitioning then return end
+    if Transition and Transition.Draw then
+        Transition.Draw()
+    end
+end
+
+function SceneManager.TransitioningIn()
+    return SceneManager.TransitionState.Transitioning and SceneManager.TransitionState.Time < SceneManager.TransitionState.Duration
+end
+
+function SceneManager.TransitioningOut()
+    return SceneManager.TransitionState.Transitioning and SceneManager.TransitionState.Time >= SceneManager.TransitionState.Duration
 end
 
 function SceneManager.Update(dt)

@@ -29,7 +29,7 @@ end
 function background.draw()
     for _,box in ipairs(background.boxes) do
         love.graphics.setColor(TerminalColors[box[5]])
-        DrawBox(DisplayShift[1]/8/4 + box[1], DisplayShift[2]/8/4 + box[2], box[3], box[4])
+        DrawBox(box[1], box[2], box[3], box[4])
     end
 end
 

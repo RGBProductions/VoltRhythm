@@ -118,6 +118,20 @@ EffectTypes = {
             end
         end
     end,
+    transform = function(self)
+        if self.data.shift then
+            DisplayShiftTarget = self.data.shift or DisplayShiftTarget
+            DisplayShiftSmoothing = self.data.smoothing or 0
+        end
+        if self.data.scale then
+            DisplayScaleTarget = self.data.scale or DisplayScaleTarget
+            DisplayScaleSmoothing = self.data.smoothing or 0
+        end
+        if self.data.rotation then
+            DisplayRotationTarget = self.data.rotation or DisplayRotationTarget
+            DisplayRotationSmoothing = self.data.smoothing or 0
+        end
+    end,
     modify_bg = function(self,chart)
         if chart.background then
             chart.background[self.data.key] = self.data.value
@@ -153,41 +167,139 @@ function Effect:new(time,effectType,data)
     return note
 end
 
+SongDifficulty = {
+    easy = {
+        name = "EASY",
+        color = TerminalColors[ColorID.LIGHT_GREEN]
+    },
+    medium = {
+        name = "MEDIUM",
+        color = TerminalColors[ColorID.YELLOW]
+    },
+    hard = {
+        name = "HARD",
+        color = TerminalColors[ColorID.LIGHT_RED]
+    },
+    extreme = {
+        name = "EXTREME",
+        color = TerminalColors[ColorID.MAGENTA]
+    }
+}
+
+---@class SongData
+---@field path string
+---@field name string
+---@field author string
+---@field song string
+---@field bpm number
+---@field charts {easy: chartdata|Chart?, medium: chartdata|Chart?, hard: chartdata|Chart?, extreme: chartdata|Chart?}
+---@field songPreview {[1]: number, [2]: number}
+SongData = {}
+SongData.__index = SongData
+
+---@alias chartdata {path: string, level: number, charter: string}
+
+function LoadSongData(path)
+    local infoPath = path.."/info.json"
+    if not love.filesystem.getInfo(infoPath) then return nil end
+    ---@type boolean, {name: string, author: string, bpm: number, song: string, songPreview: {[1]: number, [2]: number}, charts: {easy: chartdata?, medium: chartdata?, hard: chartdata?, extreme: chartdata?}}
+    local loadedInfo,songInfo = pcall(json.decode, love.filesystem.read(infoPath))
+    if not loadedInfo then return nil end
+
+    local songData = setmetatable({}, SongData)
+    songData.path = path
+
+    songData.name = songInfo.name
+    songData.author = songInfo.author
+    songData.bpm = songInfo.bpm
+    songData.songPreview = songInfo.songPreview
+
+    songData.song = songInfo.song
+
+    songData.charts = songInfo.charts
+
+    return songData
+end
+
+function SongData:new(name,author,bpm,song,songPreview,charts)
+    local songData = setmetatable({}, self)
+    songData.name = name or "Song"
+    songData.author = author or "Composer"
+    songData.bpm = bpm or 120
+    songData.song = song
+    songData.songPreview = songPreview or {0,math.huge}
+    songData.charts = charts or {}
+    return songData
+end
+
+function SongData:loadChart(difficulty)
+    if not self.charts[difficulty] then return nil end
+    if getmetatable(self.charts[difficulty]) == Chart then return self.charts[difficulty] end
+    local chart = Chart.fromFile(self.path.."/"..self.charts[difficulty].path)
+    self.charts[difficulty] = chart
+    return chart
+end
+
+function SongData:save(path)
+    if not love.filesystem.getInfo(path) then
+        love.filesystem.createDirectory(path)
+    end
+    local charts = {}
+    for name,chart in pairs(self.charts) do
+        if getmetatable(chart) == Chart then
+            charts[name] = {
+                path = name..".json",
+                charter = "charter",
+                level = 1
+            }
+            chart:save(path.."/"..name..".json")
+        else
+            charts[name] = chart
+        end
+    end
+    love.filesystem.write(path.."/info.json", json.encode({
+        name = self.name,
+        author = self.author,
+        bpm = self.bpm,
+        song = self.song,
+        songPreview = self.songPreview,
+        charts = charts
+    }))
+end
+
+function SongData:getLevel(difficulty)
+    if not self.charts[difficulty] then return 0 end
+    return self.charts[difficulty].level or 0
+end
+
+function SongData:getCharter(difficulty)
+    if not self.charts[difficulty] then return 0 end
+    return self.charts[difficulty].charter
+end
+
+---@class Chart
+---@field song string
+---@field video string
+---@field background string
+---@field backgroundInit table
+---@field bpm number
+---@field notes table
+---@field effects table
+---@field time number
+---@field lanes integer
+---@field name string
 Chart = {}
 Chart.__index = Chart
 
 function Chart:new(song, bpm, notes, effects, name, lanes, video, background, backgroundInit)
     local chart = setmetatable({}, self)
 
-    if love.filesystem.getInfo(song) then
-        chart.song = love.audio.newSource(song, "stream")
-    end
-    chart.songPath = song
+    chart.song = song
     chart.bpm = bpm
 
-    if video and love.filesystem.getInfo(video) then
-        chart.video = love.graphics.newVideo(video)
-    end
-    chart.videoPath = video
-
-    if background and love.filesystem.getInfo(background) then
-        local s,r = pcall(require, background:sub(1,-5))
-        if s then
-            chart.background = r
-            chart.backgroundPath = background
-        else
-            chart.background = require "boxesbg"
-            chart.backgroundPath = "boxesbg.lua"
-        end
-    else
-        chart.background = require "boxesbg"
-        chart.backgroundPath = "boxesbg.lua"
-    end
-
-    if chart.background then
-        chart.background.init(backgroundInit or {})
-    end
-    self.backgroundInit = backgroundInit or {}
+    chart.video = video
+    chart.background = background
+    chart.backgroundInit = backgroundInit or {}
 
     chart.notes = notes or {}
     table.sort(chart.notes or {}, function (a, b)
@@ -236,7 +348,7 @@ function Chart:resetAllNotes()
     end
 end
 
-function Chart.fromFile(path)
+function Chart.fromFile(path,b)
     local s,data = pcall(json.decode, love.filesystem.read(path))
     if not s then return end
     data.song = getPathOf(path).."/"..data.song
@@ -278,9 +390,9 @@ function Chart:save(path)
     love.filesystem.write(path, json.encode({
         name = self.name,
         lanes = self.lanes,
-        song = self.songPath,
-        video = self.videoPath,
-        background = self.backgroundPath,
+        song = self.song:sub(#getPathOf(self.song)+2, -1),
+        video = self.video,
+        background = self.background,
         backgroundInit = self.backgroundInit,
         bpm = self.bpm,
         notes = notes,
@@ -289,8 +401,8 @@ function Chart:save(path)
 end
 
 function Chart:getDensity()
-    if not self.song then
-        return 0
-    end
-    return #self.notes / self.song:getDuration("seconds")
+    if not self.song then return 0 end
+    local song = Assets.Source(self.song)
+    if not song then return 0 end
+    return #self.notes / song:getDuration("seconds")
 end

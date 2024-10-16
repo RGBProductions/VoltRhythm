@@ -1,4 +1,5 @@
 love.graphics.setDefaultFilter("nearest", "nearest")
+require "assets"
 require "util"
 require "colors"
 require "chart"
@@ -8,7 +9,6 @@ texture = require "texture"
 
 love.audio.setVolume(0.5)
 
-Save.Load()
 Version = (require "version")()
 
 ChargeYield = 200
@@ -23,7 +23,8 @@ function WhichSixteenth(t,bpm)
     return t/secPerSixteenth
 end
 
-Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%().,'\":+-┌─┐│└┘├┤┴┬█▓▒░┊┈╬○◇▷◁║¤")
+-- ーあいうえおかきくけこさしすせそたちつてとなにぬねの
+Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%().,'\"!?:+-┌─┐│└┘├┤┴┬█▓▒░┊┈╬○◇▷◁║¤👑")
 
 function DrawBox(x,y,w,h)
     love.graphics.print("┌"..("──"):rep(w).."┐\n"..("│"..("  "):rep(w).."│\n"):rep(h).."└"..("──"):rep(w).."┘", x*8, y*16)
@@ -37,10 +38,18 @@ function DrawBoxHalfWidth(x,y,w,h)
     love.graphics.print("┌"..("─"):rep(w).."┐\n"..("│"..(" "):rep(w).."│\n"):rep(h).."└"..("─"):rep(w).."┘", x*8, y*16)
 end
 
+require "transition"
 require "scenemanager"
 
-SceneManager.LoadScene("scenes/game", {chart = "songs/cute/hard.json"})
--- SceneManager.LoadScene("scenes/editor")
+local loadedProfile = Save.Load()
+if loadedProfile then
+    SceneManager.LoadScene("scenes/profile")
+else
+    local songData = LoadSongData("songs/cute")
+    SceneManager.LoadScene("scenes/game", {songData = songData, difficulty = "hard"})
+end
+
+-- SceneManager.LoadScene("scenes/game", {chart = "songs/cute/hard.json"})
 
 border = require "borders.overcharged"
 
@@ -150,6 +159,7 @@ end
 function love.update(dt)
     if border then border.update(dt) end
     SceneManager.Update(dt)
+    SceneManager.UpdateTransition(dt)
 end
 
 function love.draw()
@@ -158,6 +168,8 @@ function love.draw()
 
     love.graphics.setColor(1,1,1)
     SceneManager.Draw()
+    love.graphics.setColor(1,1,1)
+    SceneManager.DrawTransition()
     love.graphics.setColor(1,1,1)
     if border then border.draw() end
     love.graphics.setColor(1,1,1)
