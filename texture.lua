@@ -46,8 +46,8 @@ uniform vec2 small_res;
 vec4 effect(vec4 c, Image t, vec2 uv, vec2 px) {
 	vec2 big_uv_origin_px = (floor(uv * small_res) / small_res) * big_res + vec2(0.5);
 	vec4 accum = vec4(<init>);
-	for (float oy = 0; oy < scale_factor; oy++) {
-		for (float ox = 0; ox < scale_factor; ox++) {
+	for (float oy = 0.0; oy < scale_factor; oy+=1.0) {
+		for (float ox = 0.0; ox < scale_factor; ox+=1.0) {
 			vec2 ouv = (big_uv_origin_px + vec2(ox, oy)) / big_res;
 			vec4 px = Texel(t, ouv);
 			<op>
@@ -140,8 +140,8 @@ uniform int op_id;
 #ifdef PIXEL
 vec4 effect(vec4 c, Image t, vec2 uv, vec2 px) {
 	vec4 colour = Texel(t, uv);
-	for (float oy = -distance; oy <= distance; oy++) {
-		for (float ox = -distance; ox <= distance; ox++) {
+	for (float oy = -distance; oy <= distance; oy+=1.0) {
+		for (float ox = -distance; ox <= distance; ox+=1.0) {
 			float a = 1.0;
 			vec2 o = vec2(ox, oy);
 			if (length(o) <= distance) {
@@ -196,13 +196,13 @@ uniform bool gaussian;
 vec4 effect(vec4 c, Image t, vec2 uv, vec2 px) {
 	vec4 colour = vec4(0.0);
 	float total = 0.0;
-	for (float oi = -steps; oi <= steps; oi++) {
+	for (float oi = -steps; oi <= steps; oi+=1.0) {
 		float a = 1.0;
 		vec2 o = dimension * oi;
 		if (gaussian) {
 			a = mix(1.0, 0.0, length(o) / (steps + 1.0));
 		}
-		if (a > 0) {
+		if (a > 0.0) {
 			o /= res;
 			colour += Texel(t, uv + o) * a;
 			total += a;

@@ -1,3 +1,11 @@
+local utf8 = require "utf8"
+
+function utf8.sub(txt, i, j)
+    local o1 = (utf8.offset(txt,i) or (#txt))-1
+    local o2 = (utf8.offset(txt,j+1) or (#txt+1))-1
+    return txt:sub(o1,o2)
+end
+
 local useSteps = false
 
 Waviness = 0
@@ -6,33 +14,54 @@ WavinessSmoothing = 0
 
 NoteTypes = {
     normal = {
-        ---@param self {time: number, lane: number, length: number, type: string, extra: table, heldFor: number?}
+        ---@param self {time: number, lane: number, length: number, type: string, extra: table, heldFor: number?, visualLane?: number}
         draw = function (self,time,speed,chartPos,chartHeight,chartX,isEditor)
+            chartX = chartX + AnaglyphSide/8*0.5
             local mainpos = self.time-time
             local pos = mainpos
             chartHeight = chartHeight or 15
             chartPos = chartPos or 5
             if not isEditor then pos = pos+math.sin(pos*8)*Waviness/speed end
             local drawPos = chartPos+chartHeight-pos*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local visualLane = self.visualLane or self.lane
             if useSteps then drawPos = math.floor(drawPos) end
-            if drawPos >= chartPos and drawPos < chartPos+(chartHeight+1) and (self.heldFor or 0) <= 0 then
-                love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][3]])
-                love.graphics.print("○", (chartX+self.lane*4)*8, math.floor(drawPos*16-8))
-            end
-            local cells = self.length * speed
-            for i = 1, cells do
+            
+            local cells = self.length * math.abs(speed)
+            for i = 0.5, cells do
+            -- for i = 1, cells do
                 local barPos = mainpos+i/speed
                 if not isEditor then barPos = barPos+math.sin(barPos*8)*Waviness/speed end
                 local extPos = chartPos+chartHeight-barPos*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
                 if extPos >= chartPos and extPos-((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1) < chartPos+(chartHeight-1) then
                     love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][3]])
-                    love.graphics.print("║", (chartX+self.lane*4)*8, math.floor(extPos*16-8))
+                    love.graphics.print("║", (chartX+visualLane*4)*8, math.floor(extPos*16-8-(isEditor and 0 or 4)))
+                    -- love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][2]])
+                    -- love.graphics.print("▥▥▥", (chartX+self.lane*4-1)*8, math.floor(extPos*16-8))
                 end
             end
+
+            if drawPos >= chartPos and drawPos < chartPos+(chartHeight+1) and (self.heldFor or 0) <= 0 then
+                love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][3]])
+                love.graphics.print("○", (chartX+visualLane*4)*8, math.floor(drawPos*16-8-(isEditor and 0 or 4)))
+                -- love.graphics.print("▥▥▥", (chartX+self.lane*4-1)*8, math.floor(drawPos*16-8))
+            end
+        end,
+        hit = function(self,time,lane)
+            local pos = self.time-time
+            if math.abs(pos) <= 0.2 and lane == self.lane and not self.destroyed and not self.holding then
+                local t = 0.125
+                local accuracy = (math.abs(pos)/0.2)
+                accuracy = math.max(0,math.min(1,(1/(1-t))*accuracy - ((1/(1-t))-1)))
+                return true, accuracy, true
+            end
+            return false
+        end,
+        calculateCharge = function(self)
+            return 1 + (self.length or 0)
         end
     },
     swap = {
-        ---@param self {time: number, lane: number, length: number, type: string, extra: table, heldFor: number?}
+        ---@param self {time: number, lane: number, length: number, type: string, extra: table, heldFor: number?, visualLane?: number}
         draw = function (self,time,speed,chartPos,chartHeight,chartX,isEditor)
             local mainpos = self.time-time
             local pos = mainpos
@@ -41,38 +70,138 @@ NoteTypes = {
             if not isEditor then pos = pos+math.sin(pos*8)*Waviness/speed end
             local drawPos = chartPos+chartHeight-pos*speed
             local laneOffset = math.max(0,math.min(1, ((pos*speed)-7)/4))
-            local visualLane = self.lane - self.extra.dir*laneOffset
+            local visualLane = (self.visualLane or self.lane) - self.extra.dir*laneOffset
             local symbol = (math.abs(visualLane-self.lane) <= 1/4 and "○") or (math.abs(visualLane-(self.lane-self.extra.dir)) <= 1/4 and (self.extra.dir == 1 and "▷" or "◁")) or "◇"
             if useSteps then drawPos = math.floor(drawPos) end
-            if drawPos >= chartPos and drawPos < chartPos+(chartHeight+1) and (self.heldFor or 0) <= 0 then
-                love.graphics.setColor(TerminalColors[NoteColors[self.lane+1][3]])
-                love.graphics.print("¤", (chartX+self.lane*4)*8, math.floor(drawPos*16-8))
-                love.graphics.setColor(TerminalColors[NoteColors[self.lane+1][3]])
-                love.graphics.print(symbol, (chartX+visualLane*4)*8, math.floor(drawPos*16-8))
-            end
+
             local cells = self.length * speed
-            for i = 1, cells do
+            for i = 0.5, cells do
                 local barPos = mainpos+i/speed
                 if not isEditor then barPos = barPos+math.sin(barPos*8)*Waviness end
                 local extPos = chartPos+chartHeight-barPos*speed
                 if extPos >= chartPos and extPos < chartPos+(chartHeight-1) then
-                    love.graphics.setColor(TerminalColors[NoteColors[self.lane+1][3]])
-                    love.graphics.print("║", (chartX+visualLane*4)*8, math.floor(extPos*16-8))
+                    love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][3]])
+                    love.graphics.print("║", (chartX+visualLane*4)*8, math.floor(extPos*16-8-(isEditor and 0 or 4)))
                 end
             end
+
+            if drawPos >= chartPos and drawPos < chartPos+(chartHeight+1) and (self.heldFor or 0) <= 0 then
+                love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][3]])
+                love.graphics.print("¤", (chartX+self.lane*4)*8, math.floor(drawPos*16-8-(isEditor and 0 or 4)))
+                love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][3]])
+                love.graphics.print(symbol, (chartX+visualLane*4)*8, math.floor(drawPos*16-8-(isEditor and 0 or 4)))
+            end
+        end,
+        hit = function(self,time,lane)
+            local pos = self.time-time
+            if math.abs(pos) <= 0.2 and lane == self.lane and not self.destroyed and not self.holding then
+                local t = 0.125
+                local accuracy = (math.abs(pos)/0.2)
+                accuracy = math.max(0,math.min(1,(1/(1-t))*accuracy - ((1/(1-t))-1)))
+                return true, accuracy, true
+            end
+            return false
+        end,
+        calculateCharge = function(self)
+            return 1 + (self.length or 0)
+        end
+    },
+    merge = {
+        ---@param self {time: number, lane: number, length: number, type: string, extra: table, heldFor: number?, visualLane?: number}
+        draw = function (self,time,speed,chartPos,chartHeight,chartX,isEditor)
+            -- ▧▥▨ ◐◑
+            local mainpos = self.time-time
+            local pos = mainpos
+            chartHeight = chartHeight or 15
+            chartPos = chartPos or 5
+            if not isEditor then pos = pos+math.sin(pos*8)*Waviness/speed end
+            local drawPos = chartPos+chartHeight-pos*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            if useSteps then drawPos = math.floor(drawPos) end
+            local visualLane = self.visualLane or self.lane
+            if drawPos >= chartPos and drawPos < chartPos+(chartHeight+1) and (self.heldFor or 0) <= 0 then
+                local min,max = math.min(visualLane+self.extra.dir, visualLane), math.max(visualLane+self.extra.dir, visualLane)
+                for i = min,max do
+                    love.graphics.setColor(TerminalColors[NoteColors[((i)%(#NoteColors))+1][3]])
+                    love.graphics.print(((i == min and i == max) and "◻◻○◻◻") or (i == min and "◻◻◐▥▨") or (i == max and "▧▥◑◻◻") or "▧▥▥▥▨", (chartX+(i)*4-2)*8, math.floor(drawPos*16-8-(isEditor and 0 or 4)))
+                    -- love.graphics.print(((i == min and i == max) and "◻▥▥▥◻") or (i == min and "◻▥▥▥▨") or (i == max and "▧▥▥▥◻") or "▧▥▥▥▨", (chartX+(i)*4-2)*8, math.floor(drawPos*16-8))
+                end
+            end
+        end,
+        hit = function(self,time,lane)
+            local pos = self.time-time
+            local min,max = math.min(self.lane+self.extra.dir, self.lane), math.max(self.lane+self.extra.dir, self.lane)
+            if math.abs(pos) <= 0.2 and (lane >= min and lane <= max) and not self.destroyed and not self.holding then
+                local t = 0.125
+                local accuracy = (math.abs(pos)/0.2)
+                accuracy = math.max(0,math.min(1,(1/(1-t))*accuracy - ((1/(1-t))-1)))
+                if not self.laneAccuracies then
+                    self.laneAccuracies = {}
+                end
+                if not self.laneAccuracies[lane] then
+                    self.laneAccuracies[lane] = accuracy
+                end
+                local avgAccuracy = 0
+                local amount = 0
+                for i = min,max do
+                    if not self.laneAccuracies[i] then
+                        return false, nil, true
+                    end
+                    avgAccuracy = avgAccuracy + self.laneAccuracies[i]
+                    amount = amount + 1
+                end
+                local rating = GetRating(1 - (avgAccuracy/amount))
+                for i = min,max do
+                    if i ~= self.lane then
+                        if rating == 1 then
+                            local x = (80-(SceneManager.ActiveScene.chart.lanes*4-1))/2 - 1+(i)*4 + 1
+                            for _=1, 4 do
+                                local drawPos = (5)+(15)+(ViewOffset+ViewOffsetFreeze)*(ScrollSpeed*ScrollSpeedMod)
+                                table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
+                            end
+                        end
+                        Charge = Charge + 1
+                        RatingCounts[rating] = RatingCounts[rating] + 1
+                        Combo = Combo + 1
+                    end
+                end
+                return true, avgAccuracy/amount, true
+            end
+            return false, nil, false
+        end,
+        miss = function(self)
+            RatingCounts[#RatingCounts] = RatingCounts[#RatingCounts] + math.abs(self.extra.dir)
+            ComboBreaks = ComboBreaks + math.abs(self.extra.dir)
+        end,
+        reset = function(self)
+            self.laneAccuracies = nil
+        end,
+        calculateCharge = function(self)
+            return math.abs(self.extra.dir) + 1
         end
     }
 }
 
 EffectTypes = {
     modify_curve = function(self)
-        CurveModifier = self.data.strength
+        CurveModifierTarget = self.data.strength
+        CurveModifierSmoothing = self.data.smoothing or 0
+        if (self.data.smoothing or 0) == 0 then
+            CurveModifier = CurveModifierTarget
+        end
     end,
     chromatic = function(self)
-        Chromatic = self.data.strength
+        ChromaticModifierTarget = self.data.strength
+        ChromaticModifierSmoothing = self.data.smoothing or 0
+        if (self.data.smoothing or 0) == 0 then
+            ChromaticModifier = ChromaticModifierTarget
+        end
     end,
     tear = function(self)
-        MissTime = self.data.strength
+        TearingModifierTarget = self.data.strength
+        TearingModifierSmoothing = self.data.smoothing or 0
+        if (self.data.smoothing or 0) == 0 then
+            TearingModifier = TearingModifierTarget
+        end
     end,
     wave = function(self)
         WavinessTarget = self.data.strength
@@ -92,8 +221,11 @@ EffectTypes = {
         ViewOffsetTarget = self.data.offset
         ViewOffsetSmoothing = self.data.smoothing or 0
     end,
+    freeze_view = function(self)
+        ViewOffsetFreeze = not ViewOffsetFreeze
+    end,
     edit_note = function(self,chart)
-        for _,note in ipairs(chart) do
+        for _,note in ipairs(chart.notes) do
             if note.extra.id == self.data.id then
                 if self.data.time then
                     note.timeTarget = self.data.time
@@ -112,9 +244,10 @@ EffectTypes = {
                 if self.data.smoothing then
                     note.smoothing = self.data.smoothing
                 else
-                    note.lane = note.laneTarget
-                    note.time = note.timeTarget
+                    if note.timeTarget then note.time = note.timeTarget end
+                    if note.laneTarget then note.lane = note.laneTarget ; note.visualLane = note.laneTarget end
                 end
+                return
             end
         end
     end,
@@ -130,6 +263,16 @@ EffectTypes = {
         if self.data.rotation then
             DisplayRotationTarget = self.data.rotation or DisplayRotationTarget
             DisplayRotationSmoothing = self.data.smoothing or 0
+        end
+        if self.data.shear then
+            DisplayShearTarget = self.data.shear or DisplayShearTarget
+            DisplayShearSmoothing = self.data.smoothing or 0
+        end
+        if (self.data.smoothing or 0) == 0 then
+            DisplayShift = DisplayShiftTarget
+            DisplayScale = DisplayScaleTarget
+            DisplayRotation = DisplayRotationTarget
+            DisplayShear = DisplayShearTarget
         end
     end,
     modify_bg = function(self,chart)
@@ -183,16 +326,60 @@ SongDifficulty = {
     extreme = {
         name = "EXTREME",
         color = TerminalColors[ColorID.MAGENTA]
+    },
+    overvolt = {
+        name = "OVERVOLT",
+        color = {
+            TerminalColors[OverchargeColors[1]],
+            TerminalColors[OverchargeColors[2]],
+            TerminalColors[OverchargeColors[3]],
+            TerminalColors[OverchargeColors[4]],
+            TerminalColors[OverchargeColors[5]],
+            TerminalColors[OverchargeColors[6]]
+        },
+        animate = true
     }
 }
+
+function PrintDifficulty(x,y,difficulty,level,align)
+    local currentX = x
+    local length = utf8.len(SongDifficulty[difficulty].name .. " " .. level)
+    local nameLength = utf8.len(SongDifficulty[difficulty].name)
+    if align == "right" then
+        currentX = x - length*8
+    end
+    if align == "center" then
+        currentX = x - length*4
+    end
+    local color = SongDifficulty[difficulty].color or TerminalColors[ColorID.WHITE]
+    if type(color[1]) == "table" then
+        for i = 1, nameLength do
+            local colorIndex = (i-1 - (SongDifficulty[difficulty].animate and math.floor(love.timer.getTime()*(SongDifficulty[difficulty].animateSpeed or #color)) or 0))%#color+1
+            ---@diagnostic disable-next-line: param-type-mismatch
+            love.graphics.setColor(color[colorIndex])
+            love.graphics.print(utf8.sub(SongDifficulty[difficulty].name, i+1, i+1), currentX, y)
+            currentX = currentX + 8
+        end
+    else
+        love.graphics.setColor(color)
+        love.graphics.print(SongDifficulty[difficulty].name, currentX, y)
+        currentX = currentX + nameLength*8
+    end
+    currentX = currentX + 8
+    love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    love.graphics.print(tostring(level), currentX, y)
+end
 
 ---@class SongData
 ---@field path string
 ---@field name string
 ---@field author string
+---@field coverArtist string
 ---@field song string
+---@field songPath string
 ---@field bpm number
----@field charts {easy: chartdata|Chart?, medium: chartdata|Chart?, hard: chartdata|Chart?, extreme: chartdata|Chart?}
+---@field charts {easy: chartdata|Chart?, medium: chartdata|Chart?, hard: chartdata|Chart?, extreme: chartdata|Chart?, overvolt: chartdata|Chart?}
+---@field levels {easy: number, medium: number, hard: number, extreme: number, overvolt: number}
 ---@field songPreview {[1]: number, [2]: number}
 SongData = {}
 SongData.__index = SongData
@@ -202,7 +389,7 @@ SongData.__index = SongData
 function LoadSongData(path)
     local infoPath = path.."/info.json"
     if not love.filesystem.getInfo(infoPath) then return nil end
-    ---@type boolean, {name: string, author: string, bpm: number, song: string, songPreview: {[1]: number, [2]: number}, charts: {easy: chartdata?, medium: chartdata?, hard: chartdata?, extreme: chartdata?}}
+    ---@type boolean, {name: string, author: string, bpm: number, song: string, songPreview: {[1]: number, [2]: number}, charts: {easy: chartdata?, medium: chartdata?, hard: chartdata?, extreme: chartdata?, overvolt: chartdata?}, coverArtist: string}
     local loadedInfo,songInfo = pcall(json.decode, love.filesystem.read(infoPath))
     if not loadedInfo then return nil end
 
@@ -211,17 +398,23 @@ function LoadSongData(path)
 
     songData.name = songInfo.name
     songData.author = songInfo.author
+    songData.coverArtist = songInfo.coverArtist
     songData.bpm = songInfo.bpm
     songData.songPreview = songInfo.songPreview
 
     songData.song = songInfo.song
+    songData.songPath = path.."/"..songInfo.song
 
     songData.charts = songInfo.charts
+    songData.levels = {}
+    for name,chart in pairs(songData.charts or {}) do
+        songData.levels[name] = chart.level
+    end
 
     return songData
 end
 
-function SongData:new(name,author,bpm,song,songPreview,charts)
+function SongData:new(name,author,bpm,song,songPreview,charts,levels)
     local songData = setmetatable({}, self)
     songData.name = name or "Song"
     songData.author = author or "Composer"
@@ -229,6 +422,10 @@ function SongData:new(name,author,bpm,song,songPreview,charts)
     songData.song = song
     songData.songPreview = songPreview or {0,math.huge}
     songData.charts = charts or {}
+    songData.levels = levels or {}
+    for chartname,chart in pairs(charts or {}) do
+        songData.levels[chartname] = songData.levels[chartname] or chart.level
+    end
     return songData
 end
 
@@ -249,8 +446,8 @@ function SongData:save(path)
         if getmetatable(chart) == Chart then
             charts[name] = {
                 path = name..".json",
-                charter = "charter",
-                level = 1
+                charter = chart.charter or "Charter",
+                level = self:getLevel(name)
             }
             chart:save(path.."/"..name..".json")
         else
@@ -260,21 +457,25 @@ function SongData:save(path)
     love.filesystem.write(path.."/info.json", json.encode({
         name = self.name,
         author = self.author,
+        coverArtist = self.coverArtist,
         bpm = self.bpm,
         song = self.song,
         songPreview = self.songPreview,
-        charts = charts
+        charts = charts,
     }))
 end
 
+function SongData:hasLevel(difficulty)
+    return self.levels[difficulty] ~= nil
+end
+
 function SongData:getLevel(difficulty)
-    if not self.charts[difficulty] then return 0 end
-    return self.charts[difficulty].level or 0
+    return self.levels[difficulty] or 0
 end
 
 function SongData:getCharter(difficulty)
-    if not self.charts[difficulty] then return 0 end
-    return self.charts[difficulty].charter
+    if not self.charts[difficulty] then return "Charter" end
+    return self.charts[difficulty].charter or "Charter"
 end
 
 ---@class Chart
@@ -288,10 +489,11 @@ end
 ---@field time number
 ---@field lanes integer
 ---@field name string
+---@field charter string
 Chart = {}
 Chart.__index = Chart
 
-function Chart:new(song, bpm, notes, effects, name, lanes, video, background, backgroundInit)
+function Chart:new(song, bpm, notes, effects, name, lanes, video, background, backgroundInit, charter)
     local chart = setmetatable({}, self)
 
     chart.song = song
@@ -318,6 +520,8 @@ function Chart:new(song, bpm, notes, effects, name, lanes, video, background, ba
     chart.name = name or "Chart"
     chart.lanes = lanes or 4
 
+    chart.charter = charter or "Charter"
+
     return chart
 end
 
@@ -333,7 +537,11 @@ end
 function Chart:recalculateCharge()
     self.totalCharge = 0
     for _,note in ipairs(self.notes) do
-        self.totalCharge = self.totalCharge + 1 + (note.length or 0)
+        if (NoteTypes[note.type] or {}).calculateCharge then
+            self.totalCharge = self.totalCharge + NoteTypes[note.type].calculateCharge(note)
+        else
+            self.totalCharge = self.totalCharge + 1 + (note.length or 0)
+        end
     end
 end
 
@@ -342,6 +550,9 @@ function Chart:resetAllNotes()
         note.destroyed = false
         note.heldFor = nil
         note.holding = nil
+        if NoteTypes[note.type].reset then
+            NoteTypes[note.type].reset(note)
+        end
     end
     for _,effect in ipairs(self.effects) do
         effect.destroyed = false
@@ -375,7 +586,7 @@ function Chart.fromFile(path,b)
     for i,effect in ipairs(data.effects) do
         data.effects[i] = Effect:new(effect.time,effect.type,effect.data)
     end
-    return Chart:new(data.song,data.bpm,data.notes,data.effects,data.name,data.lanes,data.video,data.background,data.backgroundInit)
+    return Chart:new(data.song,data.bpm,data.notes,data.effects,data.name,data.lanes,data.video,data.background,data.backgroundInit,data.charter)
 end
 
 function Chart:save(path)
@@ -396,7 +607,8 @@ function Chart:save(path)
         backgroundInit = self.backgroundInit,
         bpm = self.bpm,
         notes = notes,
-        effects = effects
+        effects = effects,
+        charter = self.charter
     }))
 end
 

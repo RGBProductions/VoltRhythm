@@ -5,12 +5,13 @@ local scene = {}
 local chartPos = 5
 local chartHeight = 20
 
-local songPath = "badapple.mp3"
-local songBpm = 138
-local songName = "BAD APPLE"
-local songAuthor = "???"
-local songDifficulty = "hard"
-local songLevel = 8
+local songPath = "tool-ASSisted-spedcore-frame-boy-advance-rmx.ogg"
+local songBpm = 200
+local songName = "TOOL-ASSISTED SPEEDCORE (TQBF FRAME ADVANCE RMX)"
+local songAuthor = "Kobaryo"
+local songDifficulty = "extreme"
+local songCharter = "TotallyNotFrisk, Nicholas"
+local songLevel = 15
 
 local function drawLine(time,chartTime,speed,col)
     local pos = time-chartTime
@@ -34,8 +35,8 @@ function scene.load(args)
         scene.chart = scene.songData:loadChart("hard")
     else
         scene.difficulty = "hard"
-        scene.chart = Chart:new(songPath,songBpm,{},{},songName,nil)
-        scene.songData = SongData:new(songName, songAuthor, songBpm, songPath, {0,65536}, {hard = {path = "hard.json", level = songLevel, charter = "Charter"}})
+        scene.chart = Chart:new(songPath,songBpm,{},{},songName,nil,nil,nil,nil,songCharter)
+        scene.songData = SongData:new(songName, songAuthor, songBpm, songPath, {0,65536}, {hard = {path = "hard.json", level = songLevel, charter = "Charter"}}, {hard = songLevel})
         scene.songData.path = "editor_chart"
     end
     if EditorTime then
@@ -44,10 +45,13 @@ function scene.load(args)
         EditorTime = 0
     end
     MissTime = 0
-    Chromatic = 0
+    Chromatic = 1
+    ChromaticModifier = 0
+    ChromaticModifierTarget = 0
+    ChromaticModifierSmoothing = 0
     if ScreenShader then
         ScreenShader:send("tearStrength", MissTime*8/Display:getWidth())
-        ScreenShader:send("chromaticStrength", Chromatic)
+        ScreenShader:send("chromaticStrength", Chromatic*ChromaticModifier)
     end
     scene.targetEffect = 0
     scene.zoom = 1
@@ -139,7 +143,13 @@ function scene.wheelmoved(x,y)
             local drawPos = chartPos+chartHeight-(note.time-scene.chart.time)*(scene.speed*scene.zoom)
             drawPos = drawPos*16-8
             if math.abs(note.time-time) <= 0.0625/scene.zoom and note.lane == lane then
-                note.length = math.max(0,note.length+TimeBPM(y,scene.chart.bpm)/scene.zoom)
+                if love.keyboard.isDown("lshift") then
+                    note.extra.dir = math.max(0,math.min(3,note.lane+((note.extra.dir or 0)+y)))-note.lane
+                    note.type = note.extra.dir ~= 0 and "merge" or "normal"
+                    if note.extra.dir == 0 then note.extra.dir = nil end
+                elseif note.type ~= "merge" then
+                    note.length = math.max(0,note.length+TimeBPM(y,scene.chart.bpm)/scene.zoom)
+                end
                 break
             end
         end
@@ -147,6 +157,7 @@ function scene.wheelmoved(x,y)
 end
 
 function scene.update(dt)
+    if Paused or SceneManager.TransitioningIn() then return end
     local song = Assets.Source(scene.chart.song)
     do
         local i = 1
@@ -193,6 +204,7 @@ function scene.update(dt)
 end
 
 function scene.keypressed(k)
+    if SceneManager.TransitioningIn() then return end
     local song = Assets.Source(scene.chart.song)
     if k == "]" then
         scene.zoom = scene.zoom + 1
@@ -226,7 +238,7 @@ function scene.keypressed(k)
         end
     end
     if k == "s" and love.keyboard.isDown("lctrl") then
-        scene.songData:save(scene.songData.path)
+        scene.songData:save("editor_chart")
         -- scene.chart:save("editor_chart/hard.json")
         -- love.filesystem.write(scene.songData.path.."/"..scene.songData.song, love.filesystem.read(scene.chart.songPath))
     end
@@ -235,6 +247,7 @@ function scene.keypressed(k)
             scene.songData = LoadSongData("editor_chart")
             scene.difficulty = "hard"
             scene.chart = scene.songData:loadChart("hard")
+            print(scene.songData.songPath)
         end
     end
     if k == "space" then
@@ -253,8 +266,8 @@ function scene.keypressed(k)
             scene.chart.time = 0
         end
         scene.difficulty = "hard"
-        scene.chart = Chart:new(songPath,songBpm,{},{},songName,nil)
-        scene.songData = SongData:new(songName, songAuthor, songBpm, songPath, {0,65536}, {hard = scene.chart})
+        scene.chart = Chart:new(songPath,songBpm,{},{},songName,nil,nil,nil,nil,songCharter)
+        scene.songData = SongData:new(songName, songAuthor, songBpm, songPath, {0,65536}, {hard = scene.chart}, {hard = songLevel})
         scene.songData.path = "editor_chart"
     end
     if k == "f9" then

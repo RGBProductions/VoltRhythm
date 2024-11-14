@@ -12,65 +12,14 @@ Counter = {
     love.graphics.newImage("images/counter3.png")
 }
 
-NoteRatings = {
-    {
-        draw = function(ox,oy,center)
-            local txt = "OVERCHARGE"
-            for x = 1, #txt do
-                local c = txt:sub(x,x)
-                love.graphics.setColor(TerminalColors[OverchargeColors[(x-1)%#OverchargeColors+1]])
-                love.graphics.print(c, ox+((center and (-(#txt)/2) or 0) + x-1)*8, oy)
-            end
-        end,
-        min = 0.9,
-        max = math.huge
-    },
-    {
-        draw = function(ox,oy,center)
-            love.graphics.setColor(TerminalColors[ColorID.GOLD])
-            local txt = "SURGE"
-            love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
-        end,
-        min = 0.8,
-        max = 0.9
-    },
-    {
-        draw = function(ox,oy,center)
-            love.graphics.setColor(TerminalColors[ColorID.YELLOW])
-            local txt = "AMP"
-            love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
-        end,
-        min = 0.6,
-        max = 0.8
-    },
-    {
-        draw = function(ox,oy,center)
-            love.graphics.setColor(TerminalColors[ColorID.GREEN])
-            local txt = "FLUX"
-            love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
-        end,
-        min = 0.4,
-        max = 0.6
-    },
-    {
-        draw = function(ox,oy,center)
-            love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
-            local txt = "NULL"
-            love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
-        end,
-        min = 0.15,
-        max = 0.4
-    },
-    {
-        draw = function(ox,oy,center)
-            love.graphics.setColor(TerminalColors[ColorID.RED])
-            local txt = "BREAK"
-            love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
-        end,
-        min = 0,
-        max = 0.15
-    }
-}
+function GetRating(accValue)
+    for R,rating in ipairs(NoteRatings) do
+        if accValue >= rating.min and accValue < rating.max then
+            return R
+        end
+    end
+    return #NoteRatings
+end
 
 ---@param args {songData: SongData, difficulty: string, modifiers: table}
 function scene.load(args)
@@ -92,16 +41,17 @@ function scene.load(args)
     end
     scene.modifiers = args.modifiers or {}
     scene.chartName = "UNRAVELING STASIS"
-    AudioOffset = 0/1000
+    AudioOffset = 25/1000
     HitOffset = 0
     RealHits = 0
     Charge = 0
+    Potential = 0
     Hits = 0
     Accuracy = 0
     Combo = 0
     ComboBreaks = 0
     FullOvercharge = true
-    ScrollSpeed = 25
+    ScrollSpeed = 30
     ScrollSpeedMod = 1
     ScrollSpeedModTarget = 1
     ScrollSpeedModSmoothing = 0
@@ -145,10 +95,22 @@ function scene.load(args)
     DisplayRotation = 0
     DisplayRotationTarget = 0
     DisplayRotationSmoothing = 0
+    DisplayShear = {0,0}
+    DisplayShearTarget = {0,0}
+    DisplayShearSmoothing = 0
 
     PauseTimer = 0
     Paused = false
     SongStarted = false
+end
+
+function scene.focus(f)
+    if not f and PauseTimer <= 0 then
+        if scene.song then scene.song:pause() end
+        if scene.video then scene.video:pause() end
+        Paused = true
+        PauseTimer = 1.5
+    end
 end
 
 function scene.keypressed(k)
@@ -162,6 +124,14 @@ function scene.keypressed(k)
             PauseTimer = 1.5
         end
     end
+    if k == "backspace" and Paused then
+        SceneManager.Transition("scenes/songselect")
+    end
+    if k == "r" then
+        if scene.song then scene.song:stop() end
+        scene.chart:resetAllNotes()
+        SceneManager.Transition("scenes/game", {songData = scene.songData, difficulty = scene.difficulty})
+    end
     if k == "f8" then
         if scene.song then scene.song:stop() end
         scene.chart.time = 0
@@ -174,60 +144,112 @@ function scene.keypressed(k)
         scene.chart.time = math.huge
     end
     if not Autoplay then
-        for i,note in ipairs(scene.chart.notes) do
-            local pos = note.time-scene.chart.time
-            if math.abs(pos) <= 0.2 and k == (Keybinds[scene.chart.lanes] or Keybinds[8])[note.lane+1] and not note.destroyed and not note.holding then
-                local t = 0.125
-                local accuracy = (math.abs(pos)/0.2)
-                accuracy = math.max(0,math.min(1,(1/(1-t))*accuracy - ((1/(1-t))-1)))
-                local accValue = (1-accuracy)
-                for R,rating in ipairs(NoteRatings) do
-                    if accValue >= rating.min and accValue < rating.max then
-                        LastRating = R
+        local laneIndex = table.index(Keybinds[scene.chart.lanes] or Keybinds[8], k)
+        if laneIndex then
+            for i,note in ipairs(scene.chart.notes) do
+                local pos = note.time-scene.chart.time
+                if pos > 0.5 then -- too far for us to care
+                    break
+                end
+                local t = NoteTypes[note.type]
+                if t.hit then
+                    local hit,accuracy,marked = t.hit(note, scene.chart.time, laneIndex-1)
+                    if hit then
+                        local accValue = (1-accuracy)
+                        LastRating = GetRating(accValue)
+                        RatingCounts[LastRating] = RatingCounts[LastRating] + 1
+                        if LastRating ~= 1 then FullOvercharge = false end
+                        if LastRating == 1 then
+                            accuracy = 0 -- 100%
+                            local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
+                            for _=1, 4 do
+                                local drawPos = (5)+(15)+(ViewOffset+ViewOffsetFreeze)*(ScrollSpeed*ScrollSpeedMod)
+                                table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
+                            end
+                        end
+                        Charge = Charge + (1-accuracy)
+                        Hits = Hits + 1
+                        HitOffset = HitOffset + (note.time-scene.chart.time)
+                        RealHits = RealHits + 1
+                        Accuracy = Accuracy + (1-accuracy)
+                        local c = math.floor(Charge/scene.chart.totalCharge*100/2-1)
+                        local x = (16+c)*8
+                        RemoveParticlesByID("chargeup")
+                        for _=1,8 do
+                            table.insert(Particles, {id = "chargeup", x = x, y = 24*16+8, vx = love.math.random()*32, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = (c < 80 and ColorID.YELLOW) or (OverchargeColors[love.math.random(1,#OverchargeColors)]), char = "¤"})
+                        end
+                        if note.length <= 0 then
+                            note.destroyed = true
+                        else
+                            note.holding = true
+                            note.heldFor = 0
+                        end
+                        HitAmounts[note.lane+1] = 1
+                        Combo = Combo + 1
+                        if LastRating >= #NoteRatings-1 then
+                            Combo = 0
+                            ComboBreaks = ComboBreaks + 1
+                        end
+                        break
+                    end
+                    if marked then
                         break
                     end
                 end
-                RatingCounts[LastRating] = RatingCounts[LastRating] + 1
-                if LastRating ~= 1 then FullOvercharge = false end
-                if LastRating == 1 then
-                    accuracy = 0 -- 100%
-                    local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
-                    for _=1, 4 do
-                        local drawPos = (5)+(15)+(ViewOffset+ViewOffsetFreeze)*(ScrollSpeed*ScrollSpeedMod)
-                        table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
-                    end
-                end
-                Charge = Charge + (1-accuracy)
-                Hits = Hits + 1
-                HitOffset = HitOffset + pos
-                RealHits = RealHits + 1
-                Accuracy = Accuracy + (1-accuracy)
-                local c = math.floor(Charge/scene.chart.totalCharge*100/2-1)
-                local x = (16+c)*8
-                RemoveParticlesByID("chargeup")
-                for _=1,8 do
-                    table.insert(Particles, {id = "chargeup", x = x, y = 24*16+8, vx = love.math.random()*32, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = (c < 80 and ColorID.YELLOW) or (OverchargeColors[love.math.random(1,#OverchargeColors)]), char = "¤"})
-                end
-                if note.length <= 0 then
-                    note.destroyed = true
-                else
-                    note.holding = true
-                    note.heldFor = 0
-                end
-                HitAmounts[note.lane+1] = 1
-                Combo = Combo + 1
-                if LastRating >= #NoteRatings-1 then
-                    Combo = 0
-                    ComboBreaks = ComboBreaks + 1
-                end
-                break
+                -- local pos = note.time-scene.chart.time
+                -- if math.abs(pos) <= 0.2 and k == (Keybinds[scene.chart.lanes] or Keybinds[8])[note.lane+1] and not note.destroyed and not note.holding then
+                --     local t = 0.125
+                --     local accuracy = (math.abs(pos)/0.2)
+                --     accuracy = math.max(0,math.min(1,(1/(1-t))*accuracy - ((1/(1-t))-1)))
+                --     local accValue = (1-accuracy)
+                --     for R,rating in ipairs(NoteRatings) do
+                --         if accValue >= rating.min and accValue < rating.max then
+                --             LastRating = R
+                --             break
+                --         end
+                --     end
+                --     RatingCounts[LastRating] = RatingCounts[LastRating] + 1
+                --     if LastRating ~= 1 then FullOvercharge = false end
+                --     if LastRating == 1 then
+                --         accuracy = 0 -- 100%
+                --         local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
+                --         for _=1, 4 do
+                --             local drawPos = (5)+(15)+(ViewOffset+ViewOffsetFreeze)*(ScrollSpeed*ScrollSpeedMod)
+                --             table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
+                --         end
+                --     end
+                --     Charge = Charge + (1-accuracy)
+                --     Hits = Hits + 1
+                --     HitOffset = HitOffset + pos
+                --     RealHits = RealHits + 1
+                --     Accuracy = Accuracy + (1-accuracy)
+                --     local c = math.floor(Charge/scene.chart.totalCharge*100/2-1)
+                --     local x = (16+c)*8
+                --     RemoveParticlesByID("chargeup")
+                --     for _=1,8 do
+                --         table.insert(Particles, {id = "chargeup", x = x, y = 24*16+8, vx = love.math.random()*32, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = (c < 80 and ColorID.YELLOW) or (OverchargeColors[love.math.random(1,#OverchargeColors)]), char = "¤"})
+                --     end
+                --     if note.length <= 0 then
+                --         note.destroyed = true
+                --     else
+                --         note.holding = true
+                --         note.heldFor = 0
+                --     end
+                --     HitAmounts[note.lane+1] = 1
+                --     Combo = Combo + 1
+                --     if LastRating >= #NoteRatings-1 then
+                --         Combo = 0
+                --         ComboBreaks = ComboBreaks + 1
+                --     end
+                --     break
+                -- end
             end
         end
     end
 end
 
 function scene.update(dt)
-    if Paused or SceneManager.TransitioningIn() then return end
+    if Paused or SceneManager.TransitioningIn() or SceneManager.TransitioningOut() then return end
     if PauseTimer > 0 then
         PauseTimer = PauseTimer - dt
         if PauseTimer <= 0 then
@@ -269,6 +291,18 @@ function scene.update(dt)
 
     scene.lastTime = scene.lastTime + dt*(scene.modifiers.speed or 1)
 
+    for _,note in ipairs(scene.chart.notes) do
+        if note.laneTarget then note.lane = note.laneTarget end
+        if (note.smoothing or 0) == 0 then
+            if note.timeTarget then note.time = note.timeTarget end
+            if note.laneTarget then note.visualLane = note.laneTarget end
+        else
+            local blend = math.pow(1/note.smoothing,dt)
+            if note.timeTarget then note.time = blend*(note.time-note.timeTarget)+note.timeTarget end
+            if note.laneTarget then note.visualLane = blend*(note.visualLane-note.laneTarget)+note.laneTarget end
+        end
+    end
+
     do
         local i = 1
         local num = #scene.chart.notes
@@ -279,38 +313,55 @@ function scene.update(dt)
             end
             do
                 local pos = note.time-scene.chart.time
+                if pos > 0.5 then -- too far for us to care
+                    i = num
+                    break
+                end
                 if Autoplay then
                     if pos <= 0 then
-                        if (note.heldFor or 0) <= 0 then
-                            Charge = Charge + 1
-                            Combo = Combo + 1
-                            LastRating = 1
-                            RatingCounts[LastRating] = RatingCounts[LastRating] + 1
-                            local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
-                            for _=1, 4 do
-                                local drawPos = (5)+(15)+(ViewOffset+ViewOffsetFreeze)*(ScrollSpeed*ScrollSpeedMod)
-                                table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
+                        local t = NoteTypes[note.type]
+                        local hit = true
+                        if t.hit then
+                            hit = false
+                            for l = 0, scene.chart.lanes-1 do
+                                local hitThis,_,marked = t.hit(note, note.time, l)
+                                if marked then
+                                    PressAmounts[l+1] = 32
+                                    HitAmounts[l+1] = 1
+                                end
+                                hit = hit or hitThis
                             end
-                            Accuracy = Accuracy + 1
-                            Hits = Hits + 1
-                            HitOffset = HitOffset + 0
-                            RealHits = RealHits + 1
-                            local c = math.floor(Charge/scene.chart.totalCharge*100/2-1)
-                            local x = (16+c)*8
-                            RemoveParticlesByID("chargeup")
-                            for _=1,8 do
-                                table.insert(Particles, {id = "chargeup", x = x, y = 24*16+8, vx = love.math.random()*32, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = (c < 80 and ColorID.YELLOW) or (OverchargeColors[love.math.random(1,#OverchargeColors)]), char = "¤"})
+                        end
+                        if hit then
+                            if (note.heldFor or 0) <= 0 then
+                                Charge = Charge + 1
+                                Combo = Combo + 1
+                                LastRating = 1
+                                RatingCounts[LastRating] = RatingCounts[LastRating] + 1
+                                local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
+                                for _=1, 4 do
+                                    local drawPos = (5)+(15)+(ViewOffset+ViewOffsetFreeze)*(ScrollSpeed*ScrollSpeedMod)
+                                    table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
+                                end
+                                Accuracy = Accuracy + 1
+                                Hits = Hits + 1
+                                HitOffset = HitOffset + 0
+                                RealHits = RealHits + 1
+                                local c = math.floor(Charge/scene.chart.totalCharge*100/2-1)
+                                local x = (16+c)*8
+                                RemoveParticlesByID("chargeup")
+                                for _=1,8 do
+                                    table.insert(Particles, {id = "chargeup", x = x, y = 24*16+8, vx = love.math.random()*32, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = (c < 80 and ColorID.YELLOW) or (OverchargeColors[love.math.random(1,#OverchargeColors)]), char = "¤"})
+                                end
                             end
-                            PressAmounts[note.lane+1] = 32
+                            if note.length <= 0 then
+                                note.destroyed = true
+                                i = i - 1
+                            else
+                                note.holding = true
+                            end
+                            if not Autoplay then PressAmounts[note.lane+1] = 1 end
                         end
-                        if note.length <= 0 then
-                            note.destroyed = true
-                            i = i - 1
-                        else
-                            note.holding = true
-                        end
-                        HitAmounts[note.lane+1] = 1
-                        if not Autoplay then PressAmounts[note.lane+1] = 1 end
                     end
                 end
                 if note.holding and pos <= 0 then
@@ -330,7 +381,11 @@ function scene.update(dt)
                         end
                     end
                 end
+                local t = NoteTypes[note.type]
                 if pos <= -0.25 then
+                    if t.miss then
+                        t.miss(note)
+                    end
                     if note.length <= 0 then
                         note.destroyed = true
                         i = i - 1
@@ -391,6 +446,10 @@ function scene.update(dt)
         while i <= num do
             local effect = scene.chart.effects[i]
             local pos = effect.time-scene.chart.time
+            if pos > 0 then -- too far for us to care
+                i = num
+                break
+            end
             if effect.destroyed then
                 goto continue
             end
@@ -411,7 +470,7 @@ function scene.update(dt)
     if scene.song then
         if scene.chart.time >= scene.song:getDuration("seconds")-AudioOffset then
             if not SceneManager.TransitionState.Transitioning then
-                SceneManager.Transition("scenes/rating", {chart = scene.chart, songData = scene.songData, difficulty = scene.difficulty, offset = HitOffset/RealHits, ratings = RatingCounts, accuracy = Accuracy/math.max(Hits,1), charge = Charge/scene.chart.totalCharge, fullCombo = ComboBreaks == 0, fullOvercharge = FullOvercharge})
+                SceneManager.Transition("scenes/rating", {chart = scene.chart, songData = scene.songData, difficulty = scene.difficulty, offset = HitOffset/RealHits, ratings = RatingCounts, accuracy = Accuracy/math.max(Hits,1), charge = Charge/scene.chart.totalCharge*100, fullCombo = ComboBreaks == 0, fullOvercharge = FullOvercharge})
             end
         end
     end
@@ -433,16 +492,16 @@ function scene.update(dt)
         end
     end
 
-    do
-        local blend = math.pow(0.01,dt)
-        CurveModifier = blend*(CurveModifier-1)+1
-        ScreenShader:send("curveStrength", CurveStrength*CurveModifier)
-    end
-    do
-        local blend = math.pow(0.05,dt)
-        Chromatic = blend*Chromatic
-        ScreenShader:send("chromaticStrength", Chromatic)
-    end
+    -- do
+    --     local blend = math.pow(0.01,dt)
+    --     CurveModifier = blend*(CurveModifier-1)+1
+    --     ScreenShader:send("curveStrength", CurveStrength*CurveModifier)
+    -- end
+    -- do
+    --     local blend = math.pow(0.05,dt)
+    --     Chromatic = blend*Chromatic
+    --     ScreenShader:send("chromaticStrength", Chromatic)
+    -- end
     do
         if DisplayShiftSmoothing == 0 then
             DisplayShift[1] = DisplayShiftTarget[1]
@@ -469,6 +528,16 @@ function scene.update(dt)
         else
             local blend = math.pow(1/DisplayRotationSmoothing,dt)
             DisplayRotation = blend*(DisplayRotation-DisplayRotationTarget)+DisplayRotationTarget
+        end
+    end
+    do
+        if DisplayShearSmoothing == 0 then
+            DisplayShear[1] = DisplayShearTarget[1]
+            DisplayShear[2] = DisplayShearTarget[2]
+        else
+            local blend = math.pow(1/DisplayShearSmoothing,dt)
+            DisplayShear[1] = blend*(DisplayShear[1]-DisplayShearTarget[1])+DisplayShearTarget[1]
+            DisplayShear[2] = blend*(DisplayShear[2]-DisplayShearTarget[2])+DisplayShearTarget[2]
         end
     end
     do
@@ -506,13 +575,15 @@ function scene.update(dt)
     end
 
     MissTime = math.max(0,MissTime - dt * 8)
-    ScreenShader:send("tearStrength", MissTime*8/Display:getWidth())
-    
+    ScreenShader:send("curveStrength", CurveStrength*CurveModifier)
+    ScreenShader:send("tearStrength", TearingStrength*(MissTime*8/Display:getWidth() + TearingModifier))
+    ScreenShader:send("chromaticStrength", Chromatic * ChromaticModifier)
+    ScreenShader:send("horizBlurStrength", 0.5)
     ScreenShader:send("tearTime", love.timer.getTime())
 
     for i = 1, scene.chart.lanes do
-        PressAmounts[i] = math.max(0, math.min(Autoplay and math.huge or 1, PressAmounts[i] + dt*8*((love.keyboard.isDown((Keybinds[scene.chart.lanes] or Keybinds[8])[i]) and not Autoplay) and 1/dt or -1/dt)))
-        HitAmounts[i] = math.max(0, math.min(1, HitAmounts[i] - dt*8))
+        PressAmounts[i] = math.max(0, math.min(Autoplay and math.huge or 1, (PressAmounts[i] or 0) + dt*8*((love.keyboard.isDown((Keybinds[scene.chart.lanes] or Keybinds[8])[i]) and not Autoplay) and 1/dt or -1/dt)))
+        HitAmounts[i] = math.max(0, math.min(1, (HitAmounts[i] or 0) - dt*8))
     end
     if scene.background and scene.background.update then
         scene.background.update(dt)
@@ -537,12 +608,15 @@ function scene.draw()
     love.graphics.translate(320,240)
     love.graphics.scale(DisplayScale[1], DisplayScale[2])
     love.graphics.rotate(DisplayRotation)
+    love.graphics.shear(DisplayShear[1], DisplayShear[2])
     love.graphics.translate(-320,-240)
+
+    love.graphics.translate(AnaglyphSide, 0)
 
     -- Debug info
     love.graphics.setColor(TerminalColors[16])
-    love.graphics.print("Full Combo: " .. tostring(ComboBreaks == 0), 50*8, 5*16)
-    love.graphics.print("Full Overcharge: " .. tostring(FullOvercharge), 50*8, 6*16)
+    love.graphics.print("Full Combo: " .. tostring(ComboBreaks == 0), 50*8 + AnaglyphSide*0.75, 5*16)
+    love.graphics.print("Full Overcharge: " .. tostring(FullOvercharge), 50*8 + AnaglyphSide*0.75, 6*16)
 
     -- Chart and bar outlines
     DrawBoxHalfWidth((80-(scene.chart.lanes*4-1))/2 - 1, 4, scene.chart.lanes*4-1, 16)
@@ -556,16 +630,18 @@ function scene.draw()
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     love.graphics.print("┌─" .. ("─"):rep(utf8.len(fullText)) .. "─┐\n│ " .. (" "):rep(utf8.len(fullText)) .. " │\n└─" .. ("─"):rep(utf8.len(fullText)) .. "─┘", ((80-(utf8.len(fullText)+4))/2)*8, 1*16)
     love.graphics.print(scene.songData.name .. " - ", ((80-(utf8.len(fullText)+4))/2 + 2)*8, 2*16)
-    love.graphics.setColor(difficultyColor)
-    love.graphics.print(difficultyName, ((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - "))*8, 2*16)
+    -- love.graphics.setColor(difficultyColor)
+    -- love.graphics.print(difficultyName, ((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - "))*8, 2*16)
+    PrintDifficulty(((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - "))*8, 2*16, scene.difficulty or "easy", level or 0, "left")
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    love.graphics.print(tostring(level), ((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - " .. difficultyName .. " "))*8, 2*16)
+    -- love.graphics.print(tostring(level), ((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - " .. difficultyName .. " "))*8, 2*16)
 
     if Autoplay then love.graphics.print("┬──────────┬\n│ ".. (Showcase and "SHOWCASE" or "AUTOPLAY") .. " │\n┴──────────┴", 34*8, 21*16) end
     local acc = math.floor(Accuracy/math.max(Hits,1)*100)
 
     love.graphics.print("┬──────────┬\n│ ACC " .. (" "):rep(3-#tostring(acc))..acc.. "% │\n└──────────┘", 34*8, 25*16)
     love.graphics.print("┌──────────┐\n│  CHARGE  │\n├──────────┴", 14*8, 21*16)
+    -- love.graphics.print("┌──────────┐\n│  CHEESE  │\n├──────────┴", 14*8, 21*16)
     local c = Charge/scene.chart.totalCharge*100
     local chargeAmount = math.floor(c/100*ChargeYield)
     if c ~= c then chargeAmount = 0 end
@@ -607,7 +683,11 @@ function scene.draw()
         if v > 0 then
             local drawPos = (5)+(15)+(ViewOffset+ViewOffsetFreeze)*(ScrollSpeed*ScrollSpeedMod)
             love.graphics.setColor(TerminalColors[NoteColors[((i-1)%(#NoteColors))+1][v+1]])
-            love.graphics.print("███", x*8, drawPos*16-16)
+            love.graphics.print("███", x*8 + AnaglyphSide*0.75, drawPos*16-16)
+            -- if HitAmounts[i] > 0 then
+            --     love.graphics.setColor(TerminalColors[ColorID.BLACK])
+            --     love.graphics.print("○", x*8 + 8 + AnaglyphSide*0.75, drawPos*16-16)
+            -- end
         end
     end
 
@@ -624,11 +704,12 @@ function scene.draw()
     -- Last rating and combo
     if NoteRatings[LastRating] then
         local x,y = 40*8, 6*16
+        x = x + AnaglyphSide*0.75
         NoteRatings[LastRating].draw(x,y,true)
     end
     local comboString = tostring(Combo)
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    love.graphics.print(comboString, ((80-(#comboString))/2)*8, 7*16)
+    love.graphics.print(comboString, ((80-(#comboString))/2)*8 + AnaglyphSide*0.75, 7*16)
 
     -- Rating counts
     -- for i,rating in ipairs(NoteRatings) do

@@ -10,6 +10,8 @@ local images = {
     [6] = love.graphics.newImage("test_cover.png")
 }
 
+local sample = love.graphics.newImage("sample.png")
+
 local i = 0
 
 function scene.keypressed(k)
@@ -19,7 +21,8 @@ function scene.keypressed(k)
 end
 
 function scene.draw()
-    love.graphics.draw(images[i], 128, 128, 0, 2, 2)
+    love.graphics.draw(sample)
+    -- love.graphics.draw(images[i], 128, 128, 0, 2, 2)
 end
 
 return scene

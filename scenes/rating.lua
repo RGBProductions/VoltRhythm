@@ -2,54 +2,21 @@ local utf8 = require "utf8"
 
 local scene = {}
 
-local defaultSongCover = love.graphics.newImage("test_cover.png")
-
 local resultsText = love.graphics.newImage("images/results.png")
 
-local ranks = {
-    {
-        image = love.graphics.newImage("images/rank/F.png"),
-        charge = 0.3
-    },
-    {
-        image = love.graphics.newImage("images/rank/D.png"),
-        charge = 0.6
-    },
-    {
-        image = love.graphics.newImage("images/rank/C.png"),
-        charge = 0.7
-    },
-    {
-        image = love.graphics.newImage("images/rank/B.png"),
-        charge = 0.8
-    },
-    {
-        image = love.graphics.newImage("images/rank/A.png"),
-        charge = 0.9
-    },
-    {
-        image = love.graphics.newImage("images/rank/S.png"),
-        charge = 0.95
-    },
-    {
-        image = love.graphics.newImage("images/rank/O.png"),
-        charge = math.huge
-    }
-}
-
 local function getRank(charge)
-    for i,rank in ipairs(ranks) do
+    for i,rank in ipairs(Ranks) do
         if charge < rank.charge then
             return i
         end
     end
-    return #ranks
+    return #Ranks
 end
 
 function scene.load(args)
-    scene.rank = getRank(args.charge or 0)
-    scene.charge = math.floor(math.min(args.charge, 0.8)*ChargeYield)
-    scene.overcharge = math.floor(math.max(args.charge-0.8, 0)*ChargeYield)
+    scene.rank = getRank((args.charge or 0) / 100)
+    scene.charge = math.floor(math.min(args.charge / 100, 0.8)*ChargeYield)
+    scene.overcharge = math.floor(math.max((args.charge / 100)-0.8, 0)*ChargeYield)
     scene.accuracy = args.accuracy
     scene.fullCombo = args.fullCombo
     scene.fullOvercharge = args.fullOvercharge
@@ -58,11 +25,55 @@ function scene.load(args)
     scene.difficulty = args.difficulty
     scene.chart = args.chart
     scene.ratings = args.ratings
+    scene.cover = Assets.GetCover((args.songData or {}).path or "")
+    scene.textScroll = 0
+    scene.textScrollTimer = 2
+    scene.textScrollDirection = -1
     if Assets.Source(scene.chart.song) then
         Assets.Source(scene.chart.song):stop()
     end
     MissTime = 0
     ScreenShader:send("tearStrength", MissTime*8/Display:getWidth())
+
+    local spl = scene.songData.path:split("/")
+    local id = spl[#spl]
+
+    local savedRating = Save.Read("songs."..id.."."..scene.difficulty)
+    local shouldSave = not Autoplay and not Showcase
+    if savedRating then
+        if (savedRating.accuracy or 0) > scene.accuracy or (savedRating.charge or 0) > scene.charge or (savedRating.overcharge or 0) > scene.overcharge then
+            shouldSave = false
+        end
+    end
+    if shouldSave then
+        Save.Write("songs."..id.."."..scene.difficulty,{
+            ratings = scene.ratings,
+            charge = scene.charge,
+            overcharge = scene.overcharge,
+            accuracy = scene.accuracy,
+            rank = scene.rank,
+            fullCombo = scene.fullCombo,
+            fullOvercharge = scene.fullOvercharge
+        })
+    end
+end
+
+function scene.update(dt)
+    local songName = scene.songData.name
+    if #songName > 20 then
+        if scene.textScrollTimer <= 0 then
+            local min,max = 0,#songName-20
+            scene.textScroll = math.max(min,math.min(max,scene.textScroll + scene.textScrollDirection*dt*3))
+            if scene.textScroll >= max or scene.textScroll <= min then
+                scene.textScrollTimer = 2
+            end
+        else
+            scene.textScrollTimer = scene.textScrollTimer - dt
+            if scene.textScrollTimer <= 0 then
+                scene.textScrollDirection = -scene.textScrollDirection
+            end
+        end
+    end
 end
 
 function scene.keypressed(k)
@@ -72,6 +83,9 @@ function scene.keypressed(k)
         scene.chart:recalculateCharge()
         scene.chart.time = TimeBPM(-16,scene.chart.bpm)
         SceneManager.Transition("scenes/game", {songData = scene.songData, difficulty = scene.difficulty})
+    end
+    if k == "escape" then
+        SceneManager.Transition("scenes/songselect")
     end
 end
 
@@ -113,17 +127,23 @@ function scene.draw()
     local level = scene.songData:getLevel(scene.difficulty or "easy")
     local combinedDifficultyString = difficulty .. " " .. level
     love.graphics.setColor(1,1,1)
-    love.graphics.draw(defaultSongCover, 272, 224)
-    love.graphics.setColor(difficultyColor)
-    love.graphics.print(difficulty, 232+8*(22-#combinedDifficultyString)/2, 192)
-    love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    love.graphics.print(tostring(level), 232+8*((22-#combinedDifficultyString)/2 + #difficulty+1), 192)
-    love.graphics.print(songName, 232+8*(22-#songName)/2, 320 + 16*1)
+    love.graphics.draw(scene.cover, 272, 224)
+    -- love.graphics.setColor(difficultyColor)
+    -- love.graphics.print(difficulty, 232+8*(22-#combinedDifficultyString)/2, 192)
+    PrintDifficulty(232+88, 192, scene.difficulty or "easy", level or 0, "center")
+    -- love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    -- love.graphics.print(tostring(level), 232+8*((22-#combinedDifficultyString)/2 + #difficulty+1), 192)
+
+    local startText = 1+math.floor(scene.textScroll)
+    local endText = math.min(#songName, 20)+math.floor(scene.textScroll)
+    local displaySongName = songName:sub(startText, endText)
+    love.graphics.print(displaySongName, 232+8*(22-#displaySongName)/2, 320 + 16*1)
+
     love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
     love.graphics.print(artistName, 232+8*(22-#artistName)/2, 320 + 16*2)
 
     love.graphics.setColor(1,1,1)
-    love.graphics.draw(ranks[scene.rank].image, 448, 216, 0, 4)
+    love.graphics.draw(Ranks[scene.rank].image, 448, 216, 0, 4)
     local rankText = "RANK"
     love.graphics.print(rankText, 424+8*(22-#rankText)/2, 192)
     if scene.fullOvercharge then

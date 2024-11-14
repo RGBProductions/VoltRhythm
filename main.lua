@@ -13,6 +13,97 @@ Version = (require "version")()
 
 ChargeYield = 200
 
+NoteRatings = {
+    {
+        draw = function(ox,oy,center)
+            local txt = "OVERCHARGE"
+            for x = 1, #txt do
+                local c = txt:sub(x,x)
+                love.graphics.setColor(TerminalColors[OverchargeColors[(x-1)%#OverchargeColors+1]])
+                love.graphics.print(c, ox+((center and (-(#txt)/2) or 0) + x-1)*8, oy)
+            end
+        end,
+        min = 0.9,
+        max = math.huge
+    },
+    {
+        draw = function(ox,oy,center)
+            love.graphics.setColor(TerminalColors[ColorID.GOLD])
+            local txt = "SURGE"
+            love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
+        end,
+        min = 0.8,
+        max = 0.9
+    },
+    {
+        draw = function(ox,oy,center)
+            love.graphics.setColor(TerminalColors[ColorID.YELLOW])
+            local txt = "AMP"
+            love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
+        end,
+        min = 0.6,
+        max = 0.8
+    },
+    {
+        draw = function(ox,oy,center)
+            love.graphics.setColor(TerminalColors[ColorID.GREEN])
+            local txt = "FLUX"
+            love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
+        end,
+        min = 0.4,
+        max = 0.6
+    },
+    {
+        draw = function(ox,oy,center)
+            love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
+            local txt = "NULL"
+            love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
+        end,
+        min = 0.15,
+        max = 0.4
+    },
+    {
+        draw = function(ox,oy,center)
+            love.graphics.setColor(TerminalColors[ColorID.RED])
+            local txt = "BREAK"
+            love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
+        end,
+        min = 0,
+        max = 0.15
+    }
+}
+
+Ranks = {
+    {
+        image = love.graphics.newImage("images/rank/F.png"),
+        charge = 0.3
+    },
+    {
+        image = love.graphics.newImage("images/rank/D.png"),
+        charge = 0.6
+    },
+    {
+        image = love.graphics.newImage("images/rank/C.png"),
+        charge = 0.7
+    },
+    {
+        image = love.graphics.newImage("images/rank/B.png"),
+        charge = 0.8
+    },
+    {
+        image = love.graphics.newImage("images/rank/A.png"),
+        charge = 0.9
+    },
+    {
+        image = love.graphics.newImage("images/rank/S.png"),
+        charge = 0.95
+    },
+    {
+        image = love.graphics.newImage("images/rank/O.png"),
+        charge = math.huge
+    }
+}
+
 function TimeBPM(t,bpm)
     local secPerSixteenth = 15/bpm
     return secPerSixteenth*t
@@ -24,7 +115,10 @@ function WhichSixteenth(t,bpm)
 end
 
 -- ーあいうえおかきくけこさしすせそたちつてとなにぬねの
-Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%().,'\"!?:+-┌─┐│└┘├┤┴┬█▓▒░┊┈╬○◇▷◁║¤👑")
+
+-- ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω
+
+Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%().,'\"!?:+-_=┌─┐│└┘├┤┴┬█▓▒░┊┈╬○◇▷◁║¤👑▧▥▨◐◑◻🡙ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω")
 
 function DrawBox(x,y,w,h)
     love.graphics.print("┌"..("──"):rep(w).."┐\n"..("│"..("  "):rep(w).."│\n"):rep(h).."└"..("──"):rep(w).."┘", x*8, y*16)
@@ -38,15 +132,30 @@ function DrawBoxHalfWidth(x,y,w,h)
     love.graphics.print("┌"..("─"):rep(w).."┐\n"..("│"..(" "):rep(w).."│\n"):rep(h).."└"..("─"):rep(w).."┘", x*8, y*16)
 end
 
+function table.index(t,v)
+    for k,n in pairs(t) do
+        if n == v then
+            return k
+        end
+    end
+    return nil
+end
+
 require "transition"
 require "scenemanager"
 
 local loadedProfile = Save.Load()
+if not loadedProfile then
+    Save.SetProfile("rgb")
+end
 if loadedProfile then
-    SceneManager.LoadScene("scenes/profile")
+    SceneManager.LoadScene("scenes/songselect")
+    -- SceneManager.LoadScene("scenes/profile")
 else
-    local songData = LoadSongData("songs/cute")
-    SceneManager.LoadScene("scenes/game", {songData = songData, difficulty = "hard"})
+    -- SceneManager.LoadScene("scenes/photosensitivity")
+    -- local songData = LoadSongData("songs/cute")
+    -- SceneManager.LoadScene("scenes/game", {songData = songData, difficulty = "hard"})
+    SceneManager.LoadScene("scenes/songselect")
 end
 
 -- SceneManager.LoadScene("scenes/game", {chart = "songs/cute/hard.json"})
@@ -55,30 +164,45 @@ border = require "borders.overcharged"
 
 Keybinds = {
     [4] = {"d","f","j","k"},
-    [8] = {"s","d","f","b","n","j","k","l"}
+    [8] = {"s","d","f","b","n","j","k","l"},
+    [12] = {"a","s","d","f","g","h","j","k","l",";","'","return"}
 }
 
 Display = love.graphics.newCanvas(640,480)
 Display:setFilter("linear", "linear")
+Display2 = love.graphics.newCanvas(640,480)
+Display2:setFilter("linear", "linear")
 love.graphics.setLineWidth(1)
 love.graphics.setLineStyle("rough")
 love.graphics.setFont(Font)
 
+AnaglyphMerge = love.graphics.newCanvas(640,480)
 Bloom = love.graphics.newCanvas()
 Final = love.graphics.newCanvas()
 Partial = love.graphics.newCanvas()
 
 CurveStrength = 0.5
-CurveModifier = 1
 
-Chromatic = 0
+CurveModifier = 1
+CurveModifierTarget = 1
+CurveModifierSmoothing = 0
+
+Chromatic = 1
+ChromaticModifier = 0
+ChromaticModifierTarget = 0
+ChromaticModifierSmoothing = 0
+
+TearingStrength = 1
+TearingModifier = 0
+TearingModifierTarget = 0
+TearingModifierSmoothing = 0
 
 ScreenShader = love.graphics.newShader("screen.frag")
 ScreenShader:send("curveStrength", CurveStrength*CurveModifier)
 ScreenShader:send("scanlineStrength", 0.5)
 ScreenShader:send("textureSize", {Display:getDimensions()})
 ScreenShader:send("tearStrength", 0)
-ScreenShader:send("chromaticStrength", Chromatic)
+ScreenShader:send("chromaticStrength", Chromatic*ChromaticModifier)
 ScreenShader:send("horizBlurStrength", 0.5)
 ScreenShader:send("tearTime", love.timer.getTime())
 
@@ -156,13 +280,50 @@ function love.wheelmoved(x,y)
     SceneManager.WheelMoved(x,y)
 end
 
+AnaglyphL = -4
+AnaglyphR = 4
+Anaglyph = love.graphics.newShader("anaglyph.frag")
+Anaglyph:send("left", Display2)
+AnaglyphSide = 0
+AnaglyphOn = false
+
 function love.update(dt)
     if border then border.update(dt) end
+
+    do
+        if CurveModifierSmoothing == 0 then
+            CurveModifier = CurveModifierTarget
+        else
+            local blend = math.pow(1/CurveModifierSmoothing,dt)
+            CurveModifier = blend*(CurveModifier-CurveModifierTarget)+CurveModifierTarget
+        end
+    end
+    do
+        if ChromaticModifierSmoothing == 0 then
+            ChromaticModifier = ChromaticModifierTarget
+        else
+            local blend = math.pow(1/ChromaticModifierSmoothing,dt)
+            ChromaticModifier = blend*(ChromaticModifier-ChromaticModifierTarget)+ChromaticModifierTarget
+        end
+    end
+    do
+        if TearingModifierSmoothing == 0 then
+            TearingModifier = TearingModifierTarget
+        else
+            local blend = math.pow(1/TearingModifierSmoothing,dt)
+            TearingModifier = blend*(TearingModifier-TearingModifierTarget)+TearingModifierTarget
+        end
+    end
+
     SceneManager.Update(dt)
     SceneManager.UpdateTransition(dt)
 end
 
 function love.draw()
+    AnaglyphSide = 0
+    if AnaglyphOn then
+        AnaglyphSide = AnaglyphR
+    end
     love.graphics.setCanvas(Display)
     love.graphics.clear(0,0,0)
 
@@ -171,12 +332,36 @@ function love.draw()
     love.graphics.setColor(1,1,1)
     SceneManager.DrawTransition()
     love.graphics.setColor(1,1,1)
-    if border then border.draw() end
+    if border and not SuppressBorder then border.draw() end
     love.graphics.setColor(1,1,1)
     love.graphics.print(Version.name .. " v" .. Version.version, 16, 480-16-16)
 
     love.graphics.setColor(TerminalColors[16])
     -- love.graphics.print("▒", MouseX-4, MouseY-8)
+
+    if AnaglyphOn then
+        AnaglyphSide = AnaglyphL
+        love.graphics.setCanvas(Display2)
+        love.graphics.clear(0,0,0)
+    
+        love.graphics.setColor(1,1,1)
+        SceneManager.Draw()
+        love.graphics.setColor(1,1,1)
+        SceneManager.DrawTransition()
+        love.graphics.setColor(1,1,1)
+        if border and not SuppressBorder then border.draw() end
+        love.graphics.setColor(1,1,1)
+        love.graphics.print(Version.name .. " v" .. Version.version, 16, 480-16-16)
+    
+        love.graphics.setColor(TerminalColors[16])
+        love.graphics.setCanvas(AnaglyphMerge)
+        love.graphics.setShader(Anaglyph)
+        Anaglyph:send("left", Display2)
+        love.graphics.draw(Display)
+        love.graphics.setCanvas(Display)
+        love.graphics.clear(0,0,0)
+        love.graphics.draw(AnaglyphMerge)
+    end
     
     love.graphics.setCanvas(Final)
     love.graphics.clear(0,0,0)
@@ -198,6 +383,12 @@ function love.draw()
     love.graphics.setShader()
 end
 
+function love.focus(f)
+    SceneManager.Focus(f)
+end
+
 function love.quit()
     Save.Flush()
 end
+
+love.errorhandler = require "errorhandler"

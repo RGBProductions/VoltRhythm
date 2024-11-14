@@ -2,13 +2,12 @@
     {
         "name": "mainline",
         "sections": [
-            "campaign/sections/section1"
-        ]
-    },
-    {
-        "name": "side",
-        "songs": [
-            "cute"
+            {
+                "name": "mainline.section1",
+                "songs": [
+                    "cute"
+                ]
+            }
         ]
     }
 ]

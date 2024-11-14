@@ -40,3 +40,29 @@ function Assets.Background(path)
     backgrounds[path] = r
     return backgrounds[path]
 end
+
+local defaultCovers = {
+    love.graphics.newImage("images/default0.png"),
+    love.graphics.newImage("images/default1.png"),
+    love.graphics.newImage("images/default2.png"),
+    love.graphics.newImage("images/default3.png"),
+    love.graphics.newImage("images/default4.png"),
+    love.graphics.newImage("images/default5.png")
+}
+
+function Assets.GetDefaultCover(name)
+    local hashed = love.data.hash("md5", name)
+    return defaultCovers[((hashed:byte(1,1) % hashed:byte(2,2)) % #defaultCovers) + 1]
+end
+
+local covers = {}
+
+function Assets.GetCover(path)
+    if covers[path] then return covers[path] end
+    if not love.filesystem.getInfo(path.."/cover.png") then
+        covers[path] = Assets.GetDefaultCover(path)
+    else
+        covers[path] = love.graphics.newImage(path.."/cover.png")
+    end
+    return covers[path]
+end

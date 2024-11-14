@@ -6,11 +6,13 @@ local profiles = {}
 
 local defaultSave = {
     name = "Broken Profile",
-    charge = 0,
-    overcharge = 0
+    songs = {}
 }
 
 function Save.Flush()
+    if not love.filesystem.getInfo("save") then
+        love.filesystem.createDirectory("save")
+    end
     for name,data in pairs(profiles) do
         love.filesystem.write("save/" .. name .. ".json", json.encode(data))
     end
@@ -43,10 +45,32 @@ function Save.SetProfile(profile)
     end
 end
 
+---@param key string
+---@param value any
 function Save.Write(key,value)
-    profiles[Save.Profile][key] = value
+    if not profiles[Save.Profile] then return end
+    local cur = profiles[Save.Profile]
+    local spl = key:split("%.")
+    local finalKey = table.remove(spl,#spl)
+    for _,v in ipairs(spl) do
+        if not cur[v] then
+            cur[v] = {}
+        end
+        cur = cur[v]
+    end
+    cur[finalKey] = value
 end
 
 function Save.Read(key)
-    return profiles[Save.Profile][key]
+    if not profiles[Save.Profile] then return end
+    local cur = profiles[Save.Profile]
+    local spl = key:split("%.")
+    local finalKey = table.remove(spl,#spl)
+    for _,v in ipairs(spl) do
+        if not cur[v] then
+            return
+        end
+        cur = cur[v]
+    end
+    return cur[finalKey]
 end
