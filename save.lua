@@ -30,7 +30,7 @@ function Save.Load()
     end
     local lastProfile = love.filesystem.read("lastprofile")
     if lastProfile and profiles[lastProfile] then
-        Save.Profile = lastProfile
+        Save.SetProfile(lastProfile)
         return true
     end
     return false
@@ -43,6 +43,7 @@ function Save.SetProfile(profile)
         profiles[Save.Profile] = table.merge({}, defaultSave)
         profiles[Save.Profile].name = profile
     end
+    profiles[Save.Profile].lastAccess = os.time()
 end
 
 ---@param key string
@@ -73,4 +74,15 @@ function Save.Read(key)
         cur = cur[v]
     end
     return cur[finalKey]
+end
+
+function Save.GetProfileList()
+    local list = {}
+    for k,v in pairs(profiles) do
+        table.insert(list, {id = k, name = v.name, lastAccess = v.lastAccess or 0})
+    end
+    table.sort(list, function (a, b)
+        return (a.lastAccess or 0) > (b.lastAccess or 0)
+    end)
+    return list
 end

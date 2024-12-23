@@ -13,6 +13,28 @@ function Assets.Source(path)
     return sources[path]
 end
 
+local previews = {}
+
+---@return love.Source?
+function Assets.Preview(path,section)
+    if not path then return nil end
+    if previews[path] then return previews[path] end
+    if not love.filesystem.getInfo(path) then return nil end
+    local s,r = pcall(love.sound.newSoundData, path)
+    if not s then return nil end
+    local rate = r:getSampleRate()
+    local channels = r:getChannelCount()
+    local result = love.sound.newSoundData(math.floor((section[2]-section[1])*rate), rate, r:getBitDepth(), channels)
+    local A = math.floor(section[1]*rate)*channels-2
+    local OOR = 0
+    for i = A, math.floor(section[2]*rate)*channels-3 do
+        pcall(result.setSample, result, i-A,r:getSample(i))
+    end
+    local source = love.audio.newSource(result)
+    previews[path] = source
+    return previews[path]
+end
+
 local videos = {}
 
 ---@return love.Video?

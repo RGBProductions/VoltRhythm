@@ -5,7 +5,13 @@
             {
                 "name": "mainline.section1",
                 "songs": [
-                    "cute"
+                    {"song": "cute", "difficulties": ["hard"]},
+                    
+                    {"song": "worstnightmare", "difficulties": ["overvolt"], "lock": {
+                        "global": {
+                            "xcharge": 0
+                        }
+                    }}
                 ]
             }
         ]

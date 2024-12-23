@@ -50,7 +50,7 @@ function scene.load(args)
     ChromaticModifierTarget = 0
     ChromaticModifierSmoothing = 0
     if ScreenShader then
-        ScreenShader:send("tearStrength", MissTime*8/Display:getWidth())
+        ScreenShader:send("tearStrength", MissTime*2/Display:getWidth())
         ScreenShader:send("chromaticStrength", Chromatic*ChromaticModifier)
     end
     scene.targetEffect = 0
@@ -159,6 +159,7 @@ end
 function scene.update(dt)
     if Paused or SceneManager.TransitioningIn() then return end
     local song = Assets.Source(scene.chart.song)
+    
     do
         local i = 1
         local num = #Particles
@@ -272,6 +273,7 @@ function scene.keypressed(k)
     end
     if k == "f9" then
         print(scene.chart:getDensity())
+        print(#scene.chart.notes)
         EditorTime = scene.chart.time
         if song then
             song:stop()
@@ -366,7 +368,9 @@ function scene.draw()
     for _,note in ipairs(scene.chart.notes) do
         local T = NoteTypes[note.type]
         if T and type(T.draw) == "function" then
+            love.graphics.setFont(NoteFont)
             T.draw(note,scene.chart.time,(scene.speed*scene.zoom),chartPos,chartHeight,34,true)
+            love.graphics.setFont(Font)
         end
     end
 

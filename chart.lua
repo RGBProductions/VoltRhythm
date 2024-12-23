@@ -34,7 +34,7 @@ NoteTypes = {
                 local extPos = chartPos+chartHeight-barPos*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
                 if extPos >= chartPos and extPos-((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1) < chartPos+(chartHeight-1) then
                     love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][3]])
-                    love.graphics.print("║", (chartX+visualLane*4)*8, math.floor(extPos*16-8-(isEditor and 0 or 4)))
+                    love.graphics.print("║", (chartX+visualLane*4)*8+4, math.floor(extPos*16-8-(isEditor and 0 or 4)), 0, 1, 1, NoteFont:getWidth("║")/2)
                     -- love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][2]])
                     -- love.graphics.print("▥▥▥", (chartX+self.lane*4-1)*8, math.floor(extPos*16-8))
                 end
@@ -42,7 +42,7 @@ NoteTypes = {
 
             if drawPos >= chartPos and drawPos < chartPos+(chartHeight+1) and (self.heldFor or 0) <= 0 then
                 love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][3]])
-                love.graphics.print("○", (chartX+visualLane*4)*8, math.floor(drawPos*16-8-(isEditor and 0 or 4)))
+                love.graphics.print("○", (chartX+visualLane*4)*8+4, math.floor(drawPos*16-8-(isEditor and 0 or 4)), 0, 1, 1, NoteFont:getWidth("○")/2)
                 -- love.graphics.print("▥▥▥", (chartX+self.lane*4-1)*8, math.floor(drawPos*16-8))
             end
         end,
@@ -55,6 +55,9 @@ NoteTypes = {
                 return true, accuracy, true
             end
             return false
+        end,
+        getDifficulty = function(self)
+            return 1 + (self.length or 0) * 0.25
         end,
         calculateCharge = function(self)
             return 1 + (self.length or 0)
@@ -69,9 +72,9 @@ NoteTypes = {
             chartPos = chartPos or 5
             if not isEditor then pos = pos+math.sin(pos*8)*Waviness/speed end
             local drawPos = chartPos+chartHeight-pos*speed
-            local laneOffset = math.max(0,math.min(1, ((pos*speed)-7)/4))
+            local laneOffset = isEditor and 1 or math.max(0,math.min(1, ((pos*speed)-7)/4))
             local visualLane = (self.visualLane or self.lane) - self.extra.dir*laneOffset
-            local symbol = (math.abs(visualLane-self.lane) <= 1/4 and "○") or (math.abs(visualLane-(self.lane-self.extra.dir)) <= 1/4 and (self.extra.dir == 1 and "▷" or "◁")) or "◇"
+            local symbol = isEditor and ((self.extra.dir == 1 and "▷") or (self.extra.dir == -1 and "◁") or "◇") or ((math.abs(visualLane-self.lane) <= 1/4 and "○") or (math.abs(visualLane-(self.lane-self.extra.dir)) <= 1/4 and (self.extra.dir == 1 and "▷" or "◁")) or "◇")
             if useSteps then drawPos = math.floor(drawPos) end
 
             local cells = self.length * speed
@@ -81,15 +84,16 @@ NoteTypes = {
                 local extPos = chartPos+chartHeight-barPos*speed
                 if extPos >= chartPos and extPos < chartPos+(chartHeight-1) then
                     love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][3]])
-                    love.graphics.print("║", (chartX+visualLane*4)*8, math.floor(extPos*16-8-(isEditor and 0 or 4)))
+                    love.graphics.print("║", (chartX+visualLane*4)*8+4, math.floor(extPos*16-8-(isEditor and 0 or 4)), 0, 1, 1, NoteFont:getWidth("║")/2)
                 end
             end
 
             if drawPos >= chartPos and drawPos < chartPos+(chartHeight+1) and (self.heldFor or 0) <= 0 then
                 love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][3]])
-                love.graphics.print("¤", (chartX+self.lane*4)*8, math.floor(drawPos*16-8-(isEditor and 0 or 4)))
-                love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][3]])
-                love.graphics.print(symbol, (chartX+visualLane*4)*8, math.floor(drawPos*16-8-(isEditor and 0 or 4)))
+                love.graphics.setFont(Font)
+                if self.extra.dir ~= 0 then love.graphics.print("¤", (chartX+self.lane*4)*8, math.floor(drawPos*16-8-(isEditor and 0 or 4))) end
+                love.graphics.setFont(NoteFont)
+                love.graphics.print(symbol, (chartX+visualLane*4)*8+4, math.floor(drawPos*16-8-(isEditor and 0 or 4)), 0, 1, 1, NoteFont:getWidth(symbol)/2)
             end
         end,
         hit = function(self,time,lane)
@@ -101,6 +105,9 @@ NoteTypes = {
                 return true, accuracy, true
             end
             return false
+        end,
+        getDifficulty = function(self)
+            return 1.5 + (self.length or 0) * 0.25
         end,
         calculateCharge = function(self)
             return 1 + (self.length or 0)
@@ -122,7 +129,7 @@ NoteTypes = {
                 local min,max = math.min(visualLane+self.extra.dir, visualLane), math.max(visualLane+self.extra.dir, visualLane)
                 for i = min,max do
                     love.graphics.setColor(TerminalColors[NoteColors[((i)%(#NoteColors))+1][3]])
-                    love.graphics.print(((i == min and i == max) and "◻◻○◻◻") or (i == min and "◻◻◐▥▨") or (i == max and "▧▥◑◻◻") or "▧▥▥▥▨", (chartX+(i)*4-2)*8, math.floor(drawPos*16-8-(isEditor and 0 or 4)))
+                    love.graphics.print(((i == min and i == max) and "◻○◼") or (i == min and "◻◐▥▨") or (i == max and "▧▥◑◼") or "▧▥▥▥▨", (chartX+(i)*4-2)*8, math.floor(drawPos*16-8-(isEditor and 0 or 4)))
                     -- love.graphics.print(((i == min and i == max) and "◻▥▥▥◻") or (i == min and "◻▥▥▥▨") or (i == max and "▧▥▥▥◻") or "▧▥▥▥▨", (chartX+(i)*4-2)*8, math.floor(drawPos*16-8))
                 end
             end
@@ -167,6 +174,9 @@ NoteTypes = {
                 return true, avgAccuracy/amount, true
             end
             return false, nil, false
+        end,
+        getDifficulty = function(self)
+            return math.abs(self.extra.dir)*1.5+1
         end,
         miss = function(self)
             RatingCounts[#RatingCounts] = RatingCounts[#RatingCounts] + math.abs(self.extra.dir)
@@ -311,6 +321,10 @@ function Effect:new(time,effectType,data)
 end
 
 SongDifficulty = {
+    hidden = {
+        name = "???",
+        color = TerminalColors[ColorID.DARK_GRAY]
+    },
     easy = {
         name = "EASY",
         color = TerminalColors[ColorID.LIGHT_GREEN]
@@ -343,7 +357,7 @@ SongDifficulty = {
 
 function PrintDifficulty(x,y,difficulty,level,align)
     local currentX = x
-    local length = utf8.len(SongDifficulty[difficulty].name .. " " .. level)
+    local length = utf8.len(SongDifficulty[difficulty].name .. (level ~= nil and (" " .. level) or ""))
     local nameLength = utf8.len(SongDifficulty[difficulty].name)
     if align == "right" then
         currentX = x - length*8
@@ -365,9 +379,11 @@ function PrintDifficulty(x,y,difficulty,level,align)
         love.graphics.print(SongDifficulty[difficulty].name, currentX, y)
         currentX = currentX + nameLength*8
     end
-    currentX = currentX + 8
-    love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    love.graphics.print(tostring(level), currentX, y)
+    if level ~= nil then
+        currentX = currentX + 8
+        love.graphics.setColor(TerminalColors[ColorID.WHITE])
+        love.graphics.print(tostring(level), currentX, y)
+    end
 end
 
 ---@class SongData
@@ -617,4 +633,19 @@ function Chart:getDensity()
     local song = Assets.Source(self.song)
     if not song then return 0 end
     return #self.notes / song:getDuration("seconds")
+end
+
+function Chart:getDifficulty()
+    if not self.song then return 0 end
+    local song = Assets.Source(self.song)
+    if not song then return 0 end
+    local startTime = math.huge
+    local endTime = -math.huge
+    local amount = 0
+    for _,note in ipairs(self.notes) do
+        amount = amount + NoteTypes[note.type].getDifficulty(note)
+        startTime = math.min(startTime, note.time, note.time+note.length)
+        endTime = math.max(endTime, note.time, note.time+note.length)
+    end
+    return amount / (endTime-startTime) * 1.5
 end

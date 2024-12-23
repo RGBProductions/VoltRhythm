@@ -7,14 +7,14 @@ local resultsText = love.graphics.newImage("images/results.png")
 local function getRank(charge)
     for i,rank in ipairs(Ranks) do
         if charge < rank.charge then
-            return i
+            return i, charge >= rank.plus
         end
     end
-    return #Ranks
+    return #Ranks, charge >= Ranks[#Ranks].plus
 end
 
 function scene.load(args)
-    scene.rank = getRank((args.charge or 0) / 100)
+    scene.rank,scene.plus = getRank((args.charge or 0) / 100)
     scene.charge = math.floor(math.min(args.charge / 100, 0.8)*ChargeYield)
     scene.overcharge = math.floor(math.max((args.charge / 100)-0.8, 0)*ChargeYield)
     scene.accuracy = args.accuracy
@@ -52,6 +52,7 @@ function scene.load(args)
             overcharge = scene.overcharge,
             accuracy = scene.accuracy,
             rank = scene.rank,
+            plus = scene.plus,
             fullCombo = scene.fullCombo,
             fullOvercharge = scene.fullOvercharge
         })
@@ -144,6 +145,7 @@ function scene.draw()
 
     love.graphics.setColor(1,1,1)
     love.graphics.draw(Ranks[scene.rank].image, 448, 216, 0, 4)
+    if scene.plus then love.graphics.draw(Plus, 448, 216, 0, 4) end
     local rankText = "RANK"
     love.graphics.print(rankText, 424+8*(22-#rankText)/2, 192)
     if scene.fullOvercharge then

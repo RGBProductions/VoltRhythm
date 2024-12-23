@@ -17,7 +17,10 @@ end
 
 function table.merge(a,b)
     for k,v in pairs(b) do
-        if type(v) == "table" and type(a[k]) == "table" then
+        if type(v) == "table" then
+            if type(a[k]) ~= "table" then
+                a[k] = {}
+            end
             a[k] = table.merge(a[k], v)
         else
             a[k] = v

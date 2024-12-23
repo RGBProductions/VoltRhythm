@@ -44,6 +44,10 @@ end
 
 function SceneManager.UpdateTransition(dt)
     if not SceneManager.TransitionState.Transitioning then return end
+    if (SceneManager.TransitionState.Pause or 0) > 0 then
+        SceneManager.TransitionState.Pause = SceneManager.TransitionState.Pause - 1
+        return
+    end
     local lastTime = SceneManager.TransitionState.Time
     SceneManager.TransitionState.Time = SceneManager.TransitionState.Time + dt
     if lastTime < SceneManager.TransitionState.Duration and SceneManager.TransitionState.Time >= SceneManager.TransitionState.Duration then

@@ -125,7 +125,7 @@ return function (msg)
             love.graphics.setColor(1,1,1)
 
             -- ERROR DRAW.
-            love.graphics.printf("VoltRhythm has encountered a severe error and needs to shut down.\nPlease reboot your machine as soon as possible.\n\nError details:\n" .. p, 32, 32, 576)
+            love.graphics.printf("VoltRhythm has encountered a severe error and needs to shut down.\nPlease reboot the program as soon as possible.\n\nError details:\n" .. p, 32, 32, 576)
             
             love.graphics.setColor(1,1,1)
             love.graphics.print(Version.name .. " v" .. Version.version, 16, 480-16-16)

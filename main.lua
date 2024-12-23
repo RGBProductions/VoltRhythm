@@ -12,6 +12,7 @@ love.audio.setVolume(0.5)
 Version = (require "version")()
 
 ChargeYield = 200
+XChargeYield = 50
 
 NoteRatings = {
     {
@@ -73,34 +74,70 @@ NoteRatings = {
     }
 }
 
+Plus = love.graphics.newImage("images/rank/plus.png")
+
 Ranks = {
     {
         image = love.graphics.newImage("images/rank/F.png"),
-        charge = 0.3
+        charge = 0.3,
+        plus = math.huge
     },
     {
         image = love.graphics.newImage("images/rank/D.png"),
-        charge = 0.6
+        charge = 0.6,
+        plus = 0.55
     },
     {
         image = love.graphics.newImage("images/rank/C.png"),
-        charge = 0.7
+        charge = 0.7,
+        plus = 0.65
     },
     {
         image = love.graphics.newImage("images/rank/B.png"),
-        charge = 0.8
+        charge = 0.8,
+        plus = 0.75
     },
     {
         image = love.graphics.newImage("images/rank/A.png"),
-        charge = 0.9
+        charge = 0.9,
+        plus = 0.85
     },
     {
         image = love.graphics.newImage("images/rank/S.png"),
-        charge = 0.95
+        charge = 0.95,
+        plus = 0.925
     },
     {
         image = love.graphics.newImage("images/rank/O.png"),
-        charge = math.huge
+        charge = math.huge,
+        plus = 0.99
+    }
+}
+
+ChargeValues = {
+    easy = {
+        charge = 0.15,
+        xcharge = 0
+    },
+    medium = {
+        charge = 0.3,
+        xcharge = 0.1
+    },
+    hard = {
+        charge = 0.5,
+        xcharge = 0.1
+    },
+    extreme = {
+        charge = 0.05,
+        xcharge = 0.8
+    },
+    overvolt = {
+        charge = 0,
+        xcharge = 0
+    },
+    hidden = {
+        charge = 0,
+        xcharge = 0
     }
 }
 
@@ -118,7 +155,22 @@ end
 
 -- ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω
 
-Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%().,'\"!?:+-_=┌─┐│└┘├┤┴┬█▓▒░┊┈╬○◇▷◁║¤👑▧▥▨◐◑◻🡙ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω")
+Cursor = nil
+CursorX = 0
+CursorY = 0
+
+function SetCursor(cursor,x,y)
+    if not Cursor and cursor then
+        MouseX = 320
+        MouseY = 240
+    end
+    Cursor = cursor
+    CursorX = x or 0
+    CursorY = y or 0
+end
+
+Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%().,'\"!?:+-_=┌─┐│└┘├┤┴┬█▓▒░┊┈╬○◇▷◁║¤👑▧▥▨◐◑◻🡙ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω🮰")
+NoteFont = love.graphics.newImageFont("images/notes/default.png", "○◇▷◁║▧▥▨◐◑◻◼")
 
 function DrawBox(x,y,w,h)
     love.graphics.print("┌"..("──"):rep(w).."┐\n"..("│"..("  "):rep(w).."│\n"):rep(h).."└"..("──"):rep(w).."┘", x*8, y*16)
@@ -146,17 +198,28 @@ require "scenemanager"
 
 local loadedProfile = Save.Load()
 if not loadedProfile then
-    Save.SetProfile("rgb")
+    Save.SetProfile("RGB")
 end
-if loadedProfile then
-    SceneManager.LoadScene("scenes/songselect")
-    -- SceneManager.LoadScene("scenes/profile")
+
+function EnterMainGame(transition)
+    SceneManager[transition and "Transition" or "LoadScene"]("scenes/menu")
+end
+
+if love.filesystem.getInfo("hidepswarning") then
+    EnterMainGame()
 else
-    -- SceneManager.LoadScene("scenes/photosensitivity")
-    -- local songData = LoadSongData("songs/cute")
-    -- SceneManager.LoadScene("scenes/game", {songData = songData, difficulty = "hard"})
-    SceneManager.LoadScene("scenes/songselect")
+    SceneManager.LoadScene("scenes/photosensitivity")
 end
+
+-- if loadedProfile then
+--     SceneManager.LoadScene("scenes/photosensitivity")
+--     -- SceneManager.LoadScene("scenes/profile")
+-- else
+--     -- SceneManager.LoadScene("scenes/photosensitivity")
+--     -- local songData = LoadSongData("songs/cute")
+--     -- SceneManager.LoadScene("scenes/game", {songData = songData, difficulty = "hard"})
+--     SceneManager.LoadScene("scenes/photosensitivity")
+-- end
 
 -- SceneManager.LoadScene("scenes/game", {chart = "songs/cute/hard.json"})
 
@@ -261,6 +324,10 @@ function love.keypressed(k)
     SceneManager.KeyPressed(k)
 end
 
+function love.textinput(t)
+    SceneManager.TextInput(t)
+end
+
 MouseX = Display:getWidth()/2
 MouseY = Display:getHeight()/2
 
@@ -274,6 +341,10 @@ end
 
 function love.mousepressed(x,y,b)
     SceneManager.MousePressed(MouseX,MouseY,b)
+end
+
+function love.mousereleased(x,y,b)
+    SceneManager.MouseReleased(MouseX,MouseY,b)
 end
 
 function love.wheelmoved(x,y)
@@ -314,6 +385,12 @@ function love.update(dt)
             TearingModifier = blend*(TearingModifier-TearingModifierTarget)+TearingModifierTarget
         end
     end
+    
+    ScreenShader:send("curveStrength", CurveStrength*CurveModifier)
+    ScreenShader:send("tearStrength", TearingStrength*(MissTime*2/Display:getWidth() + TearingModifier))
+    ScreenShader:send("chromaticStrength", Chromatic * ChromaticModifier)
+    ScreenShader:send("horizBlurStrength", 0.5)
+    ScreenShader:send("tearTime", love.timer.getTime())
 
     SceneManager.Update(dt)
     SceneManager.UpdateTransition(dt)
@@ -335,6 +412,9 @@ function love.draw()
     if border and not SuppressBorder then border.draw() end
     love.graphics.setColor(1,1,1)
     love.graphics.print(Version.name .. " v" .. Version.version, 16, 480-16-16)
+    if Cursor then
+        love.graphics.print(Cursor, MouseX-CursorX, MouseY-CursorY)
+    end
 
     love.graphics.setColor(TerminalColors[16])
     -- love.graphics.print("▒", MouseX-4, MouseY-8)

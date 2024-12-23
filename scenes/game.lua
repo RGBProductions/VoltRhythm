@@ -2,6 +2,23 @@ local utf8 = require "utf8"
 
 local scene = {}
 
+local hitSounds = {
+    -- love.audio.newSource("sounds/hit.ogg", "stream"),
+    -- love.audio.newSource("sounds/hit.ogg", "stream"),
+    -- love.audio.newSource("sounds/hit.ogg", "stream"),
+    -- love.audio.newSource("sounds/hit.ogg", "stream"),
+    -- love.audio.newSource("sounds/hit.ogg", "stream"),
+    -- love.audio.newSource("sounds/hit.ogg", "stream"),
+    -- love.audio.newSource("sounds/hit.ogg", "stream"),
+    -- love.audio.newSource("sounds/hit.ogg", "stream")
+}
+
+for _,hitSound in ipairs(hitSounds) do
+    hitSound:setVolume(1)
+end
+
+local lastHitSound = 0
+
 local defaultBg = Assets.Background("boxesbg.lua")
 if defaultBg then defaultBg.init() end
 
@@ -33,6 +50,9 @@ function scene.load(args)
     end
     if scene.chart then
         scene.song = Assets.Source(scene.chart.song)
+        if scene.song then
+            scene.song:seek(0, "seconds")
+        end
         scene.video = Assets.Video(scene.chart.video)
         scene.background = Assets.Background(scene.chart.background) or defaultBg
         if scene.background and type(scene.background.init) == "function" then
@@ -41,7 +61,7 @@ function scene.load(args)
     end
     scene.modifiers = args.modifiers or {}
     scene.chartName = "UNRAVELING STASIS"
-    AudioOffset = 25/1000
+    AudioOffset = Autoplay and 0 or 0/1000
     HitOffset = 0
     RealHits = 0
     Charge = 0
@@ -102,14 +122,32 @@ function scene.load(args)
     PauseTimer = 0
     Paused = false
     SongStarted = false
+    PauseSelection = 0
+end
+
+function PauseGame()
+    if scene.song then scene.song:pause() end
+    if scene.video then scene.video:pause() end
+    Paused = true
+    PauseTimer = 1.5
+    PauseSelection = 0
+end
+
+function Restart()
+    if scene.song then scene.song:stop() end
+    scene.chart:resetAllNotes()
+    SceneManager.Transition("scenes/game", {songData = scene.songData, difficulty = scene.difficulty})
+end
+
+function Exit()
+    if scene.song then scene.song:stop() end
+    scene.chart:resetAllNotes()
+    SceneManager.Transition("scenes/songselect")
 end
 
 function scene.focus(f)
     if not f and PauseTimer <= 0 then
-        if scene.song then scene.song:pause() end
-        if scene.video then scene.video:pause() end
-        Paused = true
-        PauseTimer = 1.5
+        PauseGame()
     end
 end
 
@@ -118,26 +156,40 @@ function scene.keypressed(k)
         if Paused then
             Paused = false
         elseif PauseTimer <= 0 then
-            if scene.song then scene.song:pause() end
-            if scene.video then scene.video:pause() end
-            Paused = true
-            PauseTimer = 1.5
+            PauseGame()
         end
     end
-    if k == "backspace" and Paused then
-        SceneManager.Transition("scenes/songselect")
+    if Paused then
+        if k == "backspace" and Paused then
+            Exit()
+        end
+        if k == "return" then
+            if PauseSelection == 0 then
+                Paused = false
+            end
+            if PauseSelection == 1 then
+                Restart()
+            end
+            if PauseSelection == 2 then
+                Exit()
+            end
+        end
+        if k == "left" then
+            PauseSelection = (PauseSelection-1)%3
+        end
+        if k == "right" then
+            PauseSelection = (PauseSelection+1)%3
+        end
     end
     if k == "r" then
-        if scene.song then scene.song:stop() end
-        scene.chart:resetAllNotes()
-        SceneManager.Transition("scenes/game", {songData = scene.songData, difficulty = scene.difficulty})
+        Restart()
     end
     if k == "f8" then
         if scene.song then scene.song:stop() end
         scene.chart.time = 0
         scene.chart:resetAllNotes()
         Charge = 0
-        SceneManager.Transition("scenes/editor", {songData = scene.songData, difficulty = scene.difficulty})
+        SceneManager.Transition("scenes/neditor", {songData = scene.songData, difficulty = scene.difficulty})
     end
     if PauseTimer > 0 then return end
     if k == "]" then
@@ -155,6 +207,12 @@ function scene.keypressed(k)
                 if t.hit then
                     local hit,accuracy,marked = t.hit(note, scene.chart.time, laneIndex-1)
                     if hit then
+                        local hitSound = hitSounds[lastHitSound+1]
+                        lastHitSound = (lastHitSound + 1) % #hitSounds
+                        if hitSound then
+                            hitSound:stop()
+                            hitSound:play()
+                        end
                         local accValue = (1-accuracy)
                         LastRating = GetRating(accValue)
                         RatingCounts[LastRating] = RatingCounts[LastRating] + 1
@@ -281,6 +339,13 @@ function scene.update(dt)
         end
     end
 
+    -- remember this for later
+    -- when you cross a bpm change:
+    -- > store the time in the song of the bpm change
+    -- > store the current number of beats
+    -- then to calculate current beat, take the beat count as:
+    -- WhichSixteenth(time - bpmChangeTime) / 4 + bpmChangeBeats
+
     -- Freeze notes in place and move judgement line instead
     local diff = scene.chart.time - lastTime
     if ChartFrozen then
@@ -333,6 +398,12 @@ function scene.update(dt)
                             end
                         end
                         if hit then
+                            local hitSound = hitSounds[lastHitSound+1]
+                            lastHitSound = (lastHitSound + 1) % #hitSounds
+                            if hitSound then
+                                hitSound:stop()
+                                hitSound:play()
+                            end
                             if (note.heldFor or 0) <= 0 then
                                 Charge = Charge + 1
                                 Combo = Combo + 1
@@ -470,6 +541,9 @@ function scene.update(dt)
     if scene.song then
         if scene.chart.time >= scene.song:getDuration("seconds")-AudioOffset then
             if not SceneManager.TransitionState.Transitioning then
+                if FullOvercharge then
+                    Charge = scene.chart.totalCharge
+                end
                 SceneManager.Transition("scenes/rating", {chart = scene.chart, songData = scene.songData, difficulty = scene.difficulty, offset = HitOffset/RealHits, ratings = RatingCounts, accuracy = Accuracy/math.max(Hits,1), charge = Charge/scene.chart.totalCharge*100, fullCombo = ComboBreaks == 0, fullOvercharge = FullOvercharge})
             end
         end
@@ -575,12 +649,6 @@ function scene.update(dt)
     end
 
     MissTime = math.max(0,MissTime - dt * 8)
-    ScreenShader:send("curveStrength", CurveStrength*CurveModifier)
-    ScreenShader:send("tearStrength", TearingStrength*(MissTime*8/Display:getWidth() + TearingModifier))
-    ScreenShader:send("chromaticStrength", Chromatic * ChromaticModifier)
-    ScreenShader:send("horizBlurStrength", 0.5)
-    ScreenShader:send("tearTime", love.timer.getTime())
-
     for i = 1, scene.chart.lanes do
         PressAmounts[i] = math.max(0, math.min(Autoplay and math.huge or 1, (PressAmounts[i] or 0) + dt*8*((love.keyboard.isDown((Keybinds[scene.chart.lanes] or Keybinds[8])[i]) and not Autoplay) and 1/dt or -1/dt)))
         HitAmounts[i] = math.max(0, math.min(1, (HitAmounts[i] or 0) - dt*8))
@@ -615,8 +683,8 @@ function scene.draw()
 
     -- Debug info
     love.graphics.setColor(TerminalColors[16])
-    love.graphics.print("Full Combo: " .. tostring(ComboBreaks == 0), 50*8 + AnaglyphSide*0.75, 5*16)
-    love.graphics.print("Full Overcharge: " .. tostring(FullOvercharge), 50*8 + AnaglyphSide*0.75, 6*16)
+    --love.graphics.print("Full Combo: " .. tostring(ComboBreaks == 0), 50*8 + AnaglyphSide*0.75, 5*16)
+    --love.graphics.print("Full Overcharge: " .. tostring(FullOvercharge), 50*8 + AnaglyphSide*0.75, 6*16)
 
     -- Chart and bar outlines
     DrawBoxHalfWidth((80-(scene.chart.lanes*4-1))/2 - 1, 4, scene.chart.lanes*4-1, 16)
@@ -651,6 +719,8 @@ function scene.draw()
     -- Bar fill
     c = math.floor(Charge/scene.chart.totalCharge*100)
     love.graphics.print("┬\n\n┴", 55*8, 23*16)
+    love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
+    love.graphics.print("┊", 55*8, 24*16)
     love.graphics.setColor(TerminalColors[(c < 40 and 5) or (c < 80 and 15) or 11])
     love.graphics.print(("█"):rep(math.min(41,c/2)), 15*8, 24*16)
     -- OVERCHARGE
@@ -696,7 +766,9 @@ function scene.draw()
         if not note.destroyed then
             local t = NoteTypes[note.type]
             if t and type(t.draw) == "function" then
+                love.graphics.setFont(NoteFont)
                 t.draw(note,scene.chart.time,(ScrollSpeed*ScrollSpeedMod)*NoteSpeedMods[note.lane+1][1],nil,nil,((80-(scene.chart.lanes*4-1))/2)+1)
+                love.graphics.setFont(Font)
             end
         end
     end
@@ -732,7 +804,14 @@ function scene.draw()
         love.graphics.rectangle("fill", 0, 0, 640, 480)
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
         if Paused then
-            love.graphics.draw(PausedText, 320, 240, 0, 1, 1, PausedText:getWidth()/2, PausedText:getHeight()/2)
+            DrawBoxHalfWidth(23, 12, 32, 4)
+            love.graphics.draw(PausedText, 320, 240-16, 0, 1, 1, PausedText:getWidth()/2, PausedText:getHeight()/2)
+            love.graphics.setColor(TerminalColors[PauseSelection == 0 and ColorID.LIGHT_BLUE or ColorID.WHITE])
+            love.graphics.printf("Resume", 320-96, 240+16, 96, "center", 0, 1, 1, 48, 8)
+            love.graphics.setColor(TerminalColors[PauseSelection == 1 and ColorID.LIGHT_BLUE or ColorID.WHITE])
+            love.graphics.printf("Restart", 320, 240+16, 96, "center", 0, 1, 1, 48, 8)
+            love.graphics.setColor(TerminalColors[PauseSelection == 2 and ColorID.LIGHT_BLUE or ColorID.WHITE])
+            love.graphics.printf("Quit", 320+96, 240+16, 96, "center", 0, 1, 1, 48, 8)
         else
             local counterText = Counter[math.ceil(PauseTimer*2)]
             if counterText then
@@ -740,6 +819,11 @@ function scene.draw()
             end
         end
     end
+
+    -- love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    -- love.graphics.print(tostring(scene.chart:getDifficulty()), 64, 64)
+    -- love.graphics.print(tostring(math.floor(scene.chart:getDifficulty() + 0.5)), 64, 64+16)
+    -- love.graphics.print(tostring(math.floor(scene.chart:getDensity()*1.5 + 0.5)), 64, 64+16)
 end
 
 return scene

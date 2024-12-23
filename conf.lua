@@ -4,4 +4,5 @@ function love.conf(t)
     t.window.height = 720
     t.identity = "VoltRhythm"
     t.window.title = "VoltRhythm"
+    t.window.icon = "images/icon/temp4x.png"
 end
