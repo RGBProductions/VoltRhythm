@@ -490,6 +490,15 @@ function scene.draw()
         -- love.graphics.setColor(difficultyColor)
         -- love.graphics.print(difficultyName, 608 - (#difficultyName + 1 + #tostring(difficultyLevel) + 2) * 8, 360)
         PrintDifficulty(592,360,difficulties[difficulty],difficultyLevel,"right")
+        ---@type SongData?
+        local data = scene.campaigns[1].sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].songData
+        if data then
+            local hasEffects = #((data:loadChart(difficulties[difficulty] or "easy") or {}).effects or {}) ~= 0
+            if hasEffects then
+                local x = 592 - 8 * (utf8.len(SongDifficulty[difficulties[difficulty] or "easy"].name .. " " .. (difficultyLevel or 0)) + 3)
+                love.graphics.print("✨", x, 360)
+            end
+        end
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
         -- love.graphics.print(tostring(difficultyLevel), 608 - (#tostring(difficultyLevel) + 2) * 8, 360)
         if not SongSelectOvervoltMode then love.graphics.print("🡙", 600, 360) end

@@ -265,23 +265,6 @@ function scene.load(args)
     scene.difficulty = args.difficulty
 
     scene.chart = scene.songData:loadChart(scene.difficulty)
-    -- if scene.chart then
-    --     local soundData = love.sound.newSoundData(scene.chart.song)
-    --     scene.waveform = love.graphics.newCanvas(64,soundData:getSampleCount()/1000)
-    --     local c = love.graphics.getCanvas()
-    --     love.graphics.setCanvas(scene.waveform)
-    --     for i = 0, soundData:getSampleCount()/1000-1 do
-    --         -- scene.wave[i+1] = soundData:getSample(i*2)
-    --         local sample = soundData:getSample(i*1000,1)
-    --         love.graphics.line(64, scene.waveform:getHeight()-i-1, 64-math.abs(sample)*64, scene.waveform:getHeight()-i-1)
-    --     end
-    --     love.graphics.setCanvas(c)
-    --     scene.scalePerPixel = 1/(soundData:getSampleRate()/1000)
-    --     -- scene.wave = {}
-    --     -- for i = 0, soundData:getSampleCount()-1 do
-    --     --     scene.wave[i+1] = soundData:getSample(i*2)
-    --     -- end
-    -- end
 
     scene.chartTimeTemp = SavedEditorTime or 0
     scene.lastNoteTime = 0
@@ -328,8 +311,7 @@ function scene.update(dt)
     if source then
         scene.chartTimeTemp = math.max(0,math.min(source:getDuration("seconds"), scene.chartTimeTemp))
     end
-    -- if (scene.chart or {}).song then
-        -- local source = Assets.Source(scene.chart.song)
+    
     if source then
         if source:isPlaying() then
             scene.chartTimeTemp = scene.chartTimeTemp + dt
@@ -339,7 +321,7 @@ function scene.update(dt)
             end
         end
     end
-    -- end
+    
     if scene.placement.placing then
         scene.placement.stop = {scene.lastNoteLane, scene.lastNoteTime}
 
@@ -366,7 +348,6 @@ function scene.update(dt)
         end
     end
     if scene.scrollbarGrab then
-        local source = Assets.Source(scene.chart.song)
         if source then
             local dur = source:getDuration("seconds")
             local y = math.max(0,math.min(1, (MouseY - 120) / 240))
@@ -504,25 +485,6 @@ function scene.draw()
         love.graphics.print("┈┈┈╬┈┈┈╬┈┈┈╬┈┈┈", (80-(scene.chart.lanes*4-1))/2 * 8, drawPos*16-8)
     end
 
-    -- for i = math.max(0,math.floor(scene.chartTimeTemp/scene.waveSpread))+1, math.max(0,math.floor((scene.chartTimeTemp+2)/scene.waveSpread))+1, (chartPos+chartHeight)/speed do
-    --     if not scene.wave[math.floor(i)] then
-    --         break
-    --     end
-    --     local pos = scene.waveSpread*(i-1) - scene.chartTimeTemp
-    --     local drawPos = chartPos+chartHeight-pos*speed - 1
-    --     if drawPos < chartPos then
-    --         break
-    --     end
-    --     -- 1 = chartPos+chartHeight-pos*speed - 1
-    --     local x = (80-(scene.chart.lanes*4-1))/2 * 8 - 8
-    --     love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
-    --     love.graphics.line(x, drawPos*16, x-math.abs(scene.wave[math.floor(i)])*64, drawPos*16)
-    --     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    --     love.graphics.line(x, drawPos*16, x-math.abs(scene.wave[math.floor(i)])*32, drawPos*16)
-    -- end
-
-    -- love.graphics.draw(scene.waveform)
-
     for _,note in ipairs(scene.chart.notes) do
         local t = NoteTypes[note.type]
         if t and type(t.draw) == "function" then
@@ -628,7 +590,6 @@ function scene.mousepressed(x,y,b)
         if scene.placementMode ~= placementModes.select then
             if scene.placementMode < placementModes.bpm then
                 if scene.lastNoteLane >= 0 and scene.lastNoteLane <= 3 then
-                    -- print("insert a " .. notes[scene.placementMode] .. " note on lane " .. scene.lastNoteLane .. " time " .. scene.lastNoteTime)
                     local noteType = notes[scene.placementMode]
                     scene.placement.placing = true
                     scene.placement.type = noteType

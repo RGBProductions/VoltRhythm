@@ -9,7 +9,7 @@
                     
                     {"song": "worstnightmare", "difficulties": ["overvolt"], "lock": {
                         "global": {
-                            "xcharge": 0
+                            "xcharge": 2
                         }
                     }}
                 ]
