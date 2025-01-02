@@ -1,3 +1,4 @@
+love.keyboard.setKeyRepeat(true)
 love.graphics.setDefaultFilter("nearest", "nearest")
 require "assets"
 require "util"
@@ -24,6 +25,7 @@ NoteRatings = {
                 love.graphics.print(c, ox+((center and (-(#txt)/2) or 0) + x-1)*8, oy)
             end
         end,
+        sampleColor = function() return OverchargeColors[love.math.random(1,#OverchargeColors)] end,
         min = 0.9,
         max = math.huge
     },
@@ -33,6 +35,7 @@ NoteRatings = {
             local txt = "SURGE"
             love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
         end,
+        sampleColor = function() return ColorID.GOLD end,
         min = 0.8,
         max = 0.9
     },
@@ -42,6 +45,7 @@ NoteRatings = {
             local txt = "AMP"
             love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
         end,
+        sampleColor = function() return ColorID.YELLOW end,
         min = 0.6,
         max = 0.8
     },
@@ -51,6 +55,7 @@ NoteRatings = {
             local txt = "FLUX"
             love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
         end,
+        sampleColor = function() return ColorID.GREEN end,
         min = 0.4,
         max = 0.6
     },
@@ -60,6 +65,7 @@ NoteRatings = {
             local txt = "NULL"
             love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
         end,
+        sampleColor = function() return ColorID.LIGHT_GRAY end,
         min = 0.15,
         max = 0.4
     },
@@ -69,6 +75,7 @@ NoteRatings = {
             local txt = "BREAK"
             love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
         end,
+        sampleColor = function() return ColorID.RED end,
         min = 0,
         max = 0.15
     }
@@ -169,7 +176,7 @@ function SetCursor(cursor,x,y)
     CursorY = y or 0
 end
 
-Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%().,'\"!?:+-_=┌─┐│└┘├┤┴┬█▓▒░┊┈╬○◇▷◁║¤👑▧▥▨◐◑◻🡙ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω🮰✨")
+Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%().,'\"!?/:+-_=┌─┐│└┘├┤┴┬█▓▒░┊┈╬○◇▷◁║¤👑▧▥▨◐◑◻🡙ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω🮰✨")
 NoteFont = love.graphics.newImageFont("images/notes/default.png", "○◇▷◁║▧▥▨◐◑◻◼")
 
 function DrawBox(x,y,w,h)
@@ -306,6 +313,10 @@ MissTime = 0
 
 Autoplay = false
 Showcase = false
+
+function love.filedropped(file)
+    SceneManager.FileDropped(file)
+end
 
 function love.keypressed(k)
     if k == "f11" then

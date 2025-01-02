@@ -1,5 +1,7 @@
 local utf8 = require "utf8"
 
+require "dialogs"
+
 local scene = {}
 
 local placementModes = {
@@ -25,7 +27,55 @@ local editorMenu = {
                 type = "action",
                 label = "NEW",
                 onclick = function()
-                    print("new song")
+                    local nameInput = DialogInput:new(0, 0, 368, 16, "SONG NAME", 38)
+                    local authorInput = DialogInput:new(0, 24, 368, 16, "SONG AUTHOR", 38)
+                    local songInput = DialogFileInput:new(0, 64, 368, 16, "DROP SONG HERE")
+                    local coverInput = DialogFileInput:new(0, 104, 368, 16, "DROP COVER HERE")
+                    local dialog = {
+                        width = 24,
+                        height = 14,
+                        title = "NEW SONG",
+                        contents = {
+                            nameInput,
+                            authorInput,
+                            songInput,
+                            coverInput,
+                            DialogButton:new(200, 160, 64, 16, "CANCEL", function ()
+                                table.remove(scene.dialogs, 1)
+                            end),
+                            DialogButton:new(104, 160, 64, 16, "CREATE", function ()
+                                print(nameInput.content)
+                                print(authorInput.content)
+                                print(songInput.filename)
+                                print(coverInput.filename)
+                                if songInput.file == nil then return end
+                                if love.filesystem.getInfo("editor_chart") then
+                                    for _,item in ipairs(love.filesystem.getDirectoryItems("editor_chart")) do
+                                        love.filesystem.remove("editor_chart/"..item)
+                                    end
+                                end
+                                local splitName = songInput.filename:split("/")
+                                love.filesystem.createDirectory("editor_chart")
+                                love.filesystem.write("editor_chart/cover.png", coverInput.file:read())
+                                love.filesystem.write("editor_chart/" .. splitName[#splitName], songInput.file:read())
+                                love.filesystem.write("editor_chart/info.json", json.encode({
+                                    name = nameInput.content,
+                                    author = authorInput.content,
+                                    coverArtist = "?",
+                                    song = splitName[#splitName],
+                                    bpm = 120,
+                                    charts = {}
+                                }))
+                                local songData = LoadSongData("editor_chart")
+                                scene.songData = songData
+                                scene.difficulty = "hard"
+                                scene.chart = scene.songData:loadChart(scene.difficulty)
+                                Assets.EraseCover("editor_chart")
+                                table.remove(scene.dialogs, 1)
+                            end)
+                        }
+                    }
+                    table.insert(scene.dialogs, dialog)
                     return true
                 end
             },
@@ -105,7 +155,89 @@ local editorMenu = {
                 type = "action",
                 label = "DIFFICULTIES",
                 onclick = function()
-                    print("edit song difficulties")
+                    local difficulties = {
+                        "easy", "medium", "hard", "extreme", "overvolt"
+                    }
+                    local difficultyBaseLevels = {
+                        easy = 1, medium = 6, hard = 11, extreme = 16, overvolt = 21
+                    }
+                    local dialog = {
+                        width = 14,
+                        height = 19,
+                        title = "DIFFICULTIES",
+                        contents = {
+                            DialogButton:new(40, 240, 128, 16, "CANCEL", function ()
+                                table.remove(scene.dialogs, 1)
+                            end)
+                        }
+                    }
+                    for i,difficulty in ipairs(difficulties) do
+                        local hasDifficulty = scene.songData:hasLevel(difficulty)
+                        local level = hasDifficulty and scene.songData:getLevel(difficulty) or ""
+                        local difficultyLabel = DialogDifficulty:new(16,48*(i-1),128,difficulty,nil,"left")
+
+                        local levelInput = DialogInput:new(96,48*(i-1),32,16,"LVL",4,nil,function(self)
+                            self.content = tostring(tonumber(self.content) or 0)
+                            scene.songData.levels[difficulty] = tonumber(self.content) or 0
+                            scene.songData.charts[difficulty].level = tonumber(self.content) or 0
+                        end)
+                        levelInput.content = tostring(level)
+
+                        local addButton
+                        local removeButton
+                        local editButton = DialogButton:new(152,48*(i-1),16,16,"E",function()
+                            print("edit " .. difficulty)
+                            scene.difficulty = difficulty
+                            scene.chart = scene.songData:loadChart(difficulty)
+                            table.remove(scene.dialogs, 1)
+                        end)
+                        removeButton = DialogButton:new(184,48*(i-1),16,16,"-",function()
+                            local removedialog = {
+                                title = "REMOVE " .. SongDifficulty[difficulty].name:upper(),
+                                width = 16,
+                                height = 8,
+                                contents = {
+                                    DialogLabel:new(0, 16, 240, "ARE YOU SURE?", "center"),
+                                    DialogButton:new(136, 64, 64, 16, "CANCEL", function ()
+                                        table.remove(scene.dialogs, 1)
+                                    end),
+                                    DialogButton:new(40, 64, 64, 16, "REMOVE", function ()
+                                        scene.songData:removeChart(difficulty)
+                                        if scene.difficulty == difficulty then
+                                            scene.difficulty = nil
+                                            scene.chart = nil
+                                        end
+                                        table.remove(dialog.contents, table.index(dialog.contents, removeButton))
+                                        table.remove(dialog.contents, table.index(dialog.contents, editButton))
+                                        table.remove(dialog.contents, table.index(dialog.contents, levelInput))
+                                        table.insert(dialog.contents, addButton)
+
+                                        table.remove(scene.dialogs, 1)
+                                    end)
+                                }
+                            }
+                            table.insert(scene.dialogs, 1, removedialog)
+                        end)
+                        addButton = DialogButton:new(184,48*(i-1),16,16,"+",function()
+                            local chart = scene.songData:newChart(difficulty, difficultyBaseLevels[difficulty])
+                            levelInput.content = tostring(scene.songData:getLevel(difficulty))
+                            table.remove(dialog.contents, table.index(dialog.contents, addButton))
+                            table.insert(dialog.contents, levelInput)
+                            table.insert(dialog.contents, editButton)
+                            table.insert(dialog.contents, removeButton)
+                        end)
+
+                        table.insert(dialog.contents, DialogBox:new(8,48*(i-1),128,16))
+                        table.insert(dialog.contents, difficultyLabel)
+                        if hasDifficulty then
+                            table.insert(dialog.contents, levelInput)
+                            table.insert(dialog.contents, editButton)
+                            table.insert(dialog.contents, removeButton)
+                        else
+                            table.insert(dialog.contents, addButton)
+                        end
+                    end
+                    table.insert(scene.dialogs, dialog)
                     return true
                 end
             }
@@ -279,6 +411,8 @@ function scene.load(args)
         stop = {0,0}
     }
 
+    scene.dialogs = {}
+
     SetCursor("🮰", 0, 0)
 end
 
@@ -307,7 +441,7 @@ function scene.update(dt)
         scene.chartTimeTemp = scene.chartTimeTemp - dt*(love.keyboard.isDown("lshift") and 4 or 1)*(love.keyboard.isDown("lctrl") and 8 or 1)
     end
 
-    local source = Assets.Source(scene.chart.song)
+    local source = Assets.Source((scene.chart or {}).song)
     if source then
         scene.chartTimeTemp = math.max(0,math.min(source:getDuration("seconds"), scene.chartTimeTemp))
     end
@@ -356,7 +490,42 @@ function scene.update(dt)
     end
 end
 
+function scene.textinput(t)
+    if #scene.dialogs > 0 then
+        local dialog = scene.dialogs[1]
+        for _,element in ipairs(dialog.contents) do
+            if type(element.textinput) == "function" then
+                element:textinput(t)
+            end
+        end
+        return
+    end
+end
+
+function scene.filedropped(file)
+    if #scene.dialogs > 0 then
+        local dialog = scene.dialogs[1]
+        local dx = (80-dialog.width*2)/2+1
+        local dy = (30-dialog.height)/2+2
+        for _,element in ipairs(dialog.contents) do
+            if type(element.filedropped) == "function" then
+                element:filedropped(MouseX-dx*8,MouseY-dy*16,file)
+            end
+        end
+        return
+    end
+end
+
 function scene.keypressed(k)
+    if #scene.dialogs > 0 then
+        local dialog = scene.dialogs[1]
+        for _,element in ipairs(dialog.contents) do
+            if type(element.keypressed) == "function" then
+                element:keypressed(k)
+            end
+        end
+        return
+    end
     if k == "space" then
         if (scene.chart or {}).song then
             local source = Assets.Source(scene.chart.song)
@@ -419,95 +588,109 @@ local function drawTab(tab,x,y)
 end
 
 function scene.draw()
-    DrawBoxHalfWidth((80-(scene.chart.lanes*4-1))/2 - 1, 6, scene.chart.lanes*4-1, 16)
-    
-    for i = 1, 4-1 do
-        love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
-        local x = (80-(scene.chart.lanes*4-1))/2 - 1+(i-1)*4 + 1
-        love.graphics.print(("   ┊\n"):rep(16), x*8, 7*16)
-    end
-
-    local bpmChanges = {
-        -- {time = TimeBPM(144,95), bpm = 190}
-    }
-
-    local currentTime = 0
-    local currentBPM = scene.chart.bpm
-    local numSteps = 0
-    local nextBPMChange = 1
-    local lastBPMTime = 0
-
-    local closestY = math.huge
-    scene.lastNoteTime = math.huge
-    scene.lastNoteLane = math.floor( ( MouseX - ((80-(scene.chart.lanes*4-1))/2 - 1)*8 - 4 ) / (8*4) )
-
-    local chartPos = 7
-    local chartHeight = 16
-    local speed = 25
-
-    while currentTime <= scene.chartTimeTemp+1 do
-        do
-            local pos = currentTime - scene.chartTimeTemp
-            local drawPos = chartPos+chartHeight-pos*speed - 1
-            if drawPos >= chartPos and drawPos < chartPos+chartHeight then
-                love.graphics.setColor(TerminalColors[numSteps%4 == 0 and ColorID.LIGHT_GRAY or ColorID.DARK_GRAY])
-                love.graphics.print("┈┈┈╬┈┈┈╬┈┈┈╬┈┈┈", (80-(scene.chart.lanes*4-1))/2 * 8, drawPos*16-8)
-            end
-            local mouseDist = math.abs((drawPos*16-8) - (MouseY-8))
-            if mouseDist < closestY then
-                closestY = mouseDist
-                scene.lastNoteTime = currentTime
-            end
+    if scene.chart then
+        DrawBoxHalfWidth((80-(scene.chart.lanes*4-1))/2 - 1, 6, scene.chart.lanes*4-1, 16)
+        
+        for i = 1, 4-1 do
+            love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
+            local x = (80-(scene.chart.lanes*4-1))/2 - 1+(i-1)*4 + 1
+            love.graphics.print(("   ┊\n"):rep(16), x*8, 7*16)
         end
 
-        local step = TimeBPM(1,currentBPM)
-        local bpmChange = (bpmChanges[nextBPMChange] or {time = math.huge, bpm = currentBPM})
-        if currentTime+step > bpmChange.time then
-            local pos = WhichSixteenth(bpmChange.time-lastBPMTime, currentBPM)
-            local nextBeatAt = (1 - (pos % 1)) % 1
-            currentTime = currentTime + TimeBPM(nextBeatAt,currentBPM)
-            currentBPM = bpmChange.bpm
-            lastBPMTime = bpmChange.time
-            nextBPMChange = nextBPMChange + 1
-            if nextBeatAt ~= 0 then
+        local bpmChanges = {
+            -- {time = TimeBPM(144,95), bpm = 190}
+        }
+
+        local currentTime = 0
+        local currentBPM = scene.chart.bpm
+        local numSteps = 0
+        local nextBPMChange = 1
+        local lastBPMTime = 0
+
+        local closestY = math.huge
+        scene.lastNoteTime = math.huge
+        scene.lastNoteLane = math.floor( ( MouseX - ((80-(scene.chart.lanes*4-1))/2 - 1)*8 - 4 ) / (8*4) )
+
+        local chartPos = 7
+        local chartHeight = 16
+        local speed = 25*2
+
+        while currentTime <= scene.chartTimeTemp+1 do
+            do
+                local pos = currentTime - scene.chartTimeTemp
+                local drawPos = chartPos+chartHeight-pos*speed - 1
+                if drawPos >= chartPos and drawPos < chartPos+chartHeight then
+                    love.graphics.setColor(TerminalColors[numSteps%4 == 0 and ColorID.LIGHT_GRAY or ColorID.DARK_GRAY])
+                    love.graphics.print("┈┈┈╬┈┈┈╬┈┈┈╬┈┈┈", (80-(scene.chart.lanes*4-1))/2 * 8, drawPos*16-8)
+                end
+                local mouseDist = math.abs((drawPos*16-8) - (MouseY-8))
+                if mouseDist < closestY then
+                    closestY = mouseDist
+                    scene.lastNoteTime = currentTime
+                end
+            end
+
+            local step = TimeBPM(1,currentBPM*2)
+            local bpmChange = (bpmChanges[nextBPMChange] or {time = math.huge, bpm = currentBPM})
+            if currentTime+step > bpmChange.time then
+                local pos = WhichSixteenth(bpmChange.time-lastBPMTime, currentBPM*2)
+                local nextBeatAt = (1 - (pos % 1)) % 1
+                currentTime = currentTime + TimeBPM(nextBeatAt,currentBPM*2)
+                currentBPM = bpmChange.bpm
+                lastBPMTime = bpmChange.time
+                nextBPMChange = nextBPMChange + 1
+                if nextBeatAt ~= 0 then
+                    numSteps = numSteps + 1
+                end
+            else
+                currentTime = currentTime + step
                 numSteps = numSteps + 1
             end
-        else
-            currentTime = currentTime + step
-            numSteps = numSteps + 1
         end
-    end
 
-    do
-        local pos = 0
-        local drawPos = chartPos+chartHeight-pos*speed - 1
+        do
+            local pos = 0
+            local drawPos = chartPos+chartHeight-pos*speed - 1
+            love.graphics.setColor(TerminalColors[ColorID.WHITE])
+            love.graphics.print("┈┈┈╬┈┈┈╬┈┈┈╬┈┈┈", (80-(scene.chart.lanes*4-1))/2 * 8, drawPos*16-8)
+        end
+
+        for _,note in ipairs(scene.chart.notes) do
+            local t = NoteTypes[note.type]
+            if t and type(t.draw) == "function" then
+                love.graphics.setFont(NoteFont)
+                t.draw(note,scene.chartTimeTemp,speed,chartPos, chartHeight-1,(80-(scene.chart.lanes*4-1))/2 - 1 + 2,true)
+                love.graphics.setFont(Font)
+            end
+        end
+
+        if scene.lastNoteLane >= 0 and scene.lastNoteLane < 4 then
+            local t = (scene.placementMode == placementModes.normal and NoteTypes.normal) or (scene.placementMode == placementModes.swap and NoteTypes.swap) or (scene.placementMode == placementModes.merge and NoteTypes.merge)
+            if t then
+                love.graphics.setFont(NoteFont)
+                t.draw({
+                    lane = scene.lastNoteLane,
+                    time = scene.lastNoteTime,
+                    length = 0,
+                    extra = {
+                        dir = 0
+                    }
+                }, scene.chartTimeTemp, speed, chartPos, chartHeight-1, (80-(scene.chart.lanes*4-1))/2 - 1 + 2, true)
+                love.graphics.setFont(Font)
+            end
+        end
+    
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        love.graphics.print("┈┈┈╬┈┈┈╬┈┈┈╬┈┈┈", (80-(scene.chart.lanes*4-1))/2 * 8, drawPos*16-8)
-    end
-
-    for _,note in ipairs(scene.chart.notes) do
-        local t = NoteTypes[note.type]
-        if t and type(t.draw) == "function" then
-            love.graphics.setFont(NoteFont)
-            t.draw(note,scene.chartTimeTemp,speed,chartPos, chartHeight-1,(80-(scene.chart.lanes*4-1))/2 - 1 + 2,true)
-            love.graphics.setFont(Font)
+        DrawBoxHalfWidth(52, 6, 1, 16)
+        local source = Assets.Source((scene.chart or {}).song)
+        if source then
+            local dur = source:getDuration("seconds")
+            local pos = scene.chartTimeTemp/dur
+            local y = pos*240
+            love.graphics.print("█", 424, 352-y)
         end
-    end
-
-    if scene.lastNoteLane >= 0 and scene.lastNoteLane < 4 then
-        local t = (scene.placementMode == placementModes.normal and NoteTypes.normal) or (scene.placementMode == placementModes.swap and NoteTypes.swap) or (scene.placementMode == placementModes.merge and NoteTypes.merge)
-        if t then
-            love.graphics.setFont(NoteFont)
-            t.draw({
-                lane = scene.lastNoteLane,
-                time = scene.lastNoteTime,
-                length = 0,
-                extra = {
-                    dir = 0
-                }
-            }, scene.chartTimeTemp, speed, chartPos, chartHeight-1, (80-(scene.chart.lanes*4-1))/2 - 1 + 2, true)
-            love.graphics.setFont(Font)
-        end
+    else
+        love.graphics.printf("- NO CHART LOADED -", 0, 232, 640, "center")
     end
 
     for _,particle in ipairs(Particles) do
@@ -530,23 +713,51 @@ function scene.draw()
         love.graphics.print(tab.label, tabPosition, 32)
         tabPosition = tabPosition + 8*(utf8.len(tab.label)+4)
     end
-    
-    DrawBoxHalfWidth(52, 6, 1, 16)
-    local source = Assets.Source(scene.chart.song)
-    if source then
-        local dur = source:getDuration("seconds")
-        local pos = scene.chartTimeTemp/dur
-        local y = pos*240
-        love.graphics.print("█", 424, 352-y)
+
+    if scene.difficulty then
+        local level = scene.songData:getLevel(scene.difficulty)
+        love.graphics.printf(scene.songData.name, 0, 400, 568, "right")
+        PrintDifficulty(568, 416, scene.difficulty or "easy", level or 0, "right")
+
+        local cover = Assets.GetCover(scene.songData.path)
+        love.graphics.draw(cover, 576, 400, 0, 32/cover:getWidth(), 32/cover:getHeight())
     end
 
-    local level = scene.songData:getLevel(scene.difficulty)
-    love.graphics.printf(scene.songData.name, 0, 400, 608, "right")
-    PrintDifficulty(608, 416, scene.difficulty or "easy", level or 0, "right")
+    for i = #scene.dialogs, 1, -1 do
+        local dialog = scene.dialogs[i]
+        local x = (80-dialog.width*2)/2-1
+        local y = (30-dialog.height)/2-1
+        DrawBoxHalfWidth(x,y,dialog.width*2,dialog.height)
+        for _,element in ipairs(dialog.contents) do
+            element:draw((x+2)*8, (y+3)*16)
+        end
+        love.graphics.printf(dialog.title, (x+1)*8, (y+1)*16, dialog.width*16, "center")
+    end
 end
 
 function scene.mousepressed(x,y,b)
     if b == 1 then
+        if #scene.dialogs > 0 then
+            local dialog = scene.dialogs[1]
+            local dx = (80-dialog.width*2)/2+1
+            local dy = (30-dialog.height)/2+2
+            local clicked
+            for _,element in ipairs(dialog.contents) do
+                if type(element.click) == "function" then
+                    if element:click(MouseX-dx*8,MouseY-dy*16) then
+                        clicked = element
+                        break
+                    end
+                end
+            end
+            for _,element in ipairs(dialog.contents) do
+                if element ~= clicked and type(element.unclick) == "function" then
+                    element:unclick(MouseX-dx*8,MouseY-dy*16)
+                end
+            end
+            return
+        end
+
         local hadOpen = false
         local tabPosition = 32
         for i,tab in ipairs(editorMenu) do
@@ -587,7 +798,7 @@ function scene.mousepressed(x,y,b)
         end
         if hadOpen then return end
         
-        if scene.placementMode ~= placementModes.select then
+        if scene.placementMode ~= placementModes.select and scene.chart then
             if scene.placementMode < placementModes.bpm then
                 if scene.lastNoteLane >= 0 and scene.lastNoteLane <= 3 then
                     local noteType = notes[scene.placementMode]
@@ -607,7 +818,7 @@ function scene.mousepressed(x,y,b)
             end
         end
 
-        local source = Assets.Source(scene.chart.song)
+        local source = Assets.Source((scene.chart or {}).song)
         if source then
             local dur = source:getDuration("seconds")
             local pos = scene.chartTimeTemp/dur
@@ -618,7 +829,7 @@ function scene.mousepressed(x,y,b)
         end
     end
 
-    if b == 2 then
+    if b == 2 and scene.chart then
         for i,note in ipairs(scene.chart.notes) do
             local A,B = math.min(note.lane, note.lane+(note.extra.dir or 0)),math.max(note.lane, note.lane+(note.extra.dir or 0))
             if note.type == "swap" then

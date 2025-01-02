@@ -445,6 +445,26 @@ function SongData:new(name,author,bpm,song,songPreview,charts,levels)
     return songData
 end
 
+function SongData:newChart(difficulty, level)
+    if self.charts[difficulty] then return self.charts[difficulty] end
+    local chart = Chart:new(
+        self.songPath,
+        self.bpm,
+        {}, {},
+        self.name, 4,
+        nil, nil, {}, "?"
+    )
+    self.charts[difficulty] = chart
+    self.levels[difficulty] = level or 1
+    return chart
+end
+
+function SongData:removeChart(difficulty)
+    if not self.charts[difficulty] then return end
+    self.charts[difficulty] = nil
+    self.levels[difficulty] = nil
+end
+
 function SongData:loadChart(difficulty)
     if not self.charts[difficulty] then return nil end
     if getmetatable(self.charts[difficulty]) == Chart then return self.charts[difficulty] end

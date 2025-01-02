@@ -88,3 +88,7 @@ function Assets.GetCover(path)
     end
     return covers[path]
 end
+
+function Assets.EraseCover(path)
+    covers[path] = nil
+end

@@ -151,3 +151,9 @@ function SceneManager.GamepadPressed(stick,button)
         SceneManager.ActiveScene.gamepadpressed(stick,button)
     end
 end
+
+function SceneManager.FileDropped(file)
+    if SceneManager.ActiveScene.filedropped ~= nil then
+        SceneManager.ActiveScene.filedropped(file)
+    end
+end
