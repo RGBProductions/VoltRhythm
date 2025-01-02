@@ -4,17 +4,8 @@ local scene = {}
 
 local resultsText = love.graphics.newImage("images/results.png")
 
-local function getRank(charge)
-    for i,rank in ipairs(Ranks) do
-        if charge < rank.charge then
-            return i, charge >= rank.plus
-        end
-    end
-    return #Ranks, charge >= Ranks[#Ranks].plus
-end
-
 function scene.load(args)
-    scene.rank,scene.plus = getRank((args.charge or 0) / 100)
+    scene.rank,scene.plus = GetRank(args.accuracy or 0)
     scene.charge = math.floor(math.min(args.charge / 100, 0.8)*ChargeYield)
     scene.overcharge = math.floor(math.max((args.charge / 100)-0.8, 0)*ChargeYield)
     scene.accuracy = args.accuracy

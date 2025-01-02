@@ -121,6 +121,15 @@ Ranks = {
     }
 }
 
+function GetRank(charge)
+    for i,rank in ipairs(Ranks) do
+        if charge < rank.charge then
+            return i, charge >= rank.plus
+        end
+    end
+    return #Ranks, charge >= Ranks[#Ranks].plus
+end
+
 ChargeValues = {
     easy = {
         charge = 0.15,

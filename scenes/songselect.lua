@@ -144,6 +144,9 @@ function scene.load(args)
                         scene.totalCharge = scene.totalCharge + savedRating.charge*ChargeValues[name].charge
                         scene.totalOvercharge = scene.totalOvercharge + savedRating.overcharge*ChargeValues[name].charge
                         scene.totalXCharge = scene.totalXCharge + (savedRating.charge+savedRating.overcharge)/ChargeYield*XChargeYield*ChargeValues[name].xcharge
+                        local reRank, rePlus = GetRank(savedRating.accuracy)
+                        Save.Write("songs."..song.song.."."..name..".rank", reRank)
+                        Save.Write("songs."..song.song.."."..name..".plus", rePlus)
                     end
                 end
             end
