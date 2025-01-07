@@ -85,6 +85,7 @@ function scene.load(args)
     ViewOffsetTarget = 0
     ViewOffsetSmoothing = 16
     ViewOffsetFreeze = 0
+    ViewOffsetMoveLine = true
     ChartFrozen = false
     LastRating = 0
     scene.lastTime = scene.chart.time
@@ -740,7 +741,7 @@ function scene.draw()
         love.graphics.print(("   ┊\n"):rep(16), x*8, 5*16)
     end
     do
-        local drawPos = (5)+(15)+(ViewOffset+ViewOffsetFreeze)*(ScrollSpeed*ScrollSpeedMod)
+        local drawPos = (5)+(15)+(ViewOffsetMoveLine and (ViewOffset+ViewOffsetFreeze) or 0)*(ScrollSpeed*ScrollSpeedMod)
         if drawPos >= 5 and drawPos <= 20 then
             love.graphics.print("┈┈┈"..("╬┈┈┈"):rep(scene.chart.lanes-1), ((80-(scene.chart.lanes*4-1))/2 - 1+(1-1)*4 + 1)*8, drawPos*16-16)
         end
@@ -751,7 +752,7 @@ function scene.draw()
         local x = (80-(scene.chart.lanes*4-1))/2 - 1+(i-1)*4 + 1
         local v = math.ceil(math.min(1,PressAmounts[i])+HitAmounts[i]*2)
         if v > 0 then
-            local drawPos = (5)+(15)+(ViewOffset+ViewOffsetFreeze)*(ScrollSpeed*ScrollSpeedMod)
+            local drawPos = (5)+(15)+(ViewOffsetMoveLine and (ViewOffset+ViewOffsetFreeze) or 0)*(ScrollSpeed*ScrollSpeedMod)
             love.graphics.setColor(TerminalColors[NoteColors[((i-1)%(#NoteColors))+1][v+1]])
             love.graphics.print("███", x*8 + AnaglyphSide*0.75, drawPos*16-16)
             -- if HitAmounts[i] > 0 then

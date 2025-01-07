@@ -230,6 +230,7 @@ EffectTypes = {
     offset = function(self)
         ViewOffsetTarget = self.data.offset
         ViewOffsetSmoothing = self.data.smoothing or 0
+        ViewOffsetMoveLine = not self.data.keep_line
     end,
     freeze_view = function(self)
         ViewOffsetFreeze = not ViewOffsetFreeze
