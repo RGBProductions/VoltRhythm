@@ -191,6 +191,7 @@ function DialogFileInput:new(x,y,width,height,label)
     ---@type love.DroppedFile?
     input.file = nil
     input.filename = ""
+    input.open = false
 
     return input
 end
@@ -201,21 +202,31 @@ function DialogFileInput:draw(x,y)
     if self.file then
         local width = math.min(self.width, Font:getWidth(self.filename))
         love.graphics.printf(self.filename:sub(-math.floor(width/8), -1), self.x+x, self.y+y, self.width, "center")
+    elseif self.open then
+        love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
+        love.graphics.printf("DROP A FILE", self.x+x, self.y+y, self.width, "center")
     else
         love.graphics.printf(self.label, self.x+x, self.y+y, self.width, "center")
     end
+    love.graphics.setColor(TerminalColors[ColorID.WHITE])
 end
 
 function DialogFileInput:click(x,y)
-    if x >= self.x and x < self.x+self.width and y >= self.y and y < self.y+self.height then
+    if x >= self.x-8 and x < self.x+self.width+8 and y >= self.y-16 and y < self.y+self.height+16 then
         -- TODO: open a "load file" dialog?
+        self.open = not self.open
         return true
     end
     return false
 end
 
+function DialogFileInput:unclick(x,y)
+    self.open = false
+end
+
 function DialogFileInput:filedropped(x,y,file)
-    if x >= self.x-8 and x < self.x+self.width+8 and y >= self.y-16 and y < self.y+self.height+16 then
+    -- if x >= self.x-8 and x < self.x+self.width+8 and y >= self.y-16 and y < self.y+self.height+16 then
+    if self.open then
         self.file = file
         self.filename = file:getFilename()
         return true
