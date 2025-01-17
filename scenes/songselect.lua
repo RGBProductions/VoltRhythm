@@ -262,8 +262,9 @@ function scene.keypressed(k)
     if k == "return" then
         if scene.campaigns[1].sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].isUnlocked then
             local difficulty = SongSelectOvervoltMode and (table.index(difficulties, scene.campaigns[1].sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].difficulties[1]) or 5) or SongSelectDifficulty
+            ---@type SongData?
             local songData = scene.campaigns[1].sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].songData
-            if songData then
+            if songData and songData:loadChart(difficulties[difficulty]) ~= nil then
                 if preview then
                     preview:stop()
                     preview:setLooping(false)
