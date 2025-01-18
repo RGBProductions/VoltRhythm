@@ -675,5 +675,7 @@ function Chart:getDifficulty()
         startTime = math.min(startTime, note.time, note.time+note.length)
         endTime = math.max(endTime, note.time, note.time+note.length)
     end
+    local duration = (endTime-startTime)
+    if duration == 0 then return 0 end
     return amount / (endTime-startTime) * 1.5
 end

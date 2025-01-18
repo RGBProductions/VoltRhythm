@@ -180,9 +180,10 @@ local editorMenu = {
                     end)
                     bpmInput.content = "120"
                     local coverInput = DialogFileInput:new(0, 128, 368, 16, "SONG COVER")
+                    local artistInput = DialogInput:new(0, 160, 368, 16, "COVER ARTIST", 20)
                     local dialog = {
                         width = 24,
-                        height = 16,
+                        height = 17,
                         title = "NEW SONG",
                         contents = {
                             nameInput,
@@ -190,11 +191,12 @@ local editorMenu = {
                             songInput,
                             bpmInput,
                             coverInput,
+                            artistInput,
                             DialogLabel:new(124, 96, 64, "SONG BPM"),
-                            DialogButton:new(200, 176, 64, 16, "CANCEL", function ()
+                            DialogButton:new(200, 208, 64, 16, "CANCEL", function ()
                                 table.remove(scene.dialogs, 1)
                             end),
-                            DialogButton:new(104, 176, 64, 16, "CREATE", function ()
+                            DialogButton:new(104, 208, 64, 16, "CREATE", function ()
                                 -- print(nameInput.content)
                                 -- print(authorInput.content)
                                 -- print(songInput.filename)
@@ -213,7 +215,7 @@ local editorMenu = {
                                 love.filesystem.write("editor_chart/info.json", json.encode({
                                     name = nameInput.content,
                                     author = authorInput.content,
-                                    coverArtist = "?",
+                                    coverArtist = artistInput.content,
                                     song = splitName[#splitName],
                                     bpm = tonumber(bpmInput.content),
                                     charts = {}
@@ -343,7 +345,6 @@ local editorMenu = {
                         local addButton
                         local removeButton
                         local editButton = DialogButton:new(152,48*(i-1),16,16,"E",function()
-                            print("edit " .. difficulty)
                             scene.difficulty = difficulty
                             scene.chart = scene.songData:loadChart(difficulty)
                             table.remove(scene.dialogs, 1)
@@ -491,6 +492,7 @@ local editorMenu = {
                 type = "action",
                 label = "PLAYTEST",
                 onclick = function()
+                    if not scene.chart then return true end
                     shutoffMusic()
                     scene.chart:sort()
                     scene.chart:recalculateCharge()
@@ -507,6 +509,7 @@ local editorMenu = {
                 type = "action",
                 label = "AUTO SHOWCASE",
                 onclick = function()
+                    if not scene.chart then return true end
                     shutoffMusic()
                     scene.chart:sort()
                     scene.chart:recalculateCharge()
@@ -965,7 +968,7 @@ function scene.draw()
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
         love.graphics.print("Suggested Level: ", 32, 400)
         love.graphics.print("     Full Level: ", 32, 416)
-        local difficulty = scene.chart:getDifficulty()
+        local difficulty = math.max(1, scene.chart:getDifficulty())
         if math.floor(difficulty + 0.5) < SongDifficulty[scene.difficulty].range[1] or math.floor(difficulty + 0.5) > SongDifficulty[scene.difficulty].range[2] then
             love.graphics.setColor(TerminalColors[ColorID.LIGHT_RED])
         end
