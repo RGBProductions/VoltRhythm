@@ -157,3 +157,9 @@ function SceneManager.FileDropped(file)
         SceneManager.ActiveScene.filedropped(file)
     end
 end
+
+function SceneManager.DirectoryDropped(path)
+    if SceneManager.ActiveScene.directorydropped ~= nil then
+        SceneManager.ActiveScene.directorydropped(path)
+    end
+end

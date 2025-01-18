@@ -327,6 +327,10 @@ function love.filedropped(file)
     SceneManager.FileDropped(file)
 end
 
+function love.directorydropped(file)
+    SceneManager.DirectoryDropped(file)
+end
+
 function love.keypressed(k)
     if k == "f11" then
         love.window.setFullscreen(not love.window.getFullscreen())

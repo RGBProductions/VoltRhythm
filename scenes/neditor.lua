@@ -30,7 +30,6 @@ local function hoistHistory(path,name)
         table.insert(scene.history, 1, {path = path, name = name})
     end
     buildRecentMenu()
-    love.filesystem.write("editor_history.json", json.encode(scene.history))
 end
 
 local filesource = love.filesystem.getSource()
@@ -567,6 +566,17 @@ local function getMenuItemById(id)
 end
 
 buildRecentMenu = function()
+    local i,n = 1,#scene.history
+    while i <= n do
+        if not love.filesystem.getInfo(scene.history[i].path) then
+            table.remove(scene.history, i)
+            i = i - 1
+        end
+        i = i + 1
+        n = #scene.history
+    end
+    love.filesystem.write("editor_history.json", json.encode(scene.history))
+
     local menu = getMenuItemById("file.recent")
     if not menu then return end
     menu.contents = {}
@@ -734,6 +744,32 @@ function scene.filedropped(file)
         end
         return
     end
+end
+
+local function fullCopy(a,b)
+    if not love.filesystem.getInfo(b) then
+        love.filesystem.createDirectory(b)
+    end
+    for _,itm in ipairs(love.filesystem.getDirectoryItems(a)) do
+        local p1 = a.."/"..itm
+        local p2 = b.."/"..itm
+        if love.filesystem.getInfo(p1).type == "directory" then
+            fullCopy(p1,p2)
+        else
+            love.filesystem.write(p2, love.filesystem.read(p1))
+        end
+    end
+end
+
+function scene.directorydropped(path)
+    love.filesystem.mount(path, "temp_import")
+    local splitPath = path:split("/")
+    local name = splitPath[#splitPath]
+    love.filesystem.createDirectory("editor_save/"..name)
+    fullCopy("temp_import", "editor_save/"..name)
+    love.filesystem.unmount(path)
+    shutoffMusic()
+    readChart(name)
 end
 
 function scene.keypressed(k)
