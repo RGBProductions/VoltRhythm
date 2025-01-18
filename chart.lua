@@ -237,7 +237,7 @@ EffectTypes = {
     end,
     edit_note = function(self,chart)
         for _,note in ipairs(chart.notes) do
-            if note.extra.id == self.data.id then
+            if note.extra.id == self.data.id or note.extra.group == self.data.group then
                 if self.data.time then
                     note.timeTarget = self.data.time
                 end
@@ -258,7 +258,7 @@ EffectTypes = {
                     if note.timeTarget then note.time = note.timeTarget end
                     if note.laneTarget then note.lane = note.laneTarget ; note.visualLane = note.laneTarget end
                 end
-                return
+                if self.data.id then return end
             end
         end
     end,

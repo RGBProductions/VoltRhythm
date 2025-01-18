@@ -616,6 +616,15 @@ function scene.load(args)
         start = {0,0},
         stop = {0,0}
     }
+    scene.selection = {
+        selecting = false,
+        dragging = false,
+        start = {0,0},
+        stop = {0,0}
+    }
+
+    scene.selectedNotes = {}
+    scene.clipboard = {}
 
     scene.dialogs = {}
 
@@ -711,6 +720,25 @@ function scene.update(dt)
             end
         end
     end
+    if scene.selection.dragging then
+        local dragX,dragY = scene.lastNoteLane-scene.selection.start[1], scene.lastNoteTime-scene.selection.start[2]
+        local songTime = math.huge
+        if source then
+            songTime = source:getDuration("seconds")
+        end
+        for _,note in ipairs(scene.selectedNotes) do
+            dragX = math.max(0,math.min(scene.chart.lanes-1, note.lane + dragX))-note.lane
+            dragY = math.max(0,math.min(songTime, note.time + dragY))-note.time
+        end
+        for _,note in ipairs(scene.selectedNotes) do
+            note.lane = note.lane + dragX
+            note.time = note.time + dragY
+        end
+        scene.selection.start = {scene.lastNoteLane, scene.lastNoteTime}
+    end
+    if scene.selection.selecting or scene.selection.dragging then
+        scene.selection.stop = {scene.lastNoteLane, scene.lastNoteTime}
+    end
     if scene.scrollbarGrab then
         if source then
             local dur = source:getDuration("seconds")
@@ -796,6 +824,67 @@ function scene.keypressed(k)
                 end
             end
         end
+    end
+    if k == "c" and love.keyboard.isDown("lctrl") then
+        -- Copy
+        scene.clipboard = scene.selectedNotes
+    end
+    if k == "x" and love.keyboard.isDown("lctrl") then
+        -- Cut
+        scene.clipboard = scene.selectedNotes
+        for _,note in ipairs(scene.selectedNotes) do
+            table.remove(scene.chart.notes, table.index(scene.chart.notes, note))
+        end
+        scene.selectedNotes = {}
+    end
+    if k == "v" and love.keyboard.isDown("lctrl") then
+        -- Paste
+        scene.selectedNotes = {}
+        local baseX,baseY = math.huge,math.huge
+        for _,note in ipairs(scene.clipboard) do
+            baseX,baseY = math.min(baseX,note.lane),math.min(baseY,note.time)
+        end
+        for _,note in ipairs(scene.clipboard) do
+            local newNote = table.merge({}, note)
+            if love.keyboard.isDown("lshift") then
+                newNote.lane = note.lane - baseX + scene.lastNoteLane
+                newNote.time = note.time - baseY + scene.lastNoteTime
+            end
+            table.insert(scene.chart.notes, newNote)
+            table.insert(scene.selectedNotes, newNote)
+        end
+    end
+    if k == "delete" then
+        for _,note in ipairs(scene.selectedNotes) do
+            table.remove(scene.chart.notes, table.index(scene.chart.notes, note))
+        end
+        scene.selectedNotes = {}
+    end
+    if k == "a" and love.keyboard.isDown("lctrl") then
+        scene.selectedNotes = {}
+        for _,note in ipairs(scene.chart.notes) do
+            table.insert(scene.selectedNotes, note)
+        end
+    end
+    if k == "g" and love.keyboard.isDown("lctrl") then
+        local groupnameInput = DialogInput:new(0, 16, 240, 16, "GROUP NAME", 30)
+        table.insert(scene.dialogs, 1, {
+            title = "GROUPING " .. #scene.selectedNotes .. " NOTES",
+            width = 16,
+            height = 9,
+            contents = {
+                groupnameInput,
+                DialogButton:new(136, 80, 64, 16, "CANCEL", function ()
+                    table.remove(scene.dialogs, 1)
+                end),
+                DialogButton:new(40, 80, 64, 16, "GROUP", function ()
+                    for _,note in ipairs(scene.selectedNotes) do
+                        note.extra.group = groupnameInput.content
+                    end
+                    table.remove(scene.dialogs, 1)
+                end)
+            }
+        })
     end
 end
 
@@ -911,13 +1000,45 @@ function scene.draw()
             love.graphics.print("┈┈┈╬┈┈┈╬┈┈┈╬┈┈┈", (80-(scene.chart.lanes*4-1))/2 * 8, drawPos*16-8)
         end
 
+        local chartX = (80-(scene.chart.lanes*4-1))/2 - 1 + 2
         for _,note in ipairs(scene.chart.notes) do
             local t = NoteTypes[note.type]
             if t and type(t.draw) == "function" then
                 love.graphics.setFont(NoteFont)
-                t.draw(note,scene.chartTimeTemp,speed,chartPos, chartHeight-1,(80-(scene.chart.lanes*4-1))/2 - 1 + 2,true)
+                t.draw(note,scene.chartTimeTemp,speed,chartPos, chartHeight-1,chartX,true)
+                if table.index(scene.selectedNotes, note) then
+                    love.graphics.setColor(1,1,1,0.5)
+
+                    local A,B = math.min(note.lane, note.lane+(note.extra.dir or 0)),math.max(note.lane, note.lane+(note.extra.dir or 0))
+                    if note.type == "swap" then
+                        A,B = math.min(note.lane, note.lane-(note.extra.dir or 0)),math.max(note.lane, note.lane-(note.extra.dir or 0))
+                    end
+        
+                    local C,D = note.time,note.time+note.length
+
+                    local pos1 = C-scene.chartTimeTemp
+                    local drawPos1 = chartPos+chartHeight-pos1*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+                    local pos2 = D-scene.chartTimeTemp
+                    local drawPos2 = chartPos+chartHeight-pos2*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+                    love.graphics.rectangle("fill", (chartX+A*4)*8-4, drawPos2*16-24, 16, math.abs((drawPos2*16)-(drawPos1*16))+16)
+                end
                 love.graphics.setFont(Font)
             end
+        end
+
+
+        if scene.selection.selecting then
+            love.graphics.setColor(1,1,1,0.5)
+            
+            local A,B = math.min(scene.selection.start[1], scene.selection.stop[1]),math.max(scene.selection.start[1], scene.selection.stop[1])
+            local C,D = math.min(scene.selection.start[2], scene.selection.stop[2]),math.max(scene.selection.start[2], scene.selection.stop[2])
+
+            local pos1 = C-scene.chartTimeTemp
+            local drawPos1 = chartPos+chartHeight-pos1*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local pos2 = D-scene.chartTimeTemp
+            local drawPos2 = chartPos+chartHeight-pos2*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local x1,x2 = (chartX+A*4)*8-4,(chartX+B*4)*8-4
+            love.graphics.rectangle("fill", x1, drawPos2*16-24, x2-x1+16, math.abs((drawPos2*16)-(drawPos1*16))+16)
         end
 
         if scene.lastNoteLane >= 0 and scene.lastNoteLane < 4 then
@@ -1075,26 +1196,6 @@ function scene.mousepressed(x,y,b)
             tabPosition = tabPosition + 8*(utf8.len(tab.label)+4)
         end
         if hadOpen then return end
-        
-        if scene.placementMode ~= placementModes.select and scene.chart then
-            if scene.placementMode < placementModes.bpm then
-                if scene.lastNoteLane >= 0 and scene.lastNoteLane <= 3 then
-                    local noteType = notes[scene.placementMode]
-                    scene.placement.placing = true
-                    scene.placement.type = noteType
-                    scene.placement.start = {scene.lastNoteLane, scene.lastNoteTime}
-                    local note = Note:new(scene.lastNoteTime, scene.lastNoteLane, 0, noteType, {})
-                    if noteType == "merge" or noteType == "swap" then
-                        note.extra.dir = 0
-                    end
-                    scene.placement.note = note
-                    table.insert(scene.chart.notes, note)
-                    for _=1,8 do
-                        table.insert(Particles, {x = x, y = y, vx = (love.math.random()*2-1)*64, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = love.math.random(1,16), char = "¤"})
-                    end
-                end
-            end
-        end
 
         local source = Assets.Source((scene.chart or {}).song)
         if source then
@@ -1103,6 +1204,51 @@ function scene.mousepressed(x,y,b)
             local Y = pos*240
             if y >= 112 and y < 368 and x >= 424 and x < 424+8 then
                 scene.scrollbarGrab = true
+            end
+        end
+        
+        if scene.chart then
+            if scene.placementMode ~= placementModes.select then
+                if scene.placementMode < placementModes.bpm then
+                    if scene.lastNoteLane >= 0 and scene.lastNoteLane <= 3 then
+                        local noteType = notes[scene.placementMode]
+                        scene.placement.placing = true
+                        scene.placement.type = noteType
+                        scene.placement.start = {scene.lastNoteLane, scene.lastNoteTime}
+                        local note = Note:new(scene.lastNoteTime, scene.lastNoteLane, 0, noteType, {})
+                        if noteType == "merge" or noteType == "swap" then
+                            note.extra.dir = 0
+                        end
+                        scene.placement.note = note
+                        table.insert(scene.chart.notes, note)
+                        for _=1,8 do
+                            table.insert(Particles, {x = x, y = y, vx = (love.math.random()*2-1)*64, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = love.math.random(1,16), char = "¤"})
+                        end
+                    end
+                end
+            elseif not scene.scrollbarGrab then
+                for i,note in ipairs(scene.selectedNotes) do
+                    local A,B = math.min(note.lane, note.lane+(note.extra.dir or 0)),math.max(note.lane, note.lane+(note.extra.dir or 0))
+                    if note.type == "swap" then
+                        A,B = math.min(note.lane, note.lane-(note.extra.dir or 0)),math.max(note.lane, note.lane-(note.extra.dir or 0))
+                    end
+        
+                    local C,D = note.time-0.05,note.time+note.length+0.05
+                    if (scene.lastNoteLane >= A and scene.lastNoteLane <= B) and (scene.lastNoteTime >= C and scene.lastNoteTime <= D) then
+                        scene.selection.dragging = true
+                        scene.selection.start = {scene.lastNoteLane, scene.lastNoteTime}
+                        scene.selection.stop = {scene.lastNoteLane, scene.lastNoteTime}
+                        break
+                    end
+                end
+
+                if not scene.selection.dragging then
+                    if not love.keyboard.isDown("lshift") then
+                        scene.selectedNotes = {}
+                    end
+                    scene.selection.selecting = true
+                    scene.selection.start = {scene.lastNoteLane, scene.lastNoteTime}
+                end
             end
         end
     end
@@ -1126,9 +1272,35 @@ function scene.mousepressed(x,y,b)
     end
 end
 
+local function aabb(x1,y1,w1,h1, x2,y2,w2,h2)
+    return
+        x1 <= x2+w2 and
+        x2 <= x1+w1 and
+        y1 <= y2+h2 and
+        y2 <= y1+h1
+end
+
 function scene.mousereleased(x,y,b)
     scene.placement.placing = false
     scene.scrollbarGrab = false
+    if scene.selection.selecting then
+        for i,note in ipairs(scene.chart.notes) do
+            local A1,B1 = math.min(note.lane, note.lane+(note.extra.dir or 0)),math.max(note.lane, note.lane+(note.extra.dir or 0))
+            if note.type == "swap" then
+                A1,B1 = math.min(note.lane, note.lane-(note.extra.dir or 0)),math.max(note.lane, note.lane-(note.extra.dir or 0))
+            end
+            local C1,D1 = note.time-0.05,note.time+note.length+0.05
+
+            local A2,B2 = math.min(scene.selection.start[1], scene.selection.stop[1]),math.max(scene.selection.start[1], scene.selection.stop[1])
+            local C2,D2 = math.min(scene.selection.start[2], scene.selection.stop[2]),math.max(scene.selection.start[2], scene.selection.stop[2])
+
+            if aabb(A1,C1,B1-A1,D1-C1, A2,C2,B2-A2,D2-C2) then
+                table.insert(scene.selectedNotes, note)
+            end
+        end
+    end
+    scene.selection.selecting = false
+    scene.selection.dragging = false
 end
 
 return scene
