@@ -30,23 +30,30 @@ local editorMenu = {
                     local nameInput = DialogInput:new(0, 0, 368, 16, "SONG NAME", 38)
                     local authorInput = DialogInput:new(0, 24, 368, 16, "SONG AUTHOR", 38)
                     local songInput = DialogFileInput:new(0, 64, 368, 16, "SONG AUDIO")
-                    local coverInput = DialogFileInput:new(0, 112, 368, 16, "SONG COVER")
+                    local bpmInput = DialogInput:new(196, 96, 48, 16, "BPM", 5, nil, function(self)
+                        self.content = tostring(tonumber(self.content) or 0)
+                    end)
+                    bpmInput.content = "120"
+                    local coverInput = DialogFileInput:new(0, 128, 368, 16, "SONG COVER")
                     local dialog = {
                         width = 24,
-                        height = 14,
+                        height = 16,
                         title = "NEW SONG",
                         contents = {
                             nameInput,
                             authorInput,
                             songInput,
+                            bpmInput,
                             coverInput,
-                            DialogButton:new(200, 160, 64, 16, "CANCEL", function ()
+                            DialogLabel:new(124, 96, 64, "SONG BPM"),
+                            DialogButton:new(200, 176, 64, 16, "CANCEL", function ()
                                 table.remove(scene.dialogs, 1)
                             end),
-                            DialogButton:new(104, 160, 64, 16, "CREATE", function ()
+                            DialogButton:new(104, 176, 64, 16, "CREATE", function ()
                                 print(nameInput.content)
                                 print(authorInput.content)
                                 print(songInput.filename)
+                                print(bpmInput.content)
                                 print(coverInput.filename)
                                 if songInput.file == nil then return end
                                 if love.filesystem.getInfo("editor_chart") then
@@ -63,7 +70,7 @@ local editorMenu = {
                                     author = authorInput.content,
                                     coverArtist = "?",
                                     song = splitName[#splitName],
-                                    bpm = 120,
+                                    bpm = tonumber(bpmInput.content),
                                     charts = {}
                                 }))
                                 local songData = LoadSongData("editor_chart")
@@ -162,11 +169,11 @@ local editorMenu = {
                         easy = 1, medium = 6, hard = 11, extreme = 16, overvolt = 21
                     }
                     local dialog = {
-                        width = 14,
+                        width = 20,
                         height = 19,
                         title = "DIFFICULTIES",
                         contents = {
-                            DialogButton:new(40, 240, 128, 16, "CANCEL", function ()
+                            DialogButton:new(88, 240, 128, 16, "CLOSE", function ()
                                 table.remove(scene.dialogs, 1)
                             end)
                         }
@@ -183,6 +190,11 @@ local editorMenu = {
                         end)
                         levelInput.content = tostring(level)
 
+                        local charterInput = DialogInput:new(216,48*(i-1),80,16,"CHARTER",10,nil,function(self)
+                            (scene.songData.charts[difficulty] or {}).charter = self.content
+                        end)
+                        charterInput.content = (scene.songData.charts[difficulty] or {}).charter or ""
+
                         local addButton
                         local removeButton
                         local editButton = DialogButton:new(152,48*(i-1),16,16,"E",function()
@@ -195,13 +207,13 @@ local editorMenu = {
                             local removedialog = {
                                 title = "REMOVE " .. SongDifficulty[difficulty].name:upper(),
                                 width = 16,
-                                height = 8,
+                                height = 9,
                                 contents = {
-                                    DialogLabel:new(0, 16, 240, "ARE YOU SURE?", "center"),
-                                    DialogButton:new(136, 64, 64, 16, "CANCEL", function ()
+                                    DialogLabel:new(0, 16, 240, "ARE YOU SURE?\nTHIS CANNOT BE UNDONE!", "center"),
+                                    DialogButton:new(136, 80, 64, 16, "CANCEL", function ()
                                         table.remove(scene.dialogs, 1)
                                     end),
-                                    DialogButton:new(40, 64, 64, 16, "REMOVE", function ()
+                                    DialogButton:new(40, 80, 64, 16, "REMOVE", function ()
                                         scene.songData:removeChart(difficulty)
                                         if scene.difficulty == difficulty then
                                             scene.difficulty = nil
@@ -210,6 +222,7 @@ local editorMenu = {
                                         table.remove(dialog.contents, table.index(dialog.contents, removeButton))
                                         table.remove(dialog.contents, table.index(dialog.contents, editButton))
                                         table.remove(dialog.contents, table.index(dialog.contents, levelInput))
+                                        table.remove(dialog.contents, table.index(dialog.contents, charterInput))
                                         table.insert(dialog.contents, addButton)
 
                                         table.remove(scene.dialogs, 1)
@@ -223,6 +236,7 @@ local editorMenu = {
                             levelInput.content = tostring(scene.songData:getLevel(difficulty))
                             table.remove(dialog.contents, table.index(dialog.contents, addButton))
                             table.insert(dialog.contents, levelInput)
+                            table.insert(dialog.contents, charterInput)
                             table.insert(dialog.contents, editButton)
                             table.insert(dialog.contents, removeButton)
                         end)
@@ -231,6 +245,7 @@ local editorMenu = {
                         table.insert(dialog.contents, difficultyLabel)
                         if hasDifficulty then
                             table.insert(dialog.contents, levelInput)
+                            table.insert(dialog.contents, charterInput)
                             table.insert(dialog.contents, editButton)
                             table.insert(dialog.contents, removeButton)
                         else
@@ -238,6 +253,15 @@ local editorMenu = {
                         end
                     end
                     table.insert(scene.dialogs, dialog)
+                    return true
+                end
+            },
+            {
+                id = "edit.open_in_old_editor",
+                type = "action",
+                label = "OPEN IN OLD EDITOR",
+                onclick = function()
+                    SceneManager.Transition("scenes/editor", {songData = scene.songData, difficulty = scene.difficulty})
                     return true
                 end
             }
@@ -412,6 +436,19 @@ function scene.load(args)
     }
 
     scene.dialogs = {}
+
+    -- WIP editor notice
+    table.insert(scene.dialogs, 1, {
+        title = "CHART EDITOR",
+        width = 17,
+        height = 18,
+        contents = {
+            DialogLabel:new(0, 16, 256, "Hello!\n\nThis chart editor is still incomplete, so you may experience some bugs or missing features. Don't worry, these should be fixed in the coming updates!\n\nFor now, please report any issues in the Discord server.", "center"),
+            DialogButton:new(64, 224, 128, 16, "OKAY", function ()
+                table.remove(scene.dialogs, 1)
+            end),
+        }
+    })
 
     SetCursor("🮰", 0, 0)
 end
@@ -613,7 +650,7 @@ function scene.draw()
 
         local chartPos = 7
         local chartHeight = 16
-        local speed = 25*2
+        local speed = 25
 
         while currentTime <= scene.chartTimeTemp+1 do
             do
@@ -630,12 +667,12 @@ function scene.draw()
                 end
             end
 
-            local step = TimeBPM(1,currentBPM*2)
+            local step = TimeBPM(1,currentBPM)
             local bpmChange = (bpmChanges[nextBPMChange] or {time = math.huge, bpm = currentBPM})
             if currentTime+step > bpmChange.time then
-                local pos = WhichSixteenth(bpmChange.time-lastBPMTime, currentBPM*2)
+                local pos = WhichSixteenth(bpmChange.time-lastBPMTime, currentBPM)
                 local nextBeatAt = (1 - (pos % 1)) % 1
-                currentTime = currentTime + TimeBPM(nextBeatAt,currentBPM*2)
+                currentTime = currentTime + TimeBPM(nextBeatAt,currentBPM)
                 currentBPM = bpmChange.bpm
                 lastBPMTime = bpmChange.time
                 nextBPMChange = nextBPMChange + 1
@@ -690,7 +727,10 @@ function scene.draw()
             love.graphics.print("█", 424, 352-y)
         end
     else
-        love.graphics.printf("- NO CHART LOADED -", 0, 232, 640, "center")
+        love.graphics.setColor(TerminalColors[ColorID.WHITE])
+        love.graphics.printf("- NO CHART LOADED -", 64, 232, 512, "center")
+        love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
+        love.graphics.printf("GO TO EDIT / DIFFICULTIES TO CREATE A NEW CHART", 64, 248, 512, "center")
     end
 
     for _,particle in ipairs(Particles) do
@@ -733,6 +773,14 @@ function scene.draw()
         end
         love.graphics.printf(dialog.title, (x+1)*8, (y+1)*16, dialog.width*16, "center")
     end
+
+    love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    love.graphics.print("Suggested Level: ", 32, 408)
+    local difficulty = math.floor(scene.chart:getDifficulty() + 0.5)
+    if difficulty < SongDifficulty[scene.difficulty].range[1] or difficulty > SongDifficulty[scene.difficulty].range[2] then
+        love.graphics.setColor(TerminalColors[ColorID.LIGHT_RED])
+    end
+    love.graphics.print(tostring(difficulty), 168, 408)
 end
 
 function scene.mousepressed(x,y,b)

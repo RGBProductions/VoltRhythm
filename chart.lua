@@ -324,23 +324,28 @@ end
 SongDifficulty = {
     hidden = {
         name = "???",
-        color = TerminalColors[ColorID.DARK_GRAY]
+        color = TerminalColors[ColorID.DARK_GRAY],
+        range = {0,math.huge}
     },
     easy = {
         name = "EASY",
-        color = TerminalColors[ColorID.LIGHT_GREEN]
+        color = TerminalColors[ColorID.LIGHT_GREEN],
+        range = {1,5}
     },
     medium = {
         name = "MEDIUM",
-        color = TerminalColors[ColorID.YELLOW]
+        color = TerminalColors[ColorID.YELLOW],
+        range = {6,10}
     },
     hard = {
         name = "HARD",
-        color = TerminalColors[ColorID.LIGHT_RED]
+        color = TerminalColors[ColorID.LIGHT_RED],
+        range = {11,15}
     },
     extreme = {
         name = "EXTREME",
-        color = TerminalColors[ColorID.MAGENTA]
+        color = TerminalColors[ColorID.MAGENTA],
+        range = {16,20}
     },
     overvolt = {
         name = "OVERVOLT",
@@ -352,6 +357,7 @@ SongDifficulty = {
             TerminalColors[OverchargeColors[5]],
             TerminalColors[OverchargeColors[6]]
         },
+        range = {21,30},
         animate = true
     }
 }
