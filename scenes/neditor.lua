@@ -15,6 +15,24 @@ local placementModes = {
 
 local notes = {"normal", "swap", "merge"}
 
+local buildRecentMenu
+
+local function hoistHistory(path,name)
+    local found = false
+    for i,item in ipairs(scene.history) do
+        if item.path == path or item.name == name then
+            table.insert(scene.history, 1, table.remove(scene.history, i))
+            found = true
+            break
+        end
+    end
+    if not found then
+        table.insert(scene.history, 1, {path = path, name = name})
+    end
+    buildRecentMenu()
+    love.filesystem.write("editor_history.json", json.encode(scene.history))
+end
+
 local filesource = love.filesystem.getSource()
 
 local function writeChart(name)
@@ -36,6 +54,7 @@ local function writeChart(name)
         local contents_c,size_c = love.filesystem.read(oPath .. "/cover.png")
         love.filesystem.write("editor_save/"..name.."/cover.png", contents_c)
     end
+    hoistHistory(scene.songData.path, scene.songData.name)
     print("Wrote chart to " .. scene.songData.path)
 end
 
@@ -48,6 +67,8 @@ local function readChart(name)
         break
     end
     scene.chart = scene.songData:loadChart(scene.difficulty)
+    scene.chartTimeTemp = 0
+    hoistHistory(songData.path, songData.name)
     return true
 end
 
@@ -542,6 +563,26 @@ local function getMenuItemById(id)
     return scan(editorMenu)
 end
 
+buildRecentMenu = function()
+    local menu = getMenuItemById("file.recent")
+    if not menu then return end
+    menu.contents = {}
+    for _,itm in ipairs(scene.history) do
+        local splitPath = itm.path:split("/")
+        local id = splitPath[#splitPath]
+        table.insert(menu.contents, {
+            id = "file.recent." .. id,
+            label = itm.name,
+            type = "action",
+            onclick = function()
+                shutoffMusic()
+                readChart(id)
+                return true
+            end
+        })
+    end
+end
+
 function scene.load(args)
     scene.songData = args.songData
     scene.difficulty = args.difficulty
@@ -577,6 +618,17 @@ function scene.load(args)
             end),
         }
     })
+
+    if love.filesystem.getInfo("editor_history.json") then
+        scene.history = json.decode(love.filesystem.read("editor_history.json"))
+    else
+        scene.history = {}
+    end
+    buildRecentMenu()
+
+    if scene.songData then
+        hoistHistory(scene.songData.path, scene.songData.name)
+    end
 
     SetCursor("🮰", 0, 0)
 end
@@ -855,10 +907,17 @@ function scene.draw()
             love.graphics.print("█", 424, 352-y)
         end
     else
-        love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        love.graphics.printf("- NO CHART LOADED -", 64, 232, 512, "center")
-        love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
-        love.graphics.printf("GO TO EDIT / DIFFICULTIES TO CREATE A NEW CHART", 64, 248, 512, "center")
+        if scene.songData then
+            love.graphics.setColor(TerminalColors[ColorID.WHITE])
+            love.graphics.printf("- NO CHART LOADED -", 64, 232, 512, "center")
+            love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
+            love.graphics.printf("GO TO EDIT / DIFFICULTIES TO CREATE A NEW CHART", 64, 248, 512, "center")
+        else
+            love.graphics.setColor(TerminalColors[ColorID.WHITE])
+            love.graphics.printf("- NO SONG LOADED -", 64, 232, 512, "center")
+            love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
+            love.graphics.printf("GO TO FILE / NEW TO CREATE A NEW SONG", 64, 248, 512, "center")
+        end
     end
 
     for _,particle in ipairs(Particles) do

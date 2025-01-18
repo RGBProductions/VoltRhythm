@@ -15,7 +15,7 @@ local options = {
         SceneManager.Transition("scenes/mpmenu")
     end},
     {"EDITOR", "CREATE CHARTS", love.graphics.newImage("images/menu/edit.png"), function()
-        SceneManager.Transition("scenes/neditor", {songData = LoadSongData("songs/worstnightmare"), difficulty = "overvolt"})
+        SceneManager.Transition("scenes/neditor")
     end},
     {"PROFILES", "MANAGE USERS", love.graphics.newImage("images/menu/prof.png"), function()
         SceneManager.Transition("scenes/profiles")
