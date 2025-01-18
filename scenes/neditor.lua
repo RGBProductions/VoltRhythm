@@ -15,6 +15,130 @@ local placementModes = {
 
 local notes = {"normal", "swap", "merge"}
 
+local filesource = love.filesystem.getSource()
+
+local function writeChart(name)
+    local oSongPath = scene.songData.songPath
+    local oPath = scene.songData.path
+    if oPath:sub(1,#filesource) == filesource then
+        oPath = oPath:sub(#filesource,-1)
+    end
+    local splitSong = scene.songData.songPath:split("/")
+    local songName = splitSong[#splitSong]
+    local splitPath = scene.songData.path:split("/")
+    name = name or splitPath[#splitPath]
+    scene.songData:save("editor_save/" .. name)
+    if oSongPath ~= "editor_save/"..name.."/"..songName then
+        local contents_s,size_s = love.filesystem.read(oSongPath)
+        love.filesystem.write("editor_save/"..name.."/"..songName, contents_s)
+    end
+    if oPath ~= "editor_save/"..name then
+        local contents_c,size_c = love.filesystem.read(oPath .. "/cover.png")
+        love.filesystem.write("editor_save/"..name.."/cover.png", contents_c)
+    end
+    print("Wrote chart to " .. scene.songData.path)
+end
+
+local function readChart(name)
+    local songData = LoadSongData("editor_save/" .. name)
+    if not songData then return false end
+    scene.songData = songData
+    for diff,_ in pairs(scene.songData.charts) do
+        scene.difficulty = diff
+        break
+    end
+    scene.chart = scene.songData:loadChart(scene.difficulty)
+    return true
+end
+
+local function shutoffMusic()
+    local source = Assets.Source((scene.chart or {}).song)
+    if source then
+        source:stop()
+    end
+end
+
+local function fileDialog(type)
+    local filenameInput = DialogInput:new(0, 224, 256, 16, "SONG ID", 32)
+    if scene.songData then
+        local splitPath = scene.songData.path:split("/")
+        filenameInput.content = splitPath[#splitPath]
+    end
+    local typename = (type == "r" and "OPEN" or "SAVE")
+    local existing = love.filesystem.getDirectoryItems("editor_save")
+    local dialog = {
+        title = typename .. " SONG",
+        width = 32,
+        height = 18,
+        contents = {
+            DialogButton:new(272, 224, 96, 16, "CANCEL", function ()
+                table.remove(scene.dialogs, 1)
+            end),
+            DialogButton:new(392, 224, 96, 16, typename, function ()
+                if type == "w" then
+                    if table.index(existing, filenameInput.content) then
+                        local savedialog = {
+                            title = "SAVE SONG",
+                            width = 16,
+                            height = 9,
+                            contents = {
+                                DialogLabel:new(0, 16, 240, "YOU ARE OVERWRITING AN EXISTING FILE! ARE YOU SURE?", "center"),
+                                DialogButton:new(136, 80, 64, 16, "CANCEL", function ()
+                                    table.remove(scene.dialogs, 1)
+                                end),
+                                DialogButton:new(40, 80, 64, 16, "SAVE", function ()
+                                    writeChart(filenameInput.content)
+                                    table.remove(scene.dialogs, 1)
+                                    table.remove(scene.dialogs, 1)
+                                end)
+                            }
+                        }
+                        table.insert(scene.dialogs, 1, savedialog)
+                    else
+                        writeChart(filenameInput.content)
+                        table.remove(scene.dialogs, 1)
+                    end
+                end
+                if type == "r" then
+                    shutoffMusic()
+                    if not readChart(filenameInput.content) then
+                        
+                    else
+                        table.remove(scene.dialogs, 1)
+                    end
+                end
+            end),
+            DialogBox:new(4,0,488,200),
+            filenameInput
+        }
+    }
+    local page = 1
+    local idx
+    local function reloadPage()
+        while dialog.contents[idx+1] do
+            table.remove(dialog.contents, idx+1)
+        end
+        local pos = 0
+        for i = (page-1)*4+1, math.min((page-1)*4+4, #existing) do
+            table.insert(dialog.contents, DialogButton:new(20,pos*48+16,408,16,existing[i],function()
+                filenameInput.content = existing[i]
+            end))
+            pos = pos + 1
+        end
+    end
+    table.insert(dialog.contents, DialogButton:new(452,16,24,16,"UP", function ()
+        page = math.max(1, page-1)
+        reloadPage()
+    end))
+    table.insert(dialog.contents, DialogButton:new(452,160,24,16,"DN", function ()
+        page = math.min(math.floor(#existing/4)+1, page+1)
+        reloadPage()
+    end))
+    idx = #dialog.contents
+    reloadPage()
+    table.insert(scene.dialogs, dialog)
+end
+
 local editorMenu = {
     {
         id = "file",
@@ -50,11 +174,11 @@ local editorMenu = {
                                 table.remove(scene.dialogs, 1)
                             end),
                             DialogButton:new(104, 176, 64, 16, "CREATE", function ()
-                                print(nameInput.content)
-                                print(authorInput.content)
-                                print(songInput.filename)
-                                print(bpmInput.content)
-                                print(coverInput.filename)
+                                -- print(nameInput.content)
+                                -- print(authorInput.content)
+                                -- print(songInput.filename)
+                                -- print(bpmInput.content)
+                                -- print(coverInput.filename)
                                 if songInput.file == nil then return end
                                 if love.filesystem.getInfo("editor_chart") then
                                     for _,item in ipairs(love.filesystem.getDirectoryItems("editor_chart")) do
@@ -91,7 +215,7 @@ local editorMenu = {
                 type = "action",
                 label = "OPEN",
                 onclick = function()
-                    print("open song")
+                    fileDialog("r")
                     return true
                 end
             },
@@ -100,23 +224,20 @@ local editorMenu = {
                 type = "menu",
                 label = "OPEN RECENT",
                 open = false,
-                contents = {
-                    {
-                        type = "action",
-                        label = "CUTE",
-                        onclick = function()
-                            print("open CUTE")
-                            return true
-                        end
-                    },
-                }
+                contents = {}
             },
             {
                 id = "file.save",
                 type = "action",
                 label = "SAVE",
                 onclick = function()
-                    print("save song")
+                    if not scene.songData then return true end
+                    local splitPath = scene.songData.path:split("/")
+                    if splitPath[#splitPath] == "editor_chart" then
+                        fileDialog("w")
+                    else
+                        writeChart()
+                    end
                     return true
                 end
             },
@@ -125,7 +246,7 @@ local editorMenu = {
                 type = "action",
                 label = "SAVE AS",
                 onclick = function()
-                    print("save song as")
+                    fileDialog("w")
                     return true
                 end
             },
@@ -134,6 +255,7 @@ local editorMenu = {
                 type = "action",
                 label = "EXIT",
                 onclick = function()
+                    shutoffMusic()
                     SavedEditorTime = nil
                     SceneManager.Transition("scenes/menu")
                     SetCursor()
@@ -154,6 +276,7 @@ local editorMenu = {
                 label = "METADATA",
                 onclick = function()
                     print("edit song metadata")
+                    if not scene.songData then return true end
                     return true
                 end
             },
@@ -162,6 +285,7 @@ local editorMenu = {
                 type = "action",
                 label = "DIFFICULTIES",
                 onclick = function()
+                    if not scene.songData then return true end
                     local difficulties = {
                         "easy", "medium", "hard", "extreme", "overvolt"
                     }
@@ -346,6 +470,7 @@ local editorMenu = {
                 type = "action",
                 label = "PLAYTEST",
                 onclick = function()
+                    shutoffMusic()
                     scene.chart:sort()
                     scene.chart:recalculateCharge()
                     SavedEditorTime = scene.chartTimeTemp
@@ -361,6 +486,7 @@ local editorMenu = {
                 type = "action",
                 label = "AUTO SHOWCASE",
                 onclick = function()
+                    shutoffMusic()
                     scene.chart:sort()
                     scene.chart:recalculateCharge()
                     SavedEditorTime = scene.chartTimeTemp
@@ -420,7 +546,9 @@ function scene.load(args)
     scene.songData = args.songData
     scene.difficulty = args.difficulty
 
-    scene.chart = scene.songData:loadChart(scene.difficulty)
+    if scene.songData then
+        scene.chart = scene.songData:loadChart(scene.difficulty)
+    end
 
     scene.chartTimeTemp = SavedEditorTime or 0
     scene.lastNoteTime = 0
@@ -774,13 +902,17 @@ function scene.draw()
         love.graphics.printf(dialog.title, (x+1)*8, (y+1)*16, dialog.width*16, "center")
     end
 
-    love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    love.graphics.print("Suggested Level: ", 32, 408)
-    local difficulty = math.floor(scene.chart:getDifficulty() + 0.5)
-    if difficulty < SongDifficulty[scene.difficulty].range[1] or difficulty > SongDifficulty[scene.difficulty].range[2] then
-        love.graphics.setColor(TerminalColors[ColorID.LIGHT_RED])
+    if scene.chart then
+        love.graphics.setColor(TerminalColors[ColorID.WHITE])
+        love.graphics.print("Suggested Level: ", 32, 400)
+        love.graphics.print("     Full Level: ", 32, 416)
+        local difficulty = scene.chart:getDifficulty()
+        if math.floor(difficulty + 0.5) < SongDifficulty[scene.difficulty].range[1] or math.floor(difficulty + 0.5) > SongDifficulty[scene.difficulty].range[2] then
+            love.graphics.setColor(TerminalColors[ColorID.LIGHT_RED])
+        end
+        love.graphics.print(tostring(math.floor(difficulty + 0.5)), 168, 400)
+        love.graphics.print(tostring(math.floor(difficulty*1000)/1000), 168, 416)
     end
-    love.graphics.print(tostring(difficulty), 168, 408)
 end
 
 function scene.mousepressed(x,y,b)

@@ -13,8 +13,11 @@ local function playSong(songInfo)
     end
     if preview == nextPreview then return end
     if preview then preview:stop() end
-    if not songInfo then return end
-    if not songInfo.songData then return end
+    if (not songInfo) or (not songInfo.songData) then
+        preview = nil
+        previewTimes = {0,math.huge}
+        return
+    end
     preview = nextPreview
     if preview then
         preview:setLooping(true)
