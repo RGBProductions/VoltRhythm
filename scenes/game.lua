@@ -38,10 +38,11 @@ function GetRating(accValue)
     return #NoteRatings
 end
 
----@param args {songData: SongData, difficulty: string, modifiers: table, isEditor?: boolean}
+---@param args {songData: SongData, difficulty: string, modifiers: table, isEditor?: boolean, forced?: boolean}
 function scene.load(args)
     LastOffset = nil
     scene.isEditor = args.isEditor
+    scene.forced = args.forced
     if args.songData then
         scene.songData = args.songData
         scene.difficulty = args.difficulty
@@ -129,6 +130,7 @@ function scene.load(args)
 end
 
 function PauseGame()
+    if scene.forced then return end
     if scene.song then scene.song:pause() end
     if scene.video then scene.video:pause() end
     Paused = true
@@ -137,12 +139,14 @@ function PauseGame()
 end
 
 function Restart()
+    if scene.forced then return end
     if scene.song then scene.song:stop() end
     scene.chart:resetAllNotes()
     SceneManager.Transition("scenes/game", {songData = scene.songData, difficulty = scene.difficulty, isEditor = scene.isEditor})
 end
 
 function Exit()
+    if scene.forced then return end
     if scene.song then scene.song:stop() end
     scene.chart:resetAllNotes()
     if scene.isEditor then

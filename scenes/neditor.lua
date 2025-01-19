@@ -97,6 +97,7 @@ local function fileDialog(type)
                 table.remove(scene.dialogs, 1)
             end),
             DialogButton:new(392, 224, 96, 16, typename, function ()
+                if #filenameInput.content <= 0 then return end
                 if type == "w" then
                     if table.index(existing, filenameInput.content) then
                         local savedialog = {

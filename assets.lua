@@ -29,7 +29,10 @@ function Assets.Preview(path,section)
     local A = math.floor(section[1]*rate)*channels-2
     local OOR = 0
     for i = A, math.floor(section[2]*rate)*channels-3 do
-        pcall(result.setSample, result, i-A,r:getSample(i))
+        local S,R = pcall(r.getSample, r, i)
+        if S then
+            pcall(result.setSample, result, i-A, R)
+        end
     end
     local source = love.audio.newSource(result)
     previews[path] = source

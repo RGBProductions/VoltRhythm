@@ -126,7 +126,7 @@ function scene.load(args)
                     cover = Assets.GetCover("songs/" .. song.song),
                 }
                 if section.songs[S].songData then
-                    section.songs[S].preview = Assets.Preview(section.songs[S].songData.songPath, section.songs[S].songData.songPreview or {0,math.huge})
+                    section.songs[S].preview = Assets.Preview(section.songs[S].songData.songPath, section.songs[S].songData.songPreview)
                 end
                 scene.songNames[song.song] = (section.songs[S].songData or {}).name or song.song
                 for _,name in ipairs(song.difficulties) do
