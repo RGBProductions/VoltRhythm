@@ -502,7 +502,7 @@ local editorMenu = {
                     SavedEditorTime = scene.chartTimeTemp
                     Autoplay = false
                     Showcase = false
-                    SceneManager.Transition("scenes/game", {songData = scene.songData, difficulty = scene.difficulty})
+                    SceneManager.Transition("scenes/game", {songData = scene.songData, difficulty = scene.difficulty, isEditor = true})
                     SetCursor()
                     return true
                 end
@@ -519,7 +519,7 @@ local editorMenu = {
                     SavedEditorTime = scene.chartTimeTemp
                     Autoplay = true
                     Showcase = true
-                    SceneManager.Transition("scenes/game", {songData = scene.songData, difficulty = scene.difficulty})
+                    SceneManager.Transition("scenes/game", {songData = scene.songData, difficulty = scene.difficulty, isEditor = true})
                     SetCursor()
                     return true
                 end

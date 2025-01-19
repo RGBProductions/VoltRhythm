@@ -38,8 +38,10 @@ function GetRating(accValue)
     return #NoteRatings
 end
 
----@param args {songData: SongData, difficulty: string, modifiers: table}
+---@param args {songData: SongData, difficulty: string, modifiers: table, isEditor?: boolean}
 function scene.load(args)
+    LastOffset = nil
+    scene.isEditor = args.isEditor
     if args.songData then
         scene.songData = args.songData
         scene.difficulty = args.difficulty
@@ -137,13 +139,20 @@ end
 function Restart()
     if scene.song then scene.song:stop() end
     scene.chart:resetAllNotes()
-    SceneManager.Transition("scenes/game", {songData = scene.songData, difficulty = scene.difficulty})
+    SceneManager.Transition("scenes/game", {songData = scene.songData, difficulty = scene.difficulty, isEditor = scene.isEditor})
 end
 
 function Exit()
     if scene.song then scene.song:stop() end
     scene.chart:resetAllNotes()
-    SceneManager.Transition("scenes/songselect")
+    if scene.isEditor then
+        scene.chart.time = 0
+        scene.chart:resetAllNotes()
+        Charge = 0
+        SceneManager.Transition("scenes/neditor", {songData = scene.songData, difficulty = scene.difficulty})
+    else
+        SceneManager.Transition("scenes/songselect")
+    end
 end
 
 function scene.focus(f)
@@ -228,7 +237,8 @@ function scene.keypressed(k)
                         end
                         Charge = Charge + (1-accuracy)
                         Hits = Hits + 1
-                        HitOffset = HitOffset + (note.time-scene.chart.time)
+                        LastOffset = (note.time-scene.chart.time)
+                        HitOffset = HitOffset + LastOffset
                         RealHits = RealHits + 1
                         Accuracy = Accuracy + (1-accuracy)
                         local c = math.floor(Charge/scene.chart.totalCharge*100/2-1)
@@ -418,6 +428,7 @@ function scene.update(dt)
                                 Accuracy = Accuracy + 1
                                 Hits = Hits + 1
                                 HitOffset = HitOffset + 0
+                                LastOffset = 0
                                 RealHits = RealHits + 1
                                 local c = math.floor(Charge/scene.chart.totalCharge*100/2-1)
                                 local x = (16+c)*8
@@ -545,7 +556,15 @@ function scene.update(dt)
                 if FullOvercharge then
                     Charge = scene.chart.totalCharge
                 end
-                SceneManager.Transition("scenes/rating", {chart = scene.chart, songData = scene.songData, difficulty = scene.difficulty, offset = HitOffset/RealHits, ratings = RatingCounts, accuracy = Accuracy/math.max(Hits,1), charge = Charge/scene.chart.totalCharge*100, fullCombo = ComboBreaks == 0, fullOvercharge = FullOvercharge})
+                if scene.isEditor then
+                    if scene.song then scene.song:stop() end
+                    scene.chart.time = 0
+                    scene.chart:resetAllNotes()
+                    Charge = 0
+                    SceneManager.Transition("scenes/neditor", {songData = scene.songData, difficulty = scene.difficulty})
+                else
+                    SceneManager.Transition("scenes/rating", {chart = scene.chart, songData = scene.songData, difficulty = scene.difficulty, offset = HitOffset/RealHits, ratings = RatingCounts, accuracy = Accuracy/math.max(Hits,1), charge = Charge/scene.chart.totalCharge*100, fullCombo = ComboBreaks == 0, fullOvercharge = FullOvercharge})
+                end
             end
         end
     end
@@ -780,6 +799,10 @@ function scene.draw()
         x = x + AnaglyphSide*0.75
         NoteRatings[LastRating].draw(x,y,true)
     end
+    -- if LastOffset then
+    --     love.graphics.printf(math.floor(LastOffset*1000*100)/100 .. " ms", 320-128, 9*16, 256, "center")
+    --     love.graphics.printf(math.floor((HitOffset/RealHits)*1000*100)/100 .. " ms", 320-128, 10*16, 256, "center")
+    -- end
     local comboString = tostring(Combo)
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     love.graphics.print(comboString, ((80-(#comboString))/2)*8 + AnaglyphSide*0.75, 7*16)
