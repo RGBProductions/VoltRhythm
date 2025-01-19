@@ -14,6 +14,8 @@ Version = (require "version")()
 
 ChargeYield = 200
 XChargeYield = 50
+TimingWindow = 0.2
+OverchargeWindow = 0.125
 
 NoteRatings = {
     {
@@ -186,7 +188,7 @@ function SetCursor(cursor,x,y)
 end
 
 Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%().,'\"!?/:+-_=┌─┐│└┘├┤┴┬█▓▒░┊┈╬○◇▷◁║¤👑▧▥▨◐◑◻🡙ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω🮰✨")
-NoteFont = love.graphics.newImageFont("images/notes/default.png", "○◇▷◁║▧▥▨◐◑◻◼")
+NoteFont = love.graphics.newImageFont("images/notes/default.png", "○◇▷◁║▧▥▨◐◑◻◼☓")
 
 function DrawBox(x,y,w,h)
     love.graphics.print("┌"..("──"):rep(w).."┐\n"..("│"..("  "):rep(w).."│\n"):rep(h).."└"..("──"):rep(w).."┘", x*8, y*16)

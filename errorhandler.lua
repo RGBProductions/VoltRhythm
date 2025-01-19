@@ -5,6 +5,8 @@ local function error_printer(msg, layer)
 end
 
 return function (msg)
+	Save.Flush()
+	
 	msg = tostring(msg)
 
 	error_printer(msg, 2)

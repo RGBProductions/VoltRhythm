@@ -51,7 +51,9 @@ local function writeChart(name)
     end
     if oPath ~= "editor_save/"..name then
         local contents_c,size_c = love.filesystem.read(oPath .. "/cover.png")
-        love.filesystem.write("editor_save/"..name.."/cover.png", contents_c)
+        if contents_c then
+            love.filesystem.write("editor_save/"..name.."/cover.png", contents_c)
+        end
     end
     hoistHistory(scene.songData.path, scene.songData.name)
     print("Wrote chart to " .. scene.songData.path)
@@ -209,7 +211,9 @@ local editorMenu = {
                                 end
                                 local splitName = songInput.filename:split("/")
                                 love.filesystem.createDirectory("editor_chart")
-                                love.filesystem.write("editor_chart/cover.png", coverInput.file:read())
+                                if coverInput.file ~= nil then
+                                    love.filesystem.write("editor_chart/cover.png", coverInput.file:read())
+                                end
                                 love.filesystem.write("editor_chart/" .. splitName[#splitName], songInput.file:read())
                                 love.filesystem.write("editor_chart/info.json", json.encode({
                                     name = nameInput.content,
@@ -942,9 +946,7 @@ function scene.draw()
             love.graphics.print(("   ┊\n"):rep(16), x*8, 7*16)
         end
 
-        local bpmChanges = {
-            -- {time = TimeBPM(144,95), bpm = 190}
-        }
+        local bpmChanges = scene.chart.bpmChanges
 
         local currentTime = 0
         local currentBPM = scene.chart.bpm
@@ -1225,6 +1227,28 @@ function scene.mousepressed(x,y,b)
                             table.insert(Particles, {x = x, y = y, vx = (love.math.random()*2-1)*64, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = love.math.random(1,16), char = "¤"})
                         end
                     end
+                end
+                if scene.placementMode == placementModes.bpm then
+                    local time = scene.lastNoteTime
+                    local bpmInput = DialogInput:new(0, 16, 240, 16, "NEW BPM", 5, nil, function(self)
+                        self.content = tostring(tonumber(self.content) or 0)
+                    end)
+                    bpmInput.content = "120"
+                    table.insert(scene.dialogs, 1, {
+                        title = "PLACING BPM CHANGE",
+                        width = 16,
+                        height = 9,
+                        contents = {
+                            bpmInput,
+                            DialogButton:new(136, 80, 64, 16, "CANCEL", function ()
+                                table.remove(scene.dialogs, 1)
+                            end),
+                            DialogButton:new(40, 80, 64, 16, "PLACE", function ()
+                                table.insert(scene.chart.bpmChanges, {time = time+0.0001, bpm = tonumber(bpmInput.content)})
+                                table.remove(scene.dialogs, 1)
+                            end)
+                        }
+                    })
                 end
             elseif not scene.scrollbarGrab then
                 for i,note in ipairs(scene.selectedNotes) do

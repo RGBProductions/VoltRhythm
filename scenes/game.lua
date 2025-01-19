@@ -256,9 +256,9 @@ function scene.keypressed(k)
                     end
                 end
                 -- local pos = note.time-scene.chart.time
-                -- if math.abs(pos) <= 0.2 and k == (Keybinds[scene.chart.lanes] or Keybinds[8])[note.lane+1] and not note.destroyed and not note.holding then
+                -- if math.abs(pos) <= TimingWindow and k == (Keybinds[scene.chart.lanes] or Keybinds[8])[note.lane+1] and not note.destroyed and not note.holding then
                 --     local t = 0.125
-                --     local accuracy = (math.abs(pos)/0.2)
+                --     local accuracy = (math.abs(pos)/TimingWindow)
                 --     accuracy = math.max(0,math.min(1,(1/(1-t))*accuracy - ((1/(1-t))-1)))
                 --     local accValue = (1-accuracy)
                 --     for R,rating in ipairs(NoteRatings) do

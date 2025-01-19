@@ -22,6 +22,7 @@ function Assets.Preview(path,section)
     if not love.filesystem.getInfo(path) then return nil end
     local s,r = pcall(love.sound.newSoundData, path)
     if not s then return nil end
+    section = section or {0,r:getDuration()}
     local rate = r:getSampleRate()
     local channels = r:getChannelCount()
     local result = love.sound.newSoundData(math.floor((section[2]-section[1])*rate), rate, r:getBitDepth(), channels)

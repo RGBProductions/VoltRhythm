@@ -48,9 +48,9 @@ NoteTypes = {
         end,
         hit = function(self,time,lane)
             local pos = self.time-time
-            if math.abs(pos) <= 0.2 and lane == self.lane and not self.destroyed and not self.holding then
-                local t = 0.125
-                local accuracy = (math.abs(pos)/0.2)
+            if math.abs(pos) <= TimingWindow and lane == self.lane and not self.destroyed and not self.holding then
+                local t = OverchargeWindow
+                local accuracy = (math.abs(pos)/TimingWindow)
                 accuracy = math.max(0,math.min(1,(1/(1-t))*accuracy - ((1/(1-t))-1)))
                 return true, accuracy, true
             end
@@ -98,9 +98,9 @@ NoteTypes = {
         end,
         hit = function(self,time,lane)
             local pos = self.time-time
-            if math.abs(pos) <= 0.2 and lane == self.lane and not self.destroyed and not self.holding then
-                local t = 0.125
-                local accuracy = (math.abs(pos)/0.2)
+            if math.abs(pos) <= TimingWindow and lane == self.lane and not self.destroyed and not self.holding then
+                local t = OverchargeWindow
+                local accuracy = (math.abs(pos)/TimingWindow)
                 accuracy = math.max(0,math.min(1,(1/(1-t))*accuracy - ((1/(1-t))-1)))
                 return true, accuracy, true
             end
@@ -137,9 +137,9 @@ NoteTypes = {
         hit = function(self,time,lane)
             local pos = self.time-time
             local min,max = math.min(self.lane+self.extra.dir, self.lane), math.max(self.lane+self.extra.dir, self.lane)
-            if math.abs(pos) <= 0.2 and (lane >= min and lane <= max) and not self.destroyed and not self.holding then
-                local t = 0.125
-                local accuracy = (math.abs(pos)/0.2)
+            if math.abs(pos) <= TimingWindow and (lane >= min and lane <= max) and not self.destroyed and not self.holding then
+                local t = OverchargeWindow
+                local accuracy = (math.abs(pos)/TimingWindow)
                 accuracy = math.max(0,math.min(1,(1/(1-t))*accuracy - ((1/(1-t))-1)))
                 if not self.laneAccuracies then
                     self.laneAccuracies = {}
@@ -457,7 +457,7 @@ function SongData:newChart(difficulty, level)
     local chart = Chart:new(
         self.songPath,
         self.bpm,
-        {}, {},
+        {}, {}, {},
         self.name, 4,
         nil, nil, {}, "?"
     )
@@ -530,6 +530,7 @@ end
 ---@field bpm number
 ---@field notes table
 ---@field effects table
+---@field bpmChanges table
 ---@field time number
 ---@field lanes integer
 ---@field name string
@@ -537,7 +538,7 @@ end
 Chart = {}
 Chart.__index = Chart
 
-function Chart:new(song, bpm, notes, effects, name, lanes, video, background, backgroundInit, charter)
+function Chart:new(song, bpm, notes, effects, bpmChanges, name, lanes, video, background, backgroundInit, charter)
     local chart = setmetatable({}, self)
 
     chart.song = song
@@ -553,6 +554,10 @@ function Chart:new(song, bpm, notes, effects, name, lanes, video, background, ba
     end)
     chart.effects = effects or {}
     table.sort(chart.effects or {}, function (a, b)
+        return a.time < b.time
+    end)
+    chart.bpmChanges = bpmChanges or {}
+    table.sort(chart.bpmChanges or {}, function (a, b)
         return a.time < b.time
     end)
     chart.time = 0
@@ -574,6 +579,9 @@ function Chart:sort()
         return a.time < b.time
     end)
     table.sort(self.effects or {}, function (a, b)
+        return a.time < b.time
+    end)
+    table.sort(self.bpmChanges or {}, function (a, b)
         return a.time < b.time
     end)
 end
@@ -630,7 +638,7 @@ function Chart.fromFile(path,b)
     for i,effect in ipairs(data.effects) do
         data.effects[i] = Effect:new(effect.time,effect.type,effect.data)
     end
-    return Chart:new(data.song,data.bpm,data.notes,data.effects,data.name,data.lanes,data.video,data.background,data.backgroundInit,data.charter)
+    return Chart:new(data.song,data.bpm,data.notes,data.effects,data.bpmChanges,data.name,data.lanes,data.video,data.background,data.backgroundInit,data.charter)
 end
 
 function Chart:save(path)
@@ -652,6 +660,7 @@ function Chart:save(path)
         bpm = self.bpm,
         notes = notes,
         effects = effects,
+        bpmChanges = self.bpmChanges,
         charter = self.charter
     }))
 end
