@@ -206,6 +206,9 @@ end
 
 function scene.keypressed(k)
     if SceneManager.TransitioningIn() then return end
+    if k == "f8" then
+        SceneManager.Transition("scenes/neditor", {songData = scene.songData, difficulty = scene.difficulty})
+    end
     local song = Assets.Source(scene.chart.song)
     if k == "]" then
         scene.zoom = scene.zoom + 1

@@ -70,6 +70,7 @@ local function readChart(name)
     scene.chart = scene.songData:loadChart(scene.difficulty)
     scene.chartTimeTemp = 0
     hoistHistory(songData.path, songData.name)
+    if scene.chart then scene.lastRating = scene.chart:getDifficulty() end
     return true
 end
 
@@ -351,6 +352,7 @@ local editorMenu = {
                         local editButton = DialogButton:new(152,48*(i-1),16,16,"E",function()
                             scene.difficulty = difficulty
                             scene.chart = scene.songData:loadChart(difficulty)
+                            if scene.chart then scene.lastRating = scene.chart:getDifficulty() end
                             table.remove(scene.dialogs, 1)
                         end)
                         removeButton = DialogButton:new(184,48*(i-1),16,16,"-",function()
@@ -609,6 +611,11 @@ function scene.load(args)
         scene.chart = scene.songData:loadChart(scene.difficulty)
     end
 
+    scene.lastRating = 1
+    if scene.chart then
+        scene.lastRating = scene.chart:getDifficulty()
+    end
+
     scene.chartTimeTemp = SavedEditorTime or 0
     scene.lastNoteTime = 0
     scene.lastNoteLane = 0
@@ -724,6 +731,8 @@ function scene.update(dt)
                 note.time = a
             end
         end
+
+        scene.lastRating = scene.chart:getDifficulty()
     end
     if scene.selection.dragging then
         local dragX,dragY = scene.lastNoteLane-scene.selection.start[1], scene.lastNoteTime-scene.selection.start[2]
@@ -841,6 +850,7 @@ function scene.keypressed(k)
             table.remove(scene.chart.notes, table.index(scene.chart.notes, note))
         end
         scene.selectedNotes = {}
+        scene.lastRating = scene.chart:getDifficulty()
     end
     if k == "v" and love.keyboard.isDown("lctrl") then
         -- Paste
@@ -857,6 +867,7 @@ function scene.keypressed(k)
             end
             table.insert(scene.chart.notes, newNote)
             table.insert(scene.selectedNotes, newNote)
+            scene.lastRating = scene.chart:getDifficulty()
         end
     end
     if k == "delete" then
@@ -864,6 +875,7 @@ function scene.keypressed(k)
             table.remove(scene.chart.notes, table.index(scene.chart.notes, note))
         end
         scene.selectedNotes = {}
+        scene.lastRating = scene.chart:getDifficulty()
     end
     if k == "a" and love.keyboard.isDown("lctrl") then
         scene.selectedNotes = {}
@@ -1128,7 +1140,7 @@ function scene.draw()
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
         love.graphics.print("Suggested Level: ", 32, 400)
         love.graphics.print("     Full Level: ", 32, 416)
-        local difficulty = math.max(1, scene.chart:getDifficulty())
+        local difficulty = math.max(1, scene.lastRating)
         if math.floor(difficulty + 0.5) < SongDifficulty[scene.difficulty].range[1] or math.floor(difficulty + 0.5) > SongDifficulty[scene.difficulty].range[2] then
             love.graphics.setColor(TerminalColors[ColorID.LIGHT_RED])
         end
@@ -1227,6 +1239,7 @@ function scene.mousepressed(x,y,b)
                         for _=1,8 do
                             table.insert(Particles, {x = x, y = y, vx = (love.math.random()*2-1)*64, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = love.math.random(1,16), char = "¤"})
                         end
+                        scene.lastRating = scene.chart:getDifficulty()
                     end
                 end
                 if scene.placementMode == placementModes.bpm then
@@ -1291,6 +1304,7 @@ function scene.mousepressed(x,y,b)
                 for _=1,8 do
                     table.insert(Particles, {x = x, y = y, vx = (love.math.random()*2-1)*64, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = ColorID.RED, char = "¤"})
                 end
+                scene.lastRating = scene.chart:getDifficulty()
                 break
             end
         end
