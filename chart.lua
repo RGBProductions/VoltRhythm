@@ -213,6 +213,13 @@ EffectTypes = {
             TearingModifier = TearingModifierTarget
         end
     end,
+    bloom = function(self)
+        BloomStrengthModifierTarget = self.data.strength
+        BloomStrengthModifierSmoothing = self.data.smoothing or 0
+        if (self.data.smoothing or 0) == 0 then
+            BloomStrengthModifier = BloomStrengthModifierTarget
+        end
+    end,
     wave = function(self)
         WavinessTarget = self.data.strength
         WavinessSmoothing = self.data.smoothing or 0

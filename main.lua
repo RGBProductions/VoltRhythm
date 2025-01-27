@@ -278,6 +278,11 @@ TearingModifier = 0
 TearingModifierTarget = 0
 TearingModifierSmoothing = 0
 
+BloomStrength = 1
+BloomStrengthModifier = 1
+BloomStrengthModifierTarget = 1
+BloomStrengthModifierSmoothing = 0
+
 ScreenShader = love.graphics.newShader("screen.frag")
 ScreenShader:send("curveStrength", CurveStrength*CurveModifier)
 ScreenShader:send("scanlineStrength", 0.5)
@@ -288,7 +293,7 @@ ScreenShader:send("horizBlurStrength", 0.5)
 ScreenShader:send("tearTime", love.timer.getTime())
 
 BloomShader = love.graphics.newShader("bloom.frag")
-BloomShader:send("strength", 1)
+BloomShader:send("strength", 2)
 
 UseShaders = true
 
@@ -411,6 +416,14 @@ function love.update(dt)
             TearingModifier = blend*(TearingModifier-TearingModifierTarget)+TearingModifierTarget
         end
     end
+    do
+        if BloomStrengthModifierSmoothing == 0 then
+            BloomStrengthModifier = BloomStrengthModifierTarget
+        else
+            local blend = math.pow(1/BloomStrengthModifierSmoothing,dt)
+            BloomStrengthModifier = blend*(BloomStrengthModifier-BloomStrengthModifierTarget)+BloomStrengthModifierTarget
+        end
+    end
     
     MissTime = math.max(0,MissTime - dt * 8)
     
@@ -419,6 +432,8 @@ function love.update(dt)
     ScreenShader:send("chromaticStrength", Chromatic * ChromaticModifier)
     ScreenShader:send("horizBlurStrength", 0.5)
     ScreenShader:send("tearTime", love.timer.getTime())
+
+    BloomShader:send("strength", BloomStrength*BloomStrengthModifier)
 
     SceneManager.Update(dt)
     SceneManager.UpdateTransition(dt)

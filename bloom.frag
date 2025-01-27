@@ -16,7 +16,7 @@ vec4 effect(vec4 c, Image t, vec2 tc, vec2 sc) {
         vec2 sample = tc - zoomDir*(zoomBlurStrength/num)*float(i);
         vec4 col = Texel(t,sample)*c;
         vec4 bloom = Texel(blurred,sample)*c;
-        final += mix(col,bloom,0.5*strength)*1.5;
+        final += mix(col,bloom,0.5*min(1.0,strength))*1.5 + bloom*max(0.0, strength - 1.0);
     }
     return final/float(num);
 }
