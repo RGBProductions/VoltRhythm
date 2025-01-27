@@ -672,7 +672,6 @@ function scene.update(dt)
         end
     end
 
-    MissTime = math.max(0,MissTime - dt * 8)
     for i = 1, scene.chart.lanes do
         PressAmounts[i] = math.max(0, math.min(Autoplay and math.huge or 1, (PressAmounts[i] or 0) + dt*8*((love.keyboard.isDown((Keybinds[scene.chart.lanes] or Keybinds[8])[i]) and not Autoplay) and 1/dt or -1/dt)))
         HitAmounts[i] = math.max(0, math.min(1, (HitAmounts[i] or 0) - dt*8))

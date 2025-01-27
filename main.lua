@@ -412,6 +412,8 @@ function love.update(dt)
         end
     end
     
+    MissTime = math.max(0,MissTime - dt * 8)
+    
     ScreenShader:send("curveStrength", CurveStrength*CurveModifier)
     ScreenShader:send("tearStrength", TearingStrength*(MissTime*2/Display:getWidth() + TearingModifier))
     ScreenShader:send("chromaticStrength", Chromatic * ChromaticModifier)

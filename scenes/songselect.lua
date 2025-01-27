@@ -26,7 +26,6 @@ local function playSong(songInfo)
 end
 
 function scene.update(dt)
-    MissTime = math.max(0,MissTime - dt * 8)
     local blendAmt = 1/((5/4) ^ 60)
     local blend = blendAmt^dt
     SongSelectOffsetView = blend*(SongSelectOffsetView - SongSelectOffsetViewTarget) + SongSelectOffsetViewTarget
