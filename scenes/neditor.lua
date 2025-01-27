@@ -178,7 +178,7 @@ local editorMenu = {
                     local nameInput = DialogInput:new(0, 0, 368, 16, "SONG NAME", 38)
                     local authorInput = DialogInput:new(0, 24, 368, 16, "SONG AUTHOR", 38)
                     local songInput = DialogFileInput:new(0, 64, 368, 16, "SONG AUDIO")
-                    local bpmInput = DialogInput:new(196, 96, 48, 16, "BPM", 5, nil, function(self)
+                    local bpmInput = DialogInput:new(196, 96, 48, 16, "BPM", 15, nil, function(self)
                         self.content = tostring(tonumber(self.content) or 0)
                     end)
                     bpmInput.content = "120"
@@ -992,9 +992,9 @@ function scene.draw()
 
             local step = TimeBPM(1,currentBPM)
             local bpmChange = (bpmChanges[nextBPMChange] or {time = math.huge, bpm = currentBPM})
-            if currentTime+step > bpmChange.time then
+            if currentTime+step - bpmChange.time >= -0.001 then
                 local pos = WhichSixteenth(bpmChange.time-lastBPMTime, currentBPM)
-                local nextBeatAt = (1 - (pos % 1)) % 1
+                local nextBeatAt = math.ceil((1 - (pos % 1)) % 1)
                 currentTime = currentTime + TimeBPM(nextBeatAt,currentBPM)
                 currentBPM = bpmChange.bpm
                 lastBPMTime = bpmChange.time
@@ -1026,7 +1026,8 @@ function scene.draw()
 
                     local A,B = math.min(note.lane, note.lane+(note.extra.dir or 0)),math.max(note.lane, note.lane+(note.extra.dir or 0))
                     if note.type == "swap" then
-                        A,B = math.min(note.lane, note.lane-(note.extra.dir or 0)),math.max(note.lane, note.lane-(note.extra.dir or 0))
+                        A = note.lane-(note.extra.dir or 0)
+                        B = A
                     end
         
                     local C,D = note.time,note.time+note.length
@@ -1035,10 +1036,21 @@ function scene.draw()
                     local drawPos1 = chartPos+chartHeight-pos1*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
                     local pos2 = D-scene.chartTimeTemp
                     local drawPos2 = chartPos+chartHeight-pos2*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
-                    love.graphics.rectangle("fill", (chartX+A*4)*8-4, drawPos2*16-24, 16, math.abs((drawPos2*16)-(drawPos1*16))+16)
+                    local a = (chartX+A*4)*8-4
+                    local b = (chartX+B*4)*8+12
+                    love.graphics.rectangle("fill", a, drawPos2*16-24, math.abs(b-a), math.abs((drawPos2*16)-(drawPos1*16))+16)
                 end
                 love.graphics.setFont(Font)
             end
+        end
+
+        love.graphics.setFont(Font)
+        love.graphics.setColor(TerminalColors[ColorID.CYAN])
+        for _,change in ipairs(bpmChanges) do
+            local drawPos = chartPos+chartHeight-(change.time - scene.chartTimeTemp)*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local txt = change.bpm .. " BPM ▷"
+            local w = 8*#txt
+            love.graphics.printf(txt, chartX*8-24 - w, drawPos*16-24, w, "right")
         end
 
 
@@ -1069,6 +1081,14 @@ function scene.draw()
                     }
                 }, scene.chartTimeTemp, speed, chartPos, chartHeight-1, (80-(scene.chart.lanes*4-1))/2 - 1 + 2, true)
                 love.graphics.setFont(Font)
+            end
+            love.graphics.setFont(Font)
+            love.graphics.setColor(TerminalColors[ColorID.CYAN])
+            if scene.placementMode == placementModes.bpm then
+                local drawPos = chartPos+chartHeight-(scene.lastNoteTime - scene.chartTimeTemp)*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+                local txt = "▷"
+                local w = 8*#txt
+                love.graphics.printf(txt, chartX*8-24 - w, drawPos*16-24, w, "right")
             end
         end
     
@@ -1244,7 +1264,7 @@ function scene.mousepressed(x,y,b)
                 end
                 if scene.placementMode == placementModes.bpm then
                     local time = scene.lastNoteTime
-                    local bpmInput = DialogInput:new(0, 16, 240, 16, "NEW BPM", 5, nil, function(self)
+                    local bpmInput = DialogInput:new(0, 16, 240, 16, "NEW BPM", 15, nil, function(self)
                         self.content = tostring(tonumber(self.content) or 0)
                     end)
                     bpmInput.content = "120"
@@ -1292,6 +1312,26 @@ function scene.mousepressed(x,y,b)
     end
 
     if b == 2 and scene.chart then
+        local chartX = (80-(scene.chart.lanes*4-1))/2 - 1 + 2
+        local chartPos = 7
+        local chartHeight = 16
+        local speed = 25
+
+        for i,change in ipairs(scene.chart.bpmChanges or {}) do
+            local drawPos = chartPos+chartHeight-(change.time - scene.chartTimeTemp)*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local txt = change.bpm .. " BPM ▷"
+            local w = 8*#txt
+            
+            local X,Y = chartX*8-24 - w, drawPos*16-24
+            if x >= X and x < X+w and y >= Y-16 and y < Y+16+16 then
+                table.remove(scene.chart.bpmChanges or {}, i)
+                for _=1,8 do
+                    table.insert(Particles, {x = x, y = y, vx = (love.math.random()*2-1)*64, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = ColorID.RED, char = "¤"})
+                end
+                return
+            end
+        end
+
         for i,note in ipairs(scene.chart.notes) do
             local A,B = math.min(note.lane, note.lane+(note.extra.dir or 0)),math.max(note.lane, note.lane+(note.extra.dir or 0))
             if note.type == "swap" then
