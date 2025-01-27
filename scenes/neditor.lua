@@ -285,6 +285,7 @@ local editorMenu = {
                 onclick = function()
                     shutoffMusic()
                     SavedEditorTime = nil
+                    SavedEditorZoom = nil
                     SceneManager.Transition("scenes/menu")
                     SetCursor()
                     return true
@@ -503,6 +504,7 @@ local editorMenu = {
                     scene.chart:sort()
                     scene.chart:recalculateCharge()
                     SavedEditorTime = scene.chartTimeTemp
+                    SavedEditorZoom = scene.zoom
                     Autoplay = false
                     Showcase = false
                     SceneManager.Transition("scenes/game", {songData = scene.songData, difficulty = scene.difficulty, isEditor = true})
@@ -520,6 +522,7 @@ local editorMenu = {
                     scene.chart:sort()
                     scene.chart:recalculateCharge()
                     SavedEditorTime = scene.chartTimeTemp
+                    SavedEditorZoom = scene.zoom
                     Autoplay = true
                     Showcase = true
                     SceneManager.Transition("scenes/game", {songData = scene.songData, difficulty = scene.difficulty, isEditor = true})
@@ -617,6 +620,7 @@ function scene.load(args)
     end
 
     scene.chartTimeTemp = SavedEditorTime or 0
+    scene.zoom = SavedEditorZoom or 1
     scene.lastNoteTime = 0
     scene.lastNoteLane = 0
 
@@ -814,6 +818,15 @@ function scene.directorydropped(path)
     readChart(name)
 end
 
+function scene.wheelmoved(x,y)
+    if love.keyboard.isDown("lctrl") then
+        scene.zoom = math.max(1,math.min(16,scene.zoom + y))
+    else
+        scene.chartTimeTemp = scene.chartTimeTemp + y/10/scene.zoom
+    end
+end
+
+---@param k love.KeyConstant
 function scene.keypressed(k)
     if #scene.dialogs > 0 then
         local dialog = scene.dialogs[1]
@@ -824,6 +837,14 @@ function scene.keypressed(k)
         end
         return
     end
+    
+    if k == "+" or k == "=" or k == "kp+" then
+        scene.zoom = math.min(16, scene.zoom + 1)
+    end
+    if k == "-" or k == "_" or k == "kp-" then
+        scene.zoom = math.max(1,scene.zoom - 1)
+    end
+
     if k == "space" then
         if (scene.chart or {}).song then
             local source = Assets.Source(scene.chart.song)
@@ -971,16 +992,17 @@ function scene.draw()
         scene.lastNoteTime = math.huge
         scene.lastNoteLane = math.floor( ( MouseX - ((80-(scene.chart.lanes*4-1))/2 - 1)*8 - 4 ) / (8*4) )
 
+        local zoom = scene.zoom
         local chartPos = 7
         local chartHeight = 16
-        local speed = 25
+        local speed = 25*zoom
 
-        while currentTime <= scene.chartTimeTemp+1 do
+        while currentTime <= scene.chartTimeTemp+1/zoom do
             do
                 local pos = currentTime - scene.chartTimeTemp
                 local drawPos = chartPos+chartHeight-pos*speed - 1
                 if drawPos >= chartPos and drawPos < chartPos+chartHeight then
-                    love.graphics.setColor(TerminalColors[numSteps%4 == 0 and ColorID.LIGHT_GRAY or ColorID.DARK_GRAY])
+                    love.graphics.setColor(TerminalColors[numSteps%(4*zoom) == 0 and ColorID.LIGHT_GRAY or ColorID.DARK_GRAY])
                     love.graphics.print("┈┈┈╬┈┈┈╬┈┈┈╬┈┈┈", (80-(scene.chart.lanes*4-1))/2 * 8, drawPos*16-8)
                 end
                 local mouseDist = math.abs((drawPos*16-8) - (MouseY-8))
@@ -990,7 +1012,7 @@ function scene.draw()
                 end
             end
 
-            local step = TimeBPM(1,currentBPM)
+            local step = TimeBPM(1/zoom,currentBPM)
             local bpmChange = (bpmChanges[nextBPMChange] or {time = math.huge, bpm = currentBPM})
             if currentTime+step - bpmChange.time >= -0.001 then
                 local pos = WhichSixteenth(bpmChange.time-lastBPMTime, currentBPM)
@@ -1082,14 +1104,15 @@ function scene.draw()
                 }, scene.chartTimeTemp, speed, chartPos, chartHeight-1, (80-(scene.chart.lanes*4-1))/2 - 1 + 2, true)
                 love.graphics.setFont(Font)
             end
-            love.graphics.setFont(Font)
-            love.graphics.setColor(TerminalColors[ColorID.CYAN])
-            if scene.placementMode == placementModes.bpm then
-                local drawPos = chartPos+chartHeight-(scene.lastNoteTime - scene.chartTimeTemp)*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
-                local txt = "▷"
-                local w = 8*#txt
-                love.graphics.printf(txt, chartX*8-24 - w, drawPos*16-24, w, "right")
-            end
+        end
+
+        love.graphics.setFont(Font)
+        love.graphics.setColor(TerminalColors[ColorID.CYAN])
+        if scene.placementMode == placementModes.bpm then
+            local drawPos = chartPos+chartHeight-(scene.lastNoteTime - scene.chartTimeTemp)*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local txt = "▷"
+            local w = 8*#txt
+            love.graphics.printf(txt, chartX*8-24 - w, drawPos*16-24, w, "right")
         end
     
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
@@ -1101,6 +1124,8 @@ function scene.draw()
             local y = pos*240
             love.graphics.print("█", 424, 352-y)
         end
+
+        love.graphics.print("Zoom: " .. math.floor(zoom*1000)/1000 .. "x", 456, 96)
     else
         if scene.songData then
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
