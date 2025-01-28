@@ -237,14 +237,14 @@ EffectTypes = {
         end
     end,
     board_brightness = function(self)
-        BoardBrightnessTarget = self.data.board or BoardBrightnessTarget
+        BoardBrightnessTarget = self.data.brightness or BoardBrightnessTarget
         BoardBrightnessSmoothing = self.data.smoothing or 0
         if (self.data.smoothing or 0) == 0 then
             BoardBrightness = BoardBrightnessTarget
         end
     end,
     note_brightness = function(self)
-        NoteBrightnessTarget = self.data.Note or NoteBrightnessTarget
+        NoteBrightnessTarget = self.data.brightness or NoteBrightnessTarget
         NoteBrightnessSmoothing = self.data.smoothing or 0
         if (self.data.smoothing or 0) == 0 then
             NoteBrightness = NoteBrightnessTarget
@@ -417,24 +417,32 @@ function PrintDifficulty(x,y,difficulty,level,align)
         currentX = x - length*4
     end
     local color = SongDifficulty[difficulty].color or TerminalColors[ColorID.WHITE]
+    local r,g,b,a = love.graphics.getColor()
     if type(color[1]) == "table" then
         for i = 1, nameLength do
             local colorIndex = (i-1 - (SongDifficulty[difficulty].animate and math.floor(love.timer.getTime()*(SongDifficulty[difficulty].animateSpeed or #color)) or 0))%#color+1
             ---@diagnostic disable-next-line: param-type-mismatch
             love.graphics.setColor(color[colorIndex])
+            local R,G,B,A = love.graphics.getColor()
+            love.graphics.setColor(r*R,g*G,b*B,a*A)
             love.graphics.print(utf8.sub(SongDifficulty[difficulty].name, i+1, i+1), currentX, y)
             currentX = currentX + 8
         end
     else
         love.graphics.setColor(color)
+        local R,G,B,A = love.graphics.getColor()
+        love.graphics.setColor(r*R,g*G,b*B,a*A)
         love.graphics.print(SongDifficulty[difficulty].name, currentX, y)
         currentX = currentX + nameLength*8
     end
     if level ~= nil then
         currentX = currentX + 8
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
+        local R,G,B,A = love.graphics.getColor()
+        love.graphics.setColor(r*R,g*G,b*B,a*A)
         love.graphics.print(tostring(level), currentX, y)
     end
+    love.graphics.setColor(r,g,b,a)
 end
 
 ---@class SongData

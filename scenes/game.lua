@@ -40,6 +40,7 @@ end
 
 ---@param args {songData: SongData, difficulty: string, modifiers: table, isEditor?: boolean, forced?: boolean}
 function scene.load(args)
+    love.keyboard.setKeyRepeat(false)
     LastOffset = nil
     scene.isEditor = args.isEditor
     scene.forced = args.forced

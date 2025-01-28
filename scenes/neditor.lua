@@ -607,6 +607,7 @@ buildRecentMenu = function()
 end
 
 function scene.load(args)
+    love.keyboard.setKeyRepeat(true)
     scene.songData = args.songData
     scene.difficulty = args.difficulty
 
@@ -1042,6 +1043,7 @@ function scene.draw()
             local t = NoteTypes[note.type]
             if t and type(t.draw) == "function" then
                 love.graphics.setFont(NoteFont)
+                love.graphics.setColor(1,1,1)
                 t.draw(note,scene.chartTimeTemp,speed,chartPos, chartHeight-1,chartX,true)
                 if table.index(scene.selectedNotes, note) then
                     love.graphics.setColor(1,1,1,0.5)
@@ -1094,6 +1096,7 @@ function scene.draw()
             local t = (scene.placementMode == placementModes.normal and NoteTypes.normal) or (scene.placementMode == placementModes.swap and NoteTypes.swap) or (scene.placementMode == placementModes.merge and NoteTypes.merge)
             if t then
                 love.graphics.setFont(NoteFont)
+                love.graphics.setColor(1,1,1)
                 t.draw({
                     lane = scene.lastNoteLane,
                     time = scene.lastNoteTime,

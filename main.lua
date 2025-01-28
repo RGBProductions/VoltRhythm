@@ -1,4 +1,3 @@
-love.keyboard.setKeyRepeat(true)
 love.graphics.setDefaultFilter("nearest", "nearest")
 require "assets"
 require "util"
