@@ -25,6 +25,8 @@ NoteTypes = {
             local drawPos = chartPos+chartHeight-pos*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
             local visualLane = self.visualLane or self.lane
             if useSteps then drawPos = math.floor(drawPos) end
+
+            local r,g,b,a = love.graphics.getColor()
             
             local cells = self.length * math.abs(speed)
             for i = 0.5, cells do
@@ -34,6 +36,8 @@ NoteTypes = {
                 local extPos = chartPos+chartHeight-barPos*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
                 if extPos >= chartPos and extPos-((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1) < chartPos+(chartHeight-1) then
                     love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][3]])
+                    local R,G,B,A = love.graphics.getColor()
+                    love.graphics.setColor(r*R,g*G,b*B,a*A)
                     love.graphics.print("║", (chartX+visualLane*4)*8+4, math.floor(extPos*16-8-0), 0, 1, 1, NoteFont:getWidth("║")/2)
                     -- love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][2]])
                     -- love.graphics.print("▥▥▥", (chartX+self.lane*4-1)*8, math.floor(extPos*16-8))
@@ -42,9 +46,13 @@ NoteTypes = {
 
             if drawPos >= chartPos and drawPos < chartPos+(chartHeight+1) and (self.heldFor or 0) <= 0 then
                 love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][3]])
+                local R,G,B,A = love.graphics.getColor()
+                love.graphics.setColor(r*R,g*G,b*B,a*A)
                 love.graphics.print("○", (chartX+visualLane*4)*8+4, math.floor(drawPos*16-8-(isEditor and 0 or 4)), 0, 1, 1, NoteFont:getWidth("○")/2)
                 -- love.graphics.print("▥▥▥", (chartX+self.lane*4-1)*8, math.floor(drawPos*16-8))
             end
+            
+            love.graphics.setColor(r,g,b,a)
         end,
         hit = function(self,time,lane)
             local pos = self.time-time
@@ -77,6 +85,8 @@ NoteTypes = {
             local symbol = isEditor and ((self.extra.dir == 1 and "▷") or (self.extra.dir == -1 and "◁") or "◇") or ((math.abs(visualLane-self.lane) <= 1/4 and "○") or (math.abs(visualLane-(self.lane-self.extra.dir)) <= 1/4 and (self.extra.dir == 1 and "▷" or "◁")) or "◇")
             if useSteps then drawPos = math.floor(drawPos) end
 
+            local r,g,b,a = love.graphics.getColor()
+
             local cells = self.length * speed
             for i = 0.5, cells do
                 local barPos = mainpos+i/speed
@@ -84,17 +94,23 @@ NoteTypes = {
                 local extPos = chartPos+chartHeight-barPos*speed
                 if extPos >= chartPos and extPos < chartPos+(chartHeight-1) then
                     love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][3]])
+                    local R,G,B,A = love.graphics.getColor()
+                    love.graphics.setColor(r*R,g*G,b*B,a*A)
                     love.graphics.print("║", (chartX+visualLane*4)*8+4, math.floor(extPos*16-8-(isEditor and 0 or 4)), 0, 1, 1, NoteFont:getWidth("║")/2)
                 end
             end
 
             if drawPos >= chartPos and drawPos < chartPos+(chartHeight+1) and (self.heldFor or 0) <= 0 then
                 love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][3]])
+                local R,G,B,A = love.graphics.getColor()
+                love.graphics.setColor(r*R,g*G,b*B,a*A)
                 love.graphics.setFont(Font)
                 if self.extra.dir ~= 0 then love.graphics.print("¤", (chartX+self.lane*4)*8, math.floor(drawPos*16-8-(isEditor and 0 or 4))) end
                 love.graphics.setFont(NoteFont)
                 love.graphics.print(symbol, (chartX+visualLane*4)*8+4, math.floor(drawPos*16-8-(isEditor and 0 or 4)), 0, 1, 1, NoteFont:getWidth(symbol)/2)
             end
+            
+            love.graphics.setColor(r,g,b,a)
         end,
         hit = function(self,time,lane)
             local pos = self.time-time
@@ -124,15 +140,22 @@ NoteTypes = {
             if not isEditor then pos = pos+math.sin(pos*8)*Waviness/speed end
             local drawPos = chartPos+chartHeight-pos*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
             if useSteps then drawPos = math.floor(drawPos) end
+
+            local r,g,b,a = love.graphics.getColor()
+
             local visualLane = self.visualLane or self.lane
             if drawPos >= chartPos and drawPos < chartPos+(chartHeight+1) and (self.heldFor or 0) <= 0 then
                 local min,max = math.min(visualLane+self.extra.dir, visualLane), math.max(visualLane+self.extra.dir, visualLane)
                 for i = min,max do
                     love.graphics.setColor(TerminalColors[NoteColors[((i)%(#NoteColors))+1][3]])
+                    local R,G,B,A = love.graphics.getColor()
+                    love.graphics.setColor(r*R,g*G,b*B,a*A)
                     love.graphics.print(((i == min and i == max) and "◻○◼") or (i == min and "◻◐▥▨") or (i == max and "▧▥◑◼") or "▧▥▥▥▨", (chartX+(i)*4-2)*8, math.floor(drawPos*16-8-(isEditor and 0 or 4)))
                     -- love.graphics.print(((i == min and i == max) and "◻▥▥▥◻") or (i == min and "◻▥▥▥▨") or (i == max and "▧▥▥▥◻") or "▧▥▥▥▨", (chartX+(i)*4-2)*8, math.floor(drawPos*16-8))
                 end
             end
+            
+            love.graphics.setColor(r,g,b,a)
         end,
         hit = function(self,time,lane)
             local pos = self.time-time
@@ -211,6 +234,20 @@ EffectTypes = {
         TearingModifierSmoothing = self.data.smoothing or 0
         if (self.data.smoothing or 0) == 0 then
             TearingModifier = TearingModifierTarget
+        end
+    end,
+    board_brightness = function(self)
+        BoardBrightnessTarget = self.data.board or BoardBrightnessTarget
+        BoardBrightnessSmoothing = self.data.smoothing or 0
+        if (self.data.smoothing or 0) == 0 then
+            BoardBrightness = BoardBrightnessTarget
+        end
+    end,
+    note_brightness = function(self)
+        NoteBrightnessTarget = self.data.Note or NoteBrightnessTarget
+        NoteBrightnessSmoothing = self.data.smoothing or 0
+        if (self.data.smoothing or 0) == 0 then
+            NoteBrightness = NoteBrightnessTarget
         end
     end,
     bloom = function(self)

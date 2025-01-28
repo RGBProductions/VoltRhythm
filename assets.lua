@@ -86,7 +86,8 @@ local covers = {}
 function Assets.GetCover(path)
     if covers[path] then return covers[path] end
     if not love.filesystem.getInfo(path.."/cover.png") then
-        covers[path] = Assets.GetDefaultCover(path)
+        local splitPath = path:split("/")
+        covers[path] = Assets.GetDefaultCover(splitPath[#splitPath])
     else
         covers[path] = love.graphics.newImage(path.."/cover.png")
     end

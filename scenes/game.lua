@@ -123,6 +123,13 @@ function scene.load(args)
     DisplayShearTarget = {0,0}
     DisplayShearSmoothing = 0
 
+    NoteBrightness = 1
+    NoteBrightnessTarget = 1
+    NoteBrightnessSmoothing = 0
+    BoardBrightness = 1
+    BoardBrightnessTarget = 1
+    BoardBrightnessSmoothing = 0
+
     PauseTimer = 0
     Paused = false
     SongStarted = false
@@ -671,6 +678,22 @@ function scene.update(dt)
             Waviness = blend*(Waviness-WavinessTarget)+WavinessTarget
         end
     end
+    do
+        if NoteBrightnessSmoothing == 0 then
+            NoteBrightness = NoteBrightnessTarget
+        else
+            local blend = math.pow(1/NoteBrightnessSmoothing,dt)
+            NoteBrightness = blend*(NoteBrightness-NoteBrightnessTarget)+NoteBrightnessTarget
+        end
+    end
+    do
+        if BoardBrightnessSmoothing == 0 then
+            BoardBrightness = BoardBrightnessTarget
+        else
+            local blend = math.pow(1/BoardBrightnessSmoothing,dt)
+            BoardBrightness = blend*(BoardBrightness-BoardBrightnessTarget)+BoardBrightnessTarget
+        end
+    end
 
     for i = 1, scene.chart.lanes do
         PressAmounts[i] = math.max(0, math.min(Autoplay and math.huge or 1, (PressAmounts[i] or 0) + dt*8*((love.keyboard.isDown((Keybinds[scene.chart.lanes] or Keybinds[8])[i]) and not Autoplay) and 1/dt or -1/dt)))
@@ -705,11 +728,14 @@ function scene.draw()
     love.graphics.translate(AnaglyphSide, 0)
 
     -- Debug info
-    love.graphics.setColor(TerminalColors[16])
+    love.graphics.setColor(TerminalColors[ColorID.WHITE])
     --love.graphics.print("Full Combo: " .. tostring(ComboBreaks == 0), 50*8 + AnaglyphSide*0.75, 5*16)
     --love.graphics.print("Full Overcharge: " .. tostring(FullOvercharge), 50*8 + AnaglyphSide*0.75, 6*16)
 
     -- Chart and bar outlines
+    love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    local r0,g0,b0,a0 = love.graphics.getColor()
+    love.graphics.setColor(r0*BoardBrightness,g0*BoardBrightness,b0*BoardBrightness,a0)
     DrawBoxHalfWidth((80-(scene.chart.lanes*4-1))/2 - 1, 4, scene.chart.lanes*4-1, 16)
     DrawBoxHalfWidth(14, 23, 50, 1)
 
@@ -719,12 +745,14 @@ function scene.draw()
     local level = scene.songData:getLevel(scene.difficulty)
     local fullText = scene.songData.name .. " - " .. difficultyName .. " " .. level
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    local r1,g1,b1,a1 = love.graphics.getColor()
+    love.graphics.setColor(r1*BoardBrightness,g1*BoardBrightness,b1*BoardBrightness,a1)
     love.graphics.print("┌─" .. ("─"):rep(utf8.len(fullText)) .. "─┐\n│ " .. (" "):rep(utf8.len(fullText)) .. " │\n└─" .. ("─"):rep(utf8.len(fullText)) .. "─┘", ((80-(utf8.len(fullText)+4))/2)*8, 1*16)
     love.graphics.print(scene.songData.name .. " - ", ((80-(utf8.len(fullText)+4))/2 + 2)*8, 2*16)
     -- love.graphics.setColor(difficultyColor)
     -- love.graphics.print(difficultyName, ((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - "))*8, 2*16)
     PrintDifficulty(((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - "))*8, 2*16, scene.difficulty or "easy", level or 0, "left")
-    love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    love.graphics.setColor(r1*BoardBrightness,g1*BoardBrightness,b1*BoardBrightness,a1)
     -- love.graphics.print(tostring(level), ((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - " .. difficultyName .. " "))*8, 2*16)
 
     if Autoplay then love.graphics.print("┬──────────┬\n│ ".. (Showcase and "SHOWCASE" or "AUTOPLAY") .. " │\n┴──────────┴", 34*8, 21*16) end
@@ -743,6 +771,8 @@ function scene.draw()
     c = math.floor(Charge/scene.chart.totalCharge*100)
     love.graphics.print("┬\n\n┴", 55*8, 23*16)
     love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
+    local r2,g2,b2,a2 = love.graphics.getColor()
+    love.graphics.setColor(r2*BoardBrightness,g2*BoardBrightness,b2*BoardBrightness,a2)
     love.graphics.print("┊", 55*8, 24*16)
     love.graphics.setColor(TerminalColors[(c < 40 and 5) or (c < 80 and 15) or 11])
     love.graphics.print(("█"):rep(math.min(41,c/2)), 15*8, 24*16)
@@ -757,8 +787,10 @@ function scene.draw()
     end
 
     -- Lanes and judgement line
+    love.graphics.setColor(TerminalColors[9])
+    local r3,g3,b3,a3 = love.graphics.getColor()
+    love.graphics.setColor(r3*BoardBrightness,g3*BoardBrightness,b3*BoardBrightness,a3)
     for i = 1, scene.chart.lanes-1 do
-        love.graphics.setColor(TerminalColors[9])
         local x = (80-(scene.chart.lanes*4-1))/2 - 1+(i-1)*4 + 1
         love.graphics.print(("   ┊\n"):rep(16), x*8, 5*16)
     end
@@ -790,6 +822,7 @@ function scene.draw()
             local t = NoteTypes[note.type]
             if t and type(t.draw) == "function" then
                 love.graphics.setFont(NoteFont)
+                love.graphics.setColor(NoteBrightness,NoteBrightness,NoteBrightness,1)
                 t.draw(note,scene.chart.time,(ScrollSpeed*ScrollSpeedMod)*NoteSpeedMods[note.lane+1][1],nil,nil,((80-(scene.chart.lanes*4-1))/2)+1)
                 love.graphics.setFont(Font)
             end
