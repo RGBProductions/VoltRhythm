@@ -62,6 +62,7 @@ function scene.load(args)
         if scene.background and type(scene.background.init) == "function" then
             scene.background.init(scene.chart.backgroundInit or {})
         end
+        scene.chart:recalculateCharge()
     end
     scene.modifiers = args.modifiers or {}
     scene.chartName = "UNRAVELING STASIS"

@@ -171,6 +171,7 @@ function scene.load(args)
 end
 
 function scene.keypressed(k)
+    if SceneManager.TransitioningIn() or SceneManager.TransitioningOut() then return end
     if k == "tab" then
         local selected = scene.campaigns[1].sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
         local difficulty = SongSelectOvervoltMode and (table.index(difficulties, scene.campaigns[1].sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].difficulties[1]) or 5) or SongSelectDifficulty
@@ -263,7 +264,8 @@ function scene.keypressed(k)
 
     if k == "return" then
         if scene.campaigns[1].sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].isUnlocked then
-            local difficulty = SongSelectOvervoltMode and (table.index(difficulties, scene.campaigns[1].sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].difficulties[1]) or 5) or SongSelectDifficulty
+            local diffs = scene.campaigns[1].sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].difficulties
+            local difficulty = SongSelectOvervoltMode and (table.index(difficulties, diffs[#diffs]) or 5) or SongSelectDifficulty
             ---@type SongData?
             local songData = scene.campaigns[1].sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].songData
             if songData and songData:loadChart(difficulties[difficulty]) ~= nil then
