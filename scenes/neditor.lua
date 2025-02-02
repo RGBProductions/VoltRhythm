@@ -1016,9 +1016,9 @@ function scene.draw()
             local step = TimeBPM(1/zoom,currentBPM)
             local bpmChange = (bpmChanges[nextBPMChange] or {time = math.huge, bpm = currentBPM})
             if currentTime+step - bpmChange.time >= -0.001 then
-                local pos = WhichSixteenth(bpmChange.time-lastBPMTime, currentBPM)
+                local pos = WhichSixteenth(bpmChange.time-lastBPMTime, currentBPM*zoom)
                 local nextBeatAt = math.ceil((1 - (pos % 1)) % 1)
-                currentTime = currentTime + TimeBPM(nextBeatAt,currentBPM)
+                currentTime = currentTime + TimeBPM(nextBeatAt,currentBPM*zoom)
                 currentBPM = bpmChange.bpm
                 lastBPMTime = bpmChange.time
                 nextBPMChange = nextBPMChange + 1
