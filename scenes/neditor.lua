@@ -15,6 +15,14 @@ local placementModes = {
 
 local notes = {"normal", "swap", "merge"}
 
+local function getDirectorySeperator()
+	if love.system.getOS() == "Windows" then
+		return "\\"
+	else
+		return "/"
+	end
+end
+
 local buildRecentMenu
 
 local function hoistHistory(path,name)
@@ -40,9 +48,11 @@ local function writeChart(name)
     if oPath:sub(1,#filesource) == filesource then
         oPath = oPath:sub(#filesource,-1)
     end
-    local splitSong = scene.songData.songPath:split("/")
+	print(oSongPath)
+	print(name)
+    local splitSong = scene.songData.songPath:split(getDirectorySeperator())
     local songName = splitSong[#splitSong]
-    local splitPath = scene.songData.path:split("/")
+    local splitPath = scene.songData.path:split(getDirectorySeperator())
     name = name or splitPath[#splitPath]
     scene.songData:save("editor_save/" .. name)
     if oSongPath ~= "editor_save/"..name.."/"..songName then
@@ -83,8 +93,11 @@ end
 
 local function fileDialog(type)
     local filenameInput = DialogInput:new(0, 224, 256, 16, "SONG ID", 32)
+	print(getDirectorySeperator())
     if scene.songData then
-        local splitPath = scene.songData.path:split("/")
+        local splitPath = scene.songData.path:split(getDirectorySeperator())
+		print(splitPath)
+		print(splitPath[#splitPath])
         filenameInput.content = splitPath[#splitPath]
     end
     local typename = (type == "r" and "OPEN" or "SAVE")
@@ -200,18 +213,14 @@ local editorMenu = {
                                 table.remove(scene.dialogs, 1)
                             end),
                             DialogButton:new(104, 208, 64, 16, "CREATE", function ()
-                                -- print(nameInput.content)
-                                -- print(authorInput.content)
-                                -- print(songInput.filename)
-                                -- print(bpmInput.content)
-                                -- print(coverInput.filename)
                                 if songInput.file == nil then return end
                                 if love.filesystem.getInfo("editor_chart") then
                                     for _,item in ipairs(love.filesystem.getDirectoryItems("editor_chart")) do
                                         love.filesystem.remove("editor_chart/"..item)
                                     end
                                 end
-                                local splitName = songInput.filename:split("/")
+								
+                                local splitName = songInput.filename:split(getDirectorySeperator())
                                 love.filesystem.createDirectory("editor_chart")
                                 if coverInput.file ~= nil then
                                     love.filesystem.write("editor_chart/cover.png", coverInput.file:read())
@@ -260,7 +269,7 @@ local editorMenu = {
                 label = "SAVE",
                 onclick = function()
                     if not scene.songData then return true end
-                    local splitPath = scene.songData.path:split("/")
+                    local splitPath = scene.songData.path:split(getDirectorySeperator())
                     if splitPath[#splitPath] == "editor_chart" then
                         fileDialog("w")
                     else
@@ -607,7 +616,6 @@ buildRecentMenu = function()
 end
 
 function scene.load(args)
-    love.keyboard.setKeyRepeat(true)
     scene.songData = args.songData
     scene.difficulty = args.difficulty
 
