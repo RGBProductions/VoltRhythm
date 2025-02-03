@@ -796,6 +796,8 @@ function scene.draw()
         local x = (80-(scene.chart.lanes*4-1))/2 - 1+(i-1)*4 + 1
         love.graphics.print(("   ┊\n"):rep(16), x*8, 5*16)
     end
+    local jlBrightness = math.max(BoardBrightness,NoteBrightness)
+    love.graphics.setColor(r3*jlBrightness,g3*jlBrightness,b3*jlBrightness,a3)
     do
         local drawPos = (5)+(15)+(ViewOffsetMoveLine and (ViewOffset+ViewOffsetFreeze) or 0)*(ScrollSpeed*ScrollSpeedMod)
         if drawPos >= 5 and drawPos <= 20 then
