@@ -138,6 +138,21 @@ function scene.load(args)
     PauseSelection = 0
 end
 
+function ResetEffects()
+    BloomStrengthModifier = 1
+    BloomStrengthModifierTarget = 1
+    BloomStrengthModifierSmoothing = 0
+    ChromaticModifier = 0
+    ChromaticModifierTarget = 0
+    ChromaticModifierSmoothing = 0
+    TearingModifier = 0
+    TearingModifierTarget = 0
+    TearingModifierSmoothing = 0
+    CurveModifier = 1
+    CurveModifierTarget = 1
+    CurveModifierSmoothing = 0
+end
+
 function PauseGame()
     if scene.forced then return end
     if scene.song then scene.song:pause() end
@@ -149,6 +164,7 @@ end
 
 function Restart()
     if scene.forced then return end
+    ResetEffects()
     if scene.song then scene.song:stop() end
     scene.chart:resetAllNotes()
     SceneManager.Transition("scenes/game", {songData = scene.songData, difficulty = scene.difficulty, isEditor = scene.isEditor})
@@ -156,6 +172,7 @@ end
 
 function Exit()
     if scene.forced then return end
+    ResetEffects()
     if scene.song then scene.song:stop() end
     scene.chart:resetAllNotes()
     if scene.isEditor then
@@ -209,6 +226,7 @@ function scene.keypressed(k)
     end
     if k == "f8" then
         if scene.song then scene.song:stop() end
+        ResetEffects()
         scene.chart.time = 0
         scene.chart:resetAllNotes()
         Charge = 0
