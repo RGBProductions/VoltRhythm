@@ -164,7 +164,6 @@ end
 
 function Restart()
     if scene.forced then return end
-    ResetEffects()
     if scene.song then scene.song:stop() end
     scene.chart:resetAllNotes()
     SceneManager.Transition("scenes/game", {songData = scene.songData, difficulty = scene.difficulty, isEditor = scene.isEditor})
@@ -172,7 +171,6 @@ end
 
 function Exit()
     if scene.forced then return end
-    ResetEffects()
     if scene.song then scene.song:stop() end
     scene.chart:resetAllNotes()
     if scene.isEditor then
@@ -226,7 +224,6 @@ function scene.keypressed(k)
     end
     if k == "f8" then
         if scene.song then scene.song:stop() end
-        ResetEffects()
         scene.chart.time = 0
         scene.chart:resetAllNotes()
         Charge = 0
@@ -906,6 +903,10 @@ function scene.draw()
     -- love.graphics.print(tostring(scene.chart:getDifficulty()), 64, 64)
     -- love.graphics.print(tostring(math.floor(scene.chart:getDifficulty() + 0.5)), 64, 64+16)
     -- love.graphics.print(tostring(math.floor(scene.chart:getDensity()*1.5 + 0.5)), 64, 64+16)
+end
+
+function scene.unload()
+    ResetEffects()
 end
 
 return scene
