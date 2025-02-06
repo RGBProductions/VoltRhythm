@@ -38,7 +38,7 @@ function GetRating(accValue)
     return #NoteRatings
 end
 
----@param args {songData: SongData, difficulty: string, modifiers: table, isEditor?: boolean, forced?: boolean}
+---@param args {songData: SongData, difficulty: string, modifiers: table, isEditor?: boolean, forced?: boolean, masquerade?: string}
 function scene.load(args)
     love.keyboard.setKeyRepeat(false)
     LastOffset = nil
@@ -52,6 +52,7 @@ function scene.load(args)
             scene.chart.time = TimeBPM(-16,scene.chart.bpm)
         end
     end
+    scene.masquerade = args.masquerade or scene.difficulty or "hidden"
     if scene.chart then
         scene.song = Assets.Source(scene.chart.song)
         if scene.song then
@@ -762,10 +763,11 @@ function scene.draw()
     DrawBoxHalfWidth(14, 23, 50, 1)
 
     -- Text Displays
-    local difficultyName = SongDifficulty[scene.difficulty or "easy"].name or scene.difficulty:upper()
-    local difficultyColor = SongDifficulty[scene.difficulty or "easy"].color or TerminalColors[ColorID.WHITE]
+    local difficultyName = SongDifficulty[scene.masquerade or "easy"].name or scene.masquerade:upper()
+    local difficultyColor = SongDifficulty[scene.masquerade or "easy"].color or TerminalColors[ColorID.WHITE]
     local level = scene.songData:getLevel(scene.difficulty)
-    local fullText = scene.songData.name .. " - " .. difficultyName .. " " .. level
+    local fullText = scene.songData.name .. " - " .. SongDifficulty[scene.masquerade].name .. (level ~= nil and (" " .. level) or "")
+    -- local fullText = scene.songData.name .. " - " .. difficultyName .. " " .. level
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     local r1,g1,b1,a1 = love.graphics.getColor()
     love.graphics.setColor(r1*BoardBrightness,g1*BoardBrightness,b1*BoardBrightness,a1)
@@ -773,7 +775,7 @@ function scene.draw()
     love.graphics.print(scene.songData.name .. " - ", ((80-(utf8.len(fullText)+4))/2 + 2)*8, 2*16)
     -- love.graphics.setColor(difficultyColor)
     -- love.graphics.print(difficultyName, ((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - "))*8, 2*16)
-    PrintDifficulty(((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - "))*8, 2*16, scene.difficulty or "easy", level or 0, "left")
+    PrintDifficulty(((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - "))*8, 2*16, scene.masquerade or "easy", level, "left")
     love.graphics.setColor(r1*BoardBrightness,g1*BoardBrightness,b1*BoardBrightness,a1)
     -- love.graphics.print(tostring(level), ((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - " .. difficultyName .. " "))*8, 2*16)
 

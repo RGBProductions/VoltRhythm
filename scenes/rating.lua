@@ -117,12 +117,12 @@ function scene.draw()
     local difficulty = SongDifficulty[scene.difficulty or "easy"].name or scene.difficulty:upper()
     local difficultyColor = SongDifficulty[scene.difficulty or "easy"].color or TerminalColors[ColorID.WHITE]
     local level = scene.songData:getLevel(scene.difficulty or "easy")
-    local combinedDifficultyString = difficulty .. " " .. level
+    -- local combinedDifficultyString = difficulty .. " " .. level
     love.graphics.setColor(1,1,1)
     love.graphics.draw(scene.cover, 272, 224)
     -- love.graphics.setColor(difficultyColor)
     -- love.graphics.print(difficulty, 232+8*(22-#combinedDifficultyString)/2, 192)
-    PrintDifficulty(232+88, 192, scene.difficulty or "easy", level or 0, "center")
+    PrintDifficulty(232+88, 192, scene.difficulty or "easy", level, "center")
     -- love.graphics.setColor(TerminalColors[ColorID.WHITE])
     -- love.graphics.print(tostring(level), 232+8*((22-#combinedDifficultyString)/2 + #difficulty+1), 192)
 

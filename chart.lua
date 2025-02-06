@@ -566,7 +566,7 @@ function SongData:hasLevel(difficulty)
 end
 
 function SongData:getLevel(difficulty)
-    return self.levels[difficulty] or 0
+    return self.levels[difficulty]
 end
 
 function SongData:getCharter(difficulty)
