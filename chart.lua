@@ -740,3 +740,11 @@ function Chart:getDifficulty()
     if duration == 0 then return 0 end
     return amount / (endTime-startTime) * 1.5
 end
+
+function Chart:getBalance()
+    local balance = 0
+    for _,note in ipairs(self.notes) do
+        balance = balance + (note.lane - (self.lanes-1)/2)
+    end
+    return balance / #self.notes
+end

@@ -176,6 +176,84 @@ local function fileDialog(type)
     table.insert(scene.dialogs, dialog)
 end
 
+local function effectPlacementDialog(effect, editing)
+    local copy = table.merge({}, effect)
+    local typeInput = DialogInput:new(0, 0, 304, 16, "EFFECT TYPE", 35, nil)
+    local data = copy.data
+    typeInput.content = copy.type or ""
+    local pos = 0
+    local dataElements = {}
+    local dialog = {
+        title = (editing and "EDITING" or "PLACING") .. " EFFECT",
+        width = 20,
+        height = 20,
+        contents = {
+            typeInput,
+            DialogLabel:new(0, 32, 304, "EFFECT DATA", "center"),
+            DialogButton:new(216, 256, 64, 16, "CANCEL", function ()
+                table.remove(scene.dialogs, 1)
+            end),
+            DialogButton:new(120, 256, 64, 16, "NUDGE", function ()
+                effect.time = effect.time + 0.001
+                copy.time = copy.time + 0.001
+            end),
+            DialogButton:new(24, 256, 64, 16, editing and "APPLY" or "PLACE", function ()
+                effect.type = typeInput.content
+                effect.data = {}
+                for _,item in ipairs(dataElements) do
+                    local v = item.value.content
+                    effect.data[item.key.content] = tonumber(v) or v
+                end
+                if not editing then
+                    local final = {time = copy.time, type = effect.type, data = effect.data}
+                    table.insert(scene.chart.effects, final)
+                    scene.chart:sort()
+                end
+                table.remove(scene.dialogs, 1)
+            end)
+        }
+    }
+    local function addDataElement(k,v) end
+    local addButton = DialogButton:new(264,pos+64,32,16,"+",function(self)
+        addDataElement("","")
+    end)
+    addDataElement = function(k,v)
+        addButton.y = addButton.y + 48
+        local i = #dataElements+1
+        local key = DialogInput:new(0,pos+64,128,16,"KEY", 16, nil, nil)
+        local equals = DialogLabel:new(132, pos+64, 8, "=", "center")
+        local value = DialogInput:new(144,pos+64,96,16,"VALUE", 12, nil, nil)
+        local remove = DialogButton:new(264,pos+64,32,16,"-",function(self)
+            table.remove(dataElements,i)
+            table.remove(dialog.contents, table.index(dialog.contents, key))
+            table.remove(dialog.contents, table.index(dialog.contents, equals))
+            table.remove(dialog.contents, table.index(dialog.contents, value))
+            table.remove(dialog.contents, table.index(dialog.contents, self))
+            for j = i, #dataElements do
+                dataElements[j].key.y = dataElements[j].key.y - 48
+                dataElements[j].equals.y = dataElements[j].equals.y - 48
+                dataElements[j].value.y = dataElements[j].value.y - 48
+                dataElements[j].remove.y = dataElements[j].remove.y - 48
+            end
+            addButton.y = addButton.y - 48
+            pos = pos - 48
+        end)
+        key.content = k
+        value.content = tostring(v)
+        table.insert(dialog.contents, key)
+        table.insert(dialog.contents, equals)
+        table.insert(dialog.contents, value)
+        table.insert(dialog.contents, remove)
+        dataElements[i] = { key = key, equals = equals, value = value, remove = remove }
+        pos = pos + 48
+    end
+    for k,v in pairs(data) do
+        addDataElement(k,v)
+    end
+    table.insert(dialog.contents, addButton)
+    table.insert(scene.dialogs, 1, dialog)
+end
+
 local editorMenu = {
     {
         id = "file",
@@ -480,7 +558,7 @@ local editorMenu = {
                 type = "action",
                 label = "BPM CHANGE",
                 onclick = function()
-                    SetCursor("¤", 4, 8)
+                    SetCursor("▷", 4, 8)
                     scene.placementMode = placementModes.bpm
                     return true
                 end
@@ -615,6 +693,8 @@ buildRecentMenu = function()
     end
 end
 
+local scrollbarX = 472
+
 function scene.load(args)
     scene.songData = args.songData
     scene.difficulty = args.difficulty
@@ -652,6 +732,9 @@ function scene.load(args)
     scene.clipboard = {}
 
     scene.dialogs = {}
+
+    scene.scrollbarGrab = false
+    scene.playingWhenGrabbed = false
 
     -- WIP editor notice
     table.insert(scene.dialogs, 1, {
@@ -771,6 +854,7 @@ function scene.update(dt)
             local dur = source:getDuration("seconds")
             local y = math.max(0,math.min(1, (MouseY - 120) / 240))
             scene.chartTimeTemp = (1-y)*dur
+            source:pause()
         end
     end
 end
@@ -859,11 +943,15 @@ function scene.keypressed(k)
             local source = Assets.Source(scene.chart.song)
             if source then
                 if scene.chartTimeTemp < source:getDuration("seconds") then
-                    if source:isPlaying() then
-                        source:pause()
+                    if scene.scrollbarGrab then
+                        scene.playingWhenGrabbed = not scene.playingWhenGrabbed
                     else
-                        source:play()
-                        source:seek(math.max(0,scene.chartTimeTemp), "seconds")
+                        if source:isPlaying() then
+                            source:pause()
+                        else
+                            source:play()
+                            source:seek(math.max(0,scene.chartTimeTemp), "seconds")
+                        end
                     end
                 end
             end
@@ -1085,6 +1173,29 @@ function scene.draw()
             love.graphics.printf(txt, chartX*8-24 - w, drawPos*16-24, w, "right")
         end
 
+        love.graphics.setFont(Font)
+        love.graphics.setColor(TerminalColors[ColorID.MAGENTA])
+        local effectPos = {}
+        local lastEffectPos = -math.huge
+        for _,effect in ipairs(scene.chart.effects or {}) do
+            local samePos = chartPos+chartHeight-(effect.time)*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            if math.abs(lastEffectPos - samePos) <= 1 then
+                samePos = lastEffectPos
+            else
+                lastEffectPos = samePos
+            end
+            local drawPos = chartPos+chartHeight-(effect.time - scene.chartTimeTemp)*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local actualPos = drawPos*8
+            if actualPos < 0 then
+                break
+            end
+            local x = effectPos[lastEffectPos] or 0
+            local txt = "¤"
+            local w = 8
+            love.graphics.printf(txt, chartX*8+136 + (x*12) - w, drawPos*16-24, w, "left")
+            effectPos[lastEffectPos] = x + 1
+        end
+
 
         if scene.selection.selecting then
             love.graphics.setColor(1,1,1,0.5)
@@ -1125,18 +1236,51 @@ function scene.draw()
             local w = 8*#txt
             love.graphics.printf(txt, chartX*8-24 - w, drawPos*16-24, w, "right")
         end
+
+
+        love.graphics.setFont(Font)
+        love.graphics.setColor(TerminalColors[ColorID.MAGENTA])
+        lastEffectPos = -math.huge
+        local lastEffectTime = 0
+        for _,effect in ipairs(scene.chart.effects or {}) do
+            local samePos = chartPos+chartHeight-(effect.time)*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            if math.abs(lastEffectPos - samePos) <= 1 then
+                samePos = lastEffectPos
+            else
+                lastEffectPos = samePos
+            end
+            if (lastEffectTime-0.01) < scene.lastNoteTime and (effect.time+0.01) >= scene.lastNoteTime then
+                break
+            end
+            effectPos[lastEffectPos] = (effectPos[lastEffectPos] or 0) + 1
+        end
+
+        love.graphics.setFont(Font)
+        love.graphics.setColor(TerminalColors[ColorID.MAGENTA])
+        if scene.placementMode == placementModes.effect then
+            local samePos = chartPos+chartHeight-(scene.lastNoteTime)*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            if math.abs(lastEffectPos - samePos) <= 1 then
+                samePos = lastEffectPos
+            else
+                lastEffectPos = samePos
+            end
+            local drawPos = chartPos+chartHeight-(scene.lastNoteTime - scene.chartTimeTemp)*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local txt = "¤"
+            local w = 8
+            love.graphics.printf(txt, chartX*8+136 + (effectPos[lastEffectPos] or 0)*12 - w, drawPos*16-24, w, "right")
+        end
     
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        DrawBoxHalfWidth(52, 6, 1, 16)
+        DrawBoxHalfWidth(scrollbarX/8-1, 6, 1, 16)
         local source = Assets.Source((scene.chart or {}).song)
         if source then
             local dur = source:getDuration("seconds")
             local pos = scene.chartTimeTemp/dur
             local y = pos*240
-            love.graphics.print("█", 424, 352-y)
+            love.graphics.print("█", scrollbarX, 352-y)
         end
 
-        love.graphics.print("Zoom: " .. math.floor(zoom*1000)/1000 .. "x", 456, 96)
+        love.graphics.print("Zoom: " .. math.floor(zoom*1000)/1000 .. "x", 480, 96)
     else
         if scene.songData then
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
@@ -1181,17 +1325,6 @@ function scene.draw()
         love.graphics.draw(cover, 576, 400, 0, 32/cover:getWidth(), 32/cover:getHeight())
     end
 
-    for i = #scene.dialogs, 1, -1 do
-        local dialog = scene.dialogs[i]
-        local x = (80-dialog.width*2)/2-1
-        local y = (30-dialog.height)/2-1
-        DrawBoxHalfWidth(x,y,dialog.width*2,dialog.height)
-        for _,element in ipairs(dialog.contents) do
-            element:draw((x+2)*8, (y+3)*16)
-        end
-        love.graphics.printf(dialog.title, (x+1)*8, (y+1)*16, dialog.width*16, "center")
-    end
-
     if scene.chart then
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
         love.graphics.print("Suggested Level: ", 32, 400)
@@ -1202,6 +1335,18 @@ function scene.draw()
         end
         love.graphics.print(tostring(math.floor(difficulty + 0.5)), 168, 400)
         love.graphics.print(tostring(math.floor(difficulty*1000)/1000), 168, 416)
+    end
+
+    love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    for i = #scene.dialogs, 1, -1 do
+        local dialog = scene.dialogs[i]
+        local x = (80-dialog.width*2)/2-1
+        local y = (30-dialog.height)/2-1
+        DrawBoxHalfWidth(x,y,dialog.width*2,dialog.height)
+        for _,element in ipairs(dialog.contents) do
+            element:draw((x+2)*8, (y+3)*16)
+        end
+        love.graphics.printf(dialog.title, (x+1)*8, (y+1)*16, dialog.width*16, "center")
     end
 end
 
@@ -1273,8 +1418,9 @@ function scene.mousepressed(x,y,b)
             local dur = source:getDuration("seconds")
             local pos = scene.chartTimeTemp/dur
             local Y = pos*240
-            if y >= 112 and y < 368 and x >= 424 and x < 424+8 then
+            if y >= 112 and y < 368 and x >= scrollbarX and x < scrollbarX+8 then
                 scene.scrollbarGrab = true
+                scene.playingWhenGrabbed = source:isPlaying()
             end
         end
         
@@ -1314,11 +1460,14 @@ function scene.mousepressed(x,y,b)
                                 table.remove(scene.dialogs, 1)
                             end),
                             DialogButton:new(40, 80, 64, 16, "PLACE", function ()
-                                table.insert(scene.chart.bpmChanges, {time = time+0.0001, bpm = tonumber(bpmInput.content)})
+                                table.insert(scene.chart.bpmChanges, {time = time, bpm = tonumber(bpmInput.content)})
                                 table.remove(scene.dialogs, 1)
                             end)
                         }
                     })
+                end
+                if scene.placementMode == placementModes.effect then
+                    effectPlacementDialog({time = scene.lastNoteTime, data = {}, type = ""}, false)
                 end
             elseif not scene.scrollbarGrab then
                 for i,note in ipairs(scene.selectedNotes) do
@@ -1368,6 +1517,26 @@ function scene.mousepressed(x,y,b)
             end
         end
 
+
+        local effectPos = {}
+        for i,effect in ipairs(scene.chart.effects or {}) do
+            local drawPos = chartPos+chartHeight-(effect.time - scene.chartTimeTemp)*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local samePos = math.floor(drawPos*2)
+            local eX = effectPos[samePos] or 0
+            local txt = "¤"
+            local w = 8
+            effectPos[samePos] = eX + 1
+            
+            local X,Y = chartX*8+136 + (eX*12) - w, drawPos*16-24
+            if x >= X and x < X+w and y >= Y-8 and y < Y+16+8 then
+                table.remove(scene.chart.effects or {}, i)
+                for _=1,8 do
+                    table.insert(Particles, {x = x, y = y, vx = (love.math.random()*2-1)*64, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = ColorID.RED, char = "¤"})
+                end
+                return
+            end
+        end
+
         for i,note in ipairs(scene.chart.notes) do
             local A,B = math.min(note.lane, note.lane+(note.extra.dir or 0)),math.max(note.lane, note.lane+(note.extra.dir or 0))
             if note.type == "swap" then
@@ -1397,7 +1566,16 @@ end
 
 function scene.mousereleased(x,y,b)
     scene.placement.placing = false
-    scene.scrollbarGrab = false
+    if scene.scrollbarGrab then
+        scene.scrollbarGrab = false
+        if scene.playingWhenGrabbed then
+            local source = Assets.Source((scene.chart or {}).song)
+            if source then
+                source:seek(scene.chartTimeTemp, "seconds")
+                source:play()
+            end
+        end
+    end
     if scene.selection.selecting then
         for i,note in ipairs(scene.chart.notes) do
             local A1,B1 = math.min(note.lane, note.lane+(note.extra.dir or 0)),math.max(note.lane, note.lane+(note.extra.dir or 0))

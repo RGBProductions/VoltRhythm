@@ -11,6 +11,7 @@ local options = {
     end},
     {"CONTINUE (EFFECTS OFF)", function()
         UseShaders = false
+        EnableChartEffects = false
         SceneManager.Transition("scenes/menu")
     end},
     {"DON'T TELL ME AGAIN", function()

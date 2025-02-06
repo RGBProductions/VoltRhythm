@@ -295,6 +295,7 @@ BloomShader = love.graphics.newShader("bloom.frag")
 BloomShader:send("strength", 2)
 
 UseShaders = true
+EnableChartEffects = true
 
 function love.resize(w,h)
     Bloom = love.graphics.newCanvas(w,h)

@@ -136,6 +136,8 @@ function scene.load(args)
     Paused = false
     SongStarted = false
     PauseSelection = 0
+
+    HandleChartEffects()
 end
 
 function ResetEffects()
@@ -345,6 +347,34 @@ function scene.keypressed(k)
     end
 end
 
+function HandleChartEffects()
+    if not EnableChartEffects then return end
+    local i = 1
+    local num = #scene.chart.effects
+    while i <= num do
+        local effect = scene.chart.effects[i]
+        local pos = effect.time-scene.chart.time
+        if pos > 0 then -- too far for us to care
+            i = num
+            return
+        end
+        if effect.destroyed then
+            goto continue
+        end
+        if pos <= 0 then
+            local t = EffectTypes[effect.type]
+            if type(t) == "function" then
+                t(effect,scene.chart)
+            end
+            effect.destroyed = true
+            i = i - 1
+        end
+        ::continue::
+        i = i + 1
+        num = #scene.chart.effects
+    end
+end
+
 function scene.update(dt)
     if Paused or SceneManager.TransitioningIn() or SceneManager.TransitioningOut() then return end
     if PauseTimer > 0 then
@@ -551,32 +581,7 @@ function scene.update(dt)
         end
     end
 
-    do
-        local i = 1
-        local num = #scene.chart.effects
-        while i <= num do
-            local effect = scene.chart.effects[i]
-            local pos = effect.time-scene.chart.time
-            if pos > 0 then -- too far for us to care
-                i = num
-                break
-            end
-            if effect.destroyed then
-                goto continue
-            end
-            if pos <= 0 then
-                local t = EffectTypes[effect.type]
-                if type(t) == "function" then
-                    t(effect,scene.chart)
-                end
-                effect.destroyed = true
-                i = i - 1
-            end
-            ::continue::
-            i = i + 1
-            num = #scene.chart.effects
-        end
-    end
+    HandleChartEffects()
 
     if scene.song then
         if scene.chart.time >= scene.song:getDuration("seconds")-AudioOffset then
