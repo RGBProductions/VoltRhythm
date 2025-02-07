@@ -1,6 +1,6 @@
 local scene = {}
 
-local logo = love.graphics.newImage("images/temp_logo.png")
+local logo = love.graphics.newImage("images/logo.png")
 
 local options = {
     {"SINGLEPLAYER", "PLAY ALONE", love.graphics.newImage("images/menu/sp.png"), function()
