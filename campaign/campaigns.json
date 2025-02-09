@@ -1,6 +1,24 @@
 [
     {
-        "name": "mainline",
+        "name": "MAINLINE",
+        "sections": [
+            {
+                "name": "mainline.section1",
+                "songs": [
+                    {"song": "cute", "difficulties": ["hard"]},
+                    
+                    {"song": "worstnightmare", "difficulties": ["overvolt"], "lock": {
+                        "global": {
+                            "xcharge": 2
+                        }
+                    }}
+                ]
+            }
+        ]
+    },
+    {
+        "name": "FREEPLAY",
+        "unscored": true,
         "sections": [
             {
                 "name": "mainline.section1",

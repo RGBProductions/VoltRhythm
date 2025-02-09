@@ -9,7 +9,7 @@ local options = {
             SongSelectSelectedSong = 1
             SongSelectSelectedSection = 1
         end
-        SceneManager.Transition("scenes/songselect")
+        SceneManager.Transition("scenes/campaignselect")
     end},
     {"MULTIPLAYER", "PLAY WITH FRIENDS", love.graphics.newImage("images/menu/mp.png"), function()
         SceneManager.Transition("scenes/mpmenu")
