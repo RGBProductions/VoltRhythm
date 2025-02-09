@@ -1596,4 +1596,8 @@ function scene.mousereleased(x,y,b)
     scene.selection.dragging = false
 end
 
+function scene.unload()
+    Particles = {}
+end
+
 return scene

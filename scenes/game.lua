@@ -157,7 +157,6 @@ function ResetEffects()
 end
 
 function PauseGame()
-    if scene.forced then return end
     if scene.song then scene.song:pause() end
     if scene.video then scene.video:pause() end
     Paused = true
@@ -166,7 +165,6 @@ function PauseGame()
 end
 
 function Restart()
-    if scene.forced then return end
     if scene.song then scene.song:stop() end
     scene.chart:resetAllNotes()
     SceneManager.Transition("scenes/game", {songData = scene.songData, difficulty = scene.difficulty, isEditor = scene.isEditor})
@@ -201,7 +199,7 @@ function scene.keypressed(k)
         end
     end
     if Paused then
-        if k == "backspace" and Paused then
+        if k == "backspace" and Paused and not scene.forced then
             Exit()
         end
         if k == "return" then
@@ -211,15 +209,15 @@ function scene.keypressed(k)
             if PauseSelection == 1 then
                 Restart()
             end
-            if PauseSelection == 2 then
+            if PauseSelection == 2 and not scene.forced then
                 Exit()
             end
         end
         if k == "left" then
-            PauseSelection = (PauseSelection-1)%3
+            PauseSelection = (PauseSelection-1)%(scene.forced and 2 or 3)
         end
         if k == "right" then
-            PauseSelection = (PauseSelection+1)%3
+            PauseSelection = (PauseSelection+1)%(scene.forced and 2 or 3)
         end
     end
     if k == "r" then
@@ -896,7 +894,7 @@ function scene.draw()
             love.graphics.printf("Resume", 320-96, 240+16, 96, "center", 0, 1, 1, 48, 8)
             love.graphics.setColor(TerminalColors[PauseSelection == 1 and ColorID.LIGHT_BLUE or ColorID.WHITE])
             love.graphics.printf("Restart", 320, 240+16, 96, "center", 0, 1, 1, 48, 8)
-            love.graphics.setColor(TerminalColors[PauseSelection == 2 and ColorID.LIGHT_BLUE or ColorID.WHITE])
+            love.graphics.setColor(TerminalColors[scene.forced and ColorID.DARK_GRAY or (PauseSelection == 2 and ColorID.LIGHT_BLUE or ColorID.WHITE)])
             love.graphics.printf("Quit", 320+96, 240+16, 96, "center", 0, 1, 1, 48, 8)
         else
             local counterText = Counter[math.ceil(PauseTimer*2)]
@@ -913,6 +911,7 @@ function scene.draw()
 end
 
 function scene.unload()
+    Particles = {}
     ResetEffects()
 end
 

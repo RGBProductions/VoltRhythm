@@ -27,7 +27,11 @@ function SceneManager.LoadScene(fn, args)
                     if SceneManager.ActiveScene.load ~= nil then
                         SceneManager.ActiveScene.load(args or {})
                     end
+                else
+                    print("Error loading scene: " .. tostring(nextScene))
                 end
+            else
+                print("Error loading scene: " .. tostring(e))
             end
         end
     end

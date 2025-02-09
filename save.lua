@@ -16,7 +16,6 @@ function Save.Flush()
     for name,data in pairs(profiles) do
         love.filesystem.write("save/" .. name .. ".json", json.encode(data))
     end
-    love.filesystem.write("lastprofile", Save.Profile)
 end
 
 function Save.Load()
@@ -44,6 +43,7 @@ function Save.SetProfile(profile)
         profiles[Save.Profile].name = profile
     end
     profiles[Save.Profile].lastAccess = os.time()
+    love.filesystem.write("lastprofile", Save.Profile)
 end
 
 ---@param key string
