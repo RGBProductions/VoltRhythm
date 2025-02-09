@@ -14,7 +14,9 @@ local lines = {}
 local opening = {
     {type = "line", text = "VOLTRPPGS INIT STARTED", duration = 0.01},
     {type = "line", text = Version.name .. " v" .. Version.version, duration = 0.01},
-    {type = "line", text = "Reading song data from /dev/fd0", duration = 0},
+    {type = "line", text = "Scanning for boot devices...", duration = 0.08},
+    {type = "line", text = "Booting from /dev/fd0", duration = 0.1},
+    {type = "line", text = "READING SONG DATA AT /dev/fd1", duration = 0},
     {type = "run", func = function()
         for _,song in ipairs(love.filesystem.getDirectoryItems("songs")) do
             local songData = LoadSongData("songs/" .. song)
@@ -25,21 +27,20 @@ local opening = {
         end
     end},
     {type = "dynamic", func = function()
-        return "Retrieved " .. num .. " items from disk"
+        return "FOUND " .. num .. " SONGS"
     end},
-    {type = "line", text = "Reading story data from /dev/fd1", duration = 0.05},
-    {type = "line", text = "E: Failed to read /dev/fd1: no such file or directory", color = ColorID.LIGHT_RED, duration = 0.01},
-    {type = "line", text = "Booting from /dev/fd2", duration = 0.1},
+    {type = "line", text = "READING STORY DATA AT /dev/fd2", duration = 0.05},
+    {type = "line", text = "E: could not read /dev/fd2: no such file or directory", color = ColorID.LIGHT_RED, duration = 0.01},
     {type = "line", text = "RETRIEVING PROFILE INFORMATION", duration = 0.05},
     {type = "run", func = function()
         local loadedProfile = Save.Load()
         if loadedProfile then
-            index = 19
+            index = 20
         end
         print(loadedProfile)
     end},
     {type = "line", text = "NO PROFILE FOUND", duration = 0},
-    {type = "accept", text = "SET UP? (Y/N) ", yes = 15, no = 13},
+    {type = "accept", text = "SET UP? (Y/N) ", yes = 16, no = 14},
     {type = "line", text = "REJECTED, SHUTTING DOWN", duration = 2},
     {type = "run", func = function()
         love.event.push("quit")
