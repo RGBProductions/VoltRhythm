@@ -11,7 +11,7 @@ function scene.keypressed(k)
             Save.SetProfile(scene.profiles[selected+1].name)
             SceneManager.Transition("scenes/menu")
         else
-            SceneManager.LoadScene("scenes/setup", {source = "profiles", destination = "profiles", set = false})
+            -- Not currently implemented, standby...
         end
     end
     if k == "up" then

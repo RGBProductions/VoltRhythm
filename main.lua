@@ -213,13 +213,8 @@ end
 require "transition"
 require "scenemanager"
 
-local loadedProfile = Save.Load()
-if not loadedProfile then
-    Save.SetProfile("RGB")
-end
-
 function EnterMainGame(transition)
-    SceneManager[transition and "Transition" or "LoadScene"]("scenes/menu")
+    SceneManager[transition and "Transition" or "LoadScene"]("scenes/startup")
 end
 
 if love.filesystem.getInfo("hidepswarning") then
