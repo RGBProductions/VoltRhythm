@@ -47,12 +47,15 @@ local function writeChart(name)
     local oPath = scene.songData.path
     if oPath:sub(1,#filesource) == filesource then
         oPath = oPath:sub(#filesource,-1)
-    end
-	print(oSongPath)
+    end	 
+	print("ospongpath: " .. oSongPath)
 	print(name)
-    local splitSong = scene.songData.songPath:split(getDirectorySeperator())
+    local splitSong = scene.songData.songPath:split("/")
+	print(unpack(splitSong))
     local songName = splitSong[#splitSong]
-    local splitPath = scene.songData.path:split(getDirectorySeperator())
+	print(songName)
+    local splitPath = scene.songData.path:split("/")
+	print(unpack(splitPath))
     name = name or splitPath[#splitPath]
     scene.songData:save("editor_save/" .. name)
     if oSongPath ~= "editor_save/"..name.."/"..songName then
@@ -71,6 +74,7 @@ end
 
 local function readChart(name)
     local songData = LoadSongData("editor_save/" .. name)
+	print("editor_save/" .. name)
     if not songData then return false end
     scene.songData = songData
     for diff,_ in pairs(scene.songData.charts) do
