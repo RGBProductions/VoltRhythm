@@ -6,17 +6,17 @@ local selected = 0
 
 local options = {
     {"CONTINUE", function()
-        SceneManager.Transition("scenes/menu")
+        SceneManager.Transition("scenes/startup")
         SuppressBorder = false
     end},
     {"CONTINUE (EFFECTS OFF)", function()
         UseShaders = false
         EnableChartEffects = false
-        SceneManager.Transition("scenes/menu")
+        SceneManager.Transition("scenes/startup")
     end},
     {"DON'T TELL ME AGAIN", function()
         love.filesystem.write("hidepswarning","")
-        SceneManager.Transition("scenes/menu")
+        SceneManager.Transition("scenes/startup")
     end},
     {"EXIT", function()
         love.event.push("quit")
