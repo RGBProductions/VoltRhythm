@@ -595,7 +595,7 @@ function scene.update(dt)
                     Charge = 0
                     SceneManager.Transition("scenes/neditor", {songData = scene.songData, difficulty = scene.difficulty})
                 else
-                    SceneManager.Transition("scenes/rating", {chart = scene.chart, songData = scene.songData, difficulty = scene.difficulty, offset = HitOffset/RealHits, ratings = RatingCounts, accuracy = Accuracy/math.max(Hits,1), charge = Charge/scene.chart.totalCharge*100, fullCombo = ComboBreaks == 0, fullOvercharge = FullOvercharge})
+                    SceneManager.Transition("scenes/rating", {chart = scene.chart, songData = scene.songData, difficulty = scene.difficulty, offset = HitOffset/RealHits, ratings = RatingCounts, accuracy = Accuracy/math.max(Hits,1), charge = (Charge*100)/scene.chart.totalCharge, fullCombo = ComboBreaks == 0, fullOvercharge = FullOvercharge})
                 end
             end
         end
@@ -782,15 +782,14 @@ function scene.draw()
 
     love.graphics.print("┬──────────┬\n│ ACC " .. (" "):rep(3-#tostring(acc))..acc.. "% │\n└──────────┘", 34*8, 25*16)
     love.graphics.print("┌──────────┐\n│  CHARGE  │\n├──────────┴", 14*8, 21*16)
-    -- love.graphics.print("┌──────────┐\n│  CHEESE  │\n├──────────┴", 14*8, 21*16)
-    local c = Charge/scene.chart.totalCharge*100
+    local c = (Charge*100)/scene.chart.totalCharge
     local chargeAmount = math.floor(c/100*ChargeYield)
     if c ~= c then chargeAmount = 0 end
     love.graphics.print(" ", 62*8, 22*16) -- Empty space
     love.graphics.print("┌──────────┐\n│  " .. (" "):rep(5-#tostring(chargeAmount)) .. chargeAmount .."¤  │\n┴──────────┤", 54*8, 21*16)
 
     -- Bar fill
-    c = math.floor(Charge/scene.chart.totalCharge*100)
+    c = math.floor((Charge*100)/scene.chart.totalCharge)
     love.graphics.print("┬\n\n┴", 55*8, 23*16)
     love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
     local r2,g2,b2,a2 = love.graphics.getColor()

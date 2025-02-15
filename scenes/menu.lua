@@ -58,6 +58,7 @@ function scene.update(dt)
 end
 
 function scene.keypressed(k)
+    if SceneManager.TransitioningIn() then return end
     if k == "right" then
         MenuSelection = (MenuSelection + 1) % #options
         MenuViewTarget = MenuViewTarget + 1

@@ -6,8 +6,8 @@ local resultsText = love.graphics.newImage("images/results.png")
 
 function scene.load(args)
     scene.rank,scene.plus = GetRank(args.accuracy or 0)
-    scene.charge = math.floor(math.min(args.charge / 100, 0.8)*ChargeYield)
-    scene.overcharge = math.floor(math.max((args.charge / 100)-0.8, 0)*ChargeYield)
+    scene.charge = math.floor((math.min(args.charge, 80)*ChargeYield)/100)
+    scene.overcharge = math.floor((math.max((args.charge)-80, 0)*ChargeYield)/100)
     scene.accuracy = args.accuracy
     scene.fullCombo = args.fullCombo
     scene.fullOvercharge = args.fullOvercharge

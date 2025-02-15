@@ -39,8 +39,8 @@ local opening = {
         end
         print(loadedProfile)
     end},
-    {type = "line", text = "NO PROFILE FOUND", duration = 0},
-    {type = "accept", text = "SET UP? (Y/N) ", yes = 16, no = 14},
+    {type = "line", text = "NO PROFILES FOUND", duration = 0},
+    {type = "accept", text = "CREATE A PROFILE? (Y/N) ", yes = 16, no = 14},
     {type = "line", text = "REJECTED, SHUTTING DOWN", duration = 2},
     {type = "run", func = function()
         love.event.push("quit")

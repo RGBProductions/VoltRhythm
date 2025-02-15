@@ -283,7 +283,7 @@ BloomStrengthModifierSmoothing = 0
 ScreenShader = love.graphics.newShader("screen.frag")
 ScreenShader:send("curveStrength", CurveStrength*CurveModifier)
 ScreenShader:send("scanlineStrength", 0.5)
-ScreenShader:send("textureSize", {Display:getDimensions()})
+ScreenShader:send("texSize", {Display:getDimensions()})
 ScreenShader:send("tearStrength", 0)
 ScreenShader:send("chromaticStrength", Chromatic*ChromaticModifier)
 ScreenShader:send("horizBlurStrength", 0.5)

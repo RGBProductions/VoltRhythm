@@ -135,16 +135,16 @@ end
 
 local dilate_shader = lg.newShader([[
 uniform vec2 res;
-uniform float distance;
+uniform float dist;
 uniform int op_id;
 #ifdef PIXEL
 vec4 effect(vec4 c, Image t, vec2 uv, vec2 px) {
 	vec4 colour = Texel(t, uv);
-	for (float oy = -distance; oy <= distance; oy+=1.0) {
-		for (float ox = -distance; ox <= distance; ox+=1.0) {
+	for (float oy = -dist; oy <= dist; oy+=1.0) {
+		for (float ox = -dist; ox <= dist; ox+=1.0) {
 			float a = 1.0;
 			vec2 o = vec2(ox, oy);
-			if (length(o) <= distance) {
+			if (length(o) <= dist) {
 				o /= res;
 				if (op_id == 1) {
 					colour = min(colour, Texel(t, uv + o));
@@ -170,7 +170,7 @@ function texture.dilate(from, to, distance, operation)
 	if not op_id then
 		error("unknown operation for texture.dilate, "..operation)
 	end
-	dilate_shader:send("distance", distance)
+	dilate_shader:send("dist", distance)
 	dilate_shader:send("res", {from:getDimensions()})
 	dilate_shader:send("op_id", op_id)
 	lg.push("all")

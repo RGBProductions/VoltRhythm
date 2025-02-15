@@ -33,6 +33,7 @@ function scene.update(dt)
 end
 
 function scene.keypressed(k)
+    if SceneManager.TransitioningIn() then return end
     if k == "left" then
         CampaignSelectIndex = ((CampaignSelectIndex-2) % Campaign.NumCampaigns) + 1
         scene.campaign = Campaign.GetByIndex(CampaignSelectIndex)
