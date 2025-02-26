@@ -39,6 +39,10 @@ function Assets.Preview(path,section)
     return previews[path]
 end
 
+function Assets.ErasePreview(path)
+    previews[path] = nil
+end
+
 local videos = {}
 
 ---@return love.Video?

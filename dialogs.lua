@@ -148,10 +148,10 @@ function DialogInput:click(x,y)
 end
 
 function DialogInput:unclick()
-    self.selected = false
-    if type(self.oncomplete) == "function" then
+    if self.selected and type(self.oncomplete) == "function" then
         self:oncomplete()
     end
+    self.selected = false
 end
 
 function DialogInput:textinput(t)

@@ -15,7 +15,7 @@ local placementModes = {
 
 local notes = {"normal", "swap", "merge"}
 
-local function getDirectorySeperator()
+local function getDirectorySeparator()
 	if love.system.getOS() == "Windows" then
 		return "\\"
 	else
@@ -47,15 +47,10 @@ local function writeChart(name)
     local oPath = scene.songData.path
     if oPath:sub(1,#filesource) == filesource then
         oPath = oPath:sub(#filesource,-1)
-    end	 
-	print("ospongpath: " .. oSongPath)
-	print(name)
+    end
     local splitSong = scene.songData.songPath:split("/")
-	print(unpack(splitSong))
     local songName = splitSong[#splitSong]
-	print(songName)
     local splitPath = scene.songData.path:split("/")
-	print(unpack(splitPath))
     name = name or splitPath[#splitPath]
     scene.songData:save("editor_save/" .. name)
     if oSongPath ~= "editor_save/"..name.."/"..songName then
@@ -74,7 +69,6 @@ end
 
 local function readChart(name)
     local songData = LoadSongData("editor_save/" .. name)
-	print("editor_save/" .. name)
     if not songData then return false end
     scene.songData = songData
     for diff,_ in pairs(scene.songData.charts) do
@@ -97,11 +91,8 @@ end
 
 local function fileDialog(type)
     local filenameInput = DialogInput:new(0, 224, 256, 16, "SONG ID", 32)
-	print(getDirectorySeperator())
     if scene.songData then
-        local splitPath = scene.songData.path:split(getDirectorySeperator())
-		print(splitPath)
-		print(splitPath[#splitPath])
+        local splitPath = scene.songData.path:split(getDirectorySeparator())
         filenameInput.content = splitPath[#splitPath]
     end
     local typename = (type == "r" and "OPEN" or "SAVE")
@@ -258,6 +249,88 @@ local function effectPlacementDialog(effect, editing)
     table.insert(scene.dialogs, 1, dialog)
 end
 
+local function metadataDialog()
+    local nameInput = DialogInput:new(0, 16, 368, 16, "SONG NAME", 38, nil, function(self)
+        scene.songData.name = self.content
+    end)
+    local authorInput = DialogInput:new(0, 64, 368, 16, "SONG AUTHOR", 38, nil, function(self)
+        scene.songData.author = self.content
+    end)
+    local bpmInput = DialogInput:new(160, 96, 120, 16, "BPM", 15, nil, function(self)
+        self.content = tostring(tonumber(self.content) or 0)
+    end)
+    local artistInput = DialogInput:new(0, 144, 368, 16, "COVER ARTIST", 20, nil, function(self)
+        scene.songData.coverArtist = self.content
+    end)
+
+    nameInput.content = scene.songData.name
+    authorInput.content = scene.songData.author
+    bpmInput.content = tostring(scene.songData.bpm)
+    artistInput.content = scene.songData.coverArtist
+
+    local preview = nil
+    local playPreviewButton
+
+    local function stopPreview()
+        playPreviewButton.label = "PLAY"
+        if preview then
+            preview:stop()
+        end
+    end
+
+    local previewStartInput = DialogInput:new(56, 208, 80, 16, "START", 10, nil, function(self)
+        stopPreview()
+        self.content = tostring(tonumber(self.content) or 0)
+        scene.songData.songPreview[1] = tonumber(self.content) or scene.songData.songPreview[1]
+    end)
+    local previewEndInput = DialogInput:new(232, 208, 80, 16, "END", 10, nil, function(self)
+        stopPreview()
+        self.content = tostring(tonumber(self.content) or 0)
+        scene.songData.songPreview[2] = tonumber(self.content) or scene.songData.songPreview[2]
+    end)
+    previewStartInput.content = tostring(scene.songData.songPreview[1] or "")
+    previewEndInput.content = tostring(scene.songData.songPreview[2] or "")
+
+    playPreviewButton = DialogButton:new(152, 208, 64, 16, "PLAY", function (self)
+        if self.label == "PLAY" then
+            self.label = "STOP"
+            Assets.ErasePreview(scene.songData.songPath)
+            preview = Assets.Preview(scene.songData.songPath, scene.songData.songPreview)
+            if preview then
+                preview:setLooping(true)
+                preview:play()
+            end
+        else
+            stopPreview()
+        end
+    end)
+
+    local dialog = {
+        title = "SONG METADATA",
+        width = 24,
+        height = 20,
+        contents = {
+            DialogLabel:new(148, 0, 72, "SONG NAME"),
+            nameInput,
+            DialogLabel:new(140, 48, 88, "SONG AUTHOR"),
+            authorInput,
+            DialogLabel:new(88, 96, 64, "SONG BPM"),
+            bpmInput,
+            DialogLabel:new(136, 128, 96, "COVER ARTIST"),
+            artistInput,
+            DialogLabel:new(136, 176, 96, "SONG PREVIEW"),
+            previewStartInput,
+            previewEndInput,
+            playPreviewButton,
+            DialogButton:new(152, 256, 64, 16, "CLOSE", function ()
+                stopPreview()
+                table.remove(scene.dialogs, 1)
+            end)
+        }
+    }
+    table.insert(scene.dialogs, 1, dialog)
+end
+
 local editorMenu = {
     {
         id = "file",
@@ -302,7 +375,7 @@ local editorMenu = {
                                     end
                                 end
 								
-                                local splitName = songInput.filename:split(getDirectorySeperator())
+                                local splitName = songInput.filename:split(getDirectorySeparator())
                                 love.filesystem.createDirectory("editor_chart")
                                 if coverInput.file ~= nil then
                                     love.filesystem.write("editor_chart/cover.png", coverInput.file:read())
@@ -351,7 +424,7 @@ local editorMenu = {
                 label = "SAVE",
                 onclick = function()
                     if not scene.songData then return true end
-                    local splitPath = scene.songData.path:split(getDirectorySeperator())
+                    local splitPath = scene.songData.path:split(getDirectorySeparator())
                     if splitPath[#splitPath] == "editor_chart" then
                         fileDialog("w")
                     else
@@ -395,8 +468,9 @@ local editorMenu = {
                 type = "action",
                 label = "METADATA",
                 onclick = function()
-                    print("edit song metadata")
+                    -- print("edit song metadata")
                     if not scene.songData then return true end
+                    metadataDialog()
                     return true
                 end
             },
@@ -694,6 +768,9 @@ buildRecentMenu = function()
                 return true
             end
         })
+        if #menu.contents >= 6 then
+            break
+        end
     end
 end
 
@@ -1284,7 +1361,7 @@ function scene.draw()
             love.graphics.print("█", scrollbarX, 352-y)
         end
 
-        love.graphics.print("Zoom: " .. math.floor(zoom*1000)/1000 .. "x", 480, 96)
+        love.graphics.print("Zoom: " .. math.floor(zoom*1000)/1000 .. "x", scrollbarX+24, 96)
     else
         if scene.songData then
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
