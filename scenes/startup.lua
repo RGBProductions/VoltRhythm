@@ -37,7 +37,6 @@ local opening = {
         if loadedProfile then
             index = 20
         end
-        print(loadedProfile)
     end},
     {type = "line", text = "NO PROFILES FOUND", duration = 0},
     {type = "accept", text = "CREATE A PROFILE? (Y/N) ", yes = 16, no = 14},
