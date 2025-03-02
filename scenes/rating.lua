@@ -1,5 +1,11 @@
 local utf8 = require "utf8"
 
+function utf8.sub(txt, i, j)
+    local o1 = (utf8.offset(txt,i) or (#txt))-1
+    local o2 = (utf8.offset(txt,j+1) or (#txt+1))-1
+    return txt:sub(o1,o2)
+end
+
 local scene = {}
 
 local resultsText = love.graphics.newImage("images/results.png")
@@ -54,7 +60,7 @@ function scene.update(dt)
     local songName = scene.songData.name
     if #songName > 20 then
         if scene.textScrollTimer <= 0 then
-            local min,max = 0,#songName-20
+            local min,max = 0, utf8.len(songName)-20
             scene.textScroll = math.max(min,math.min(max,scene.textScroll + scene.textScrollDirection*dt*3))
             if scene.textScroll >= max or scene.textScroll <= min then
                 scene.textScrollTimer = 2
@@ -127,9 +133,9 @@ function scene.draw()
     -- love.graphics.print(tostring(level), 232+8*((22-#combinedDifficultyString)/2 + #difficulty+1), 192)
 
     local startText = 1+math.floor(scene.textScroll)
-    local endText = math.min(#songName, 20)+math.floor(scene.textScroll)
-    local displaySongName = songName:sub(startText, endText)
-    love.graphics.print(displaySongName, 232+8*(22-#displaySongName)/2, 320 + 16*1)
+    local endText = math.min(utf8.len(songName), 20)+math.floor(scene.textScroll)
+    local displaySongName = utf8.sub(songName, startText, endText)
+    love.graphics.print(displaySongName, 232+8*(22-utf8.len(displaySongName))/2, 320 + 16*1)
 
     love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
     love.graphics.print(artistName, 232+8*(22-#artistName)/2, 320 + 16*2)
