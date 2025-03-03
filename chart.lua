@@ -331,8 +331,11 @@ EffectTypes = {
         end
     end,
     modify_bg = function(self,chart)
-        if chart.background then
-            chart.background[self.data.key] = self.data.value
+        local background = Assets.Background(chart.background)
+        if background then
+            for k,v in pairs(self.data) do
+                background[k] = v
+            end
         end
     end,
 }

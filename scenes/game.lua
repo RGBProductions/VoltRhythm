@@ -239,7 +239,7 @@ function scene.keypressed(k)
         if laneIndex then
             for i,note in ipairs(scene.chart.notes) do
                 local pos = note.time-scene.chart.time
-                if pos > 0.5 then -- too far for us to care
+                if pos > TimingWindow then -- too far for us to care
                     break
                 end
                 local t = NoteTypes[note.type]

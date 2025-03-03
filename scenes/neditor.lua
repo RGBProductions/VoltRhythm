@@ -278,6 +278,11 @@ local function metadataDialog()
         end
     end
 
+    local source = Assets.Source((scene.songData or {}).songPath)
+    if source then
+        scene.songData.songPreview = scene.songData.songPreview or {0,math.floor(source:getDuration()*100000)/100000}
+    end
+
     local previewStartInput = DialogInput:new(56, 208, 80, 16, "START", 10, nil, function(self)
         stopPreview()
         self.content = tostring(tonumber(self.content) or 0)
@@ -573,15 +578,6 @@ local editorMenu = {
                     table.insert(scene.dialogs, dialog)
                     return true
                 end
-            },
-            {
-                id = "edit.open_in_old_editor",
-                type = "action",
-                label = "OPEN IN OLD EDITOR",
-                onclick = function()
-                    SceneManager.Transition("scenes/editor", {songData = scene.songData, difficulty = scene.difficulty})
-                    return true
-                end
             }
         }
     },
@@ -816,19 +812,6 @@ function scene.load(args)
 
     scene.scrollbarGrab = false
     scene.playingWhenGrabbed = false
-
-    -- WIP editor notice
-    table.insert(scene.dialogs, 1, {
-        title = "CHART EDITOR",
-        width = 17,
-        height = 18,
-        contents = {
-            DialogLabel:new(0, 16, 256, "Hello!\n\nThis chart editor is still incomplete, so you may experience some bugs or missing features. Don't worry, these should be fixed in the coming updates!\n\nFor now, please report any issues in the Discord server.", "center"),
-            DialogButton:new(64, 224, 128, 16, "OKAY", function ()
-                table.remove(scene.dialogs, 1)
-            end),
-        }
-    })
 
     if love.filesystem.getInfo("editor_history.json") then
         scene.history = json.decode(love.filesystem.read("editor_history.json"))
