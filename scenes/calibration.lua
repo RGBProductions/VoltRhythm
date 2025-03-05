@@ -9,7 +9,15 @@ function scene.load()
     scene.source:setLooping(true)
 end
 
+---@param k love.KeyConstant
 function scene.keypressed(k)
+    if k == "lalt" or k == "ralt" or k == "tab" then
+        return
+    end
+    if k == "escape" then
+        SceneManager.Transition("scenes/menu")
+        return
+    end
     if k == "return" then
         if not scene.going and not scene.complete then
             scene.going = true
