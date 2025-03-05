@@ -860,9 +860,9 @@ function scene.update(dt)
     if source then
         if source:isPlaying() then
             scene.chartTimeTemp = scene.chartTimeTemp + dt
-            local sourceTime = source:tell("seconds")
+            local sourceTime = source:tell("seconds")-AudioOffset
             if math.abs(scene.chartTimeTemp - sourceTime) >= 0.03 then
-                scene.chartTimeTemp = source:tell("seconds")
+                scene.chartTimeTemp = source:tell("seconds")-AudioOffset
             end
         end
     end
