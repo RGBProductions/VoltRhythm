@@ -15,6 +15,7 @@ function scene.keypressed(k)
         return
     end
     if k == "escape" then
+        scene.source:stop()
         SceneManager.Transition("scenes/menu")
         return
     end
