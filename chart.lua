@@ -308,11 +308,13 @@ EffectTypes = {
     end,
     transform = function(self)
         if self.data.shift then
-            DisplayShiftTarget = self.data.shift or DisplayShiftTarget
+            DisplayShiftTarget[1] = (self.data.shift or DisplayShiftTarget)[1]
+            DisplayShiftTarget[2] = (self.data.shift or DisplayShiftTarget)[2]
             DisplayShiftSmoothing = self.data.smoothing or 0
         end
         if self.data.scale then
-            DisplayScaleTarget = self.data.scale or DisplayScaleTarget
+            DisplayScaleTarget[1] = (self.data.scale or DisplayScaleTarget)[1]
+            DisplayScaleTarget[2] = (self.data.scale or DisplayScaleTarget)[2]
             DisplayScaleSmoothing = self.data.smoothing or 0
         end
         if self.data.rotation then
@@ -320,14 +322,18 @@ EffectTypes = {
             DisplayRotationSmoothing = self.data.smoothing or 0
         end
         if self.data.shear then
-            DisplayShearTarget = self.data.shear or DisplayShearTarget
+            DisplayShearTarget[1] = (self.data.shear or DisplayShearTarget)[1]
+            DisplayShearTarget[2] = (self.data.shear or DisplayShearTarget)[2]
             DisplayShearSmoothing = self.data.smoothing or 0
         end
         if (self.data.smoothing or 0) == 0 then
-            DisplayShift = DisplayShiftTarget
-            DisplayScale = DisplayScaleTarget
+            DisplayShift[1] = DisplayShiftTarget[1]
+            DisplayShift[2] = DisplayShiftTarget[2]
+            DisplayScale[1] = DisplayScaleTarget[1]
+            DisplayScale[2] = DisplayScaleTarget[2]
             DisplayRotation = DisplayRotationTarget
-            DisplayShear = DisplayShearTarget
+            DisplayShear[1] = DisplayShearTarget[1]
+            DisplayShear[2] = DisplayShearTarget[2]
         end
     end,
     modify_bg = function(self,chart)
@@ -458,6 +464,7 @@ end
 ---@field bpm number
 ---@field charts {easy: chartdata|Chart?, medium: chartdata|Chart?, hard: chartdata|Chart?, extreme: chartdata|Chart?, overvolt: chartdata|Chart?}
 ---@field levels {easy: number, medium: number, hard: number, extreme: number, overvolt: number}
+---@field lyrics {easy: Lyrics?, medium: Lyrics?, hard: Lyrics?, extreme: Lyrics?, overvolt: Lyrics?, main: Lyrics?}
 ---@field songPreview {[1]: number, [2]: number}
 SongData = {}
 SongData.__index = SongData
@@ -485,14 +492,23 @@ function LoadSongData(path)
 
     songData.charts = songInfo.charts
     songData.levels = {}
+    songData.lyrics = {}
+    local S,mainlyrics = pcall(json.decode, love.filesystem.read(path.."/lyrics.json"))
+    if S then
+        songData.lyrics.main = Lyrics:new(mainlyrics)
+    end
     for name,chart in pairs(songData.charts or {}) do
         songData.levels[name] = chart.level
+        local s,lyrics = pcall(json.decode, love.filesystem.read(path.."/"..name.."-lyrics.json"))
+        if s then
+            songData.lyrics[name] = Lyrics:new(lyrics)
+        end
     end
 
     return songData
 end
 
-function SongData:new(name,author,bpm,song,songPreview,charts,levels)
+function SongData:new(name,author,bpm,song,songPreview,charts,levels,lyrics)
     local songData = setmetatable({}, self)
     songData.name = name or "Song"
     songData.author = author or "Composer"
@@ -501,6 +517,7 @@ function SongData:new(name,author,bpm,song,songPreview,charts,levels)
     songData.songPreview = songPreview or {0,math.huge}
     songData.charts = charts or {}
     songData.levels = levels or {}
+    songData.lyrics = lyrics or {}
     for chartname,chart in pairs(charts or {}) do
         songData.levels[chartname] = songData.levels[chartname] or chart.level
     end
@@ -509,13 +526,16 @@ end
 
 function SongData:newChart(difficulty, level)
     if self.charts[difficulty] then return self.charts[difficulty] end
-    local chart = Chart:new(
-        self.songPath,
-        self.bpm,
-        {}, {}, {},
-        self.name, 4,
-        nil, nil, {}, "?"
-    )
+    local chart = Chart:new({
+        song = self.songPath,
+        bpm = self.bpm,
+        notes = {},
+        effects = {},
+        bpmChanges = {},
+        name = self.name,
+        lanes = 4,
+        charter = "?"
+    })
     self.charts[difficulty] = chart
     self.levels[difficulty] = level or 1
     return chart
@@ -590,28 +610,31 @@ end
 ---@field lanes integer
 ---@field name string
 ---@field charter string
+---@field hideDifficulty boolean
 Chart = {}
 Chart.__index = Chart
 
-function Chart:new(song, bpm, notes, effects, bpmChanges, name, lanes, video, background, backgroundInit, charter)
+---@param data table
+---@return Chart
+function Chart:new(data)
     local chart = setmetatable({}, self)
 
-    chart.song = song
-    chart.bpm = bpm
+    chart.song = data.song
+    chart.bpm = data.bpm
 
-    chart.video = video
-    chart.background = background
-    chart.backgroundInit = backgroundInit or {}
+    chart.video = data.video
+    chart.background = data.background
+    chart.backgroundInit = data.backgroundInit or {}
 
-    chart.notes = notes or {}
+    chart.notes = data.notes or {}
     table.sort(chart.notes or {}, function (a, b)
         return a.time < b.time
     end)
-    chart.effects = effects or {}
+    chart.effects = data.effects or {}
     table.sort(chart.effects or {}, function (a, b)
         return a.time < b.time
     end)
-    chart.bpmChanges = bpmChanges or {}
+    chart.bpmChanges = data.bpmChanges or {}
     table.sort(chart.bpmChanges or {}, function (a, b)
         return a.time < b.time
     end)
@@ -621,10 +644,12 @@ function Chart:new(song, bpm, notes, effects, bpmChanges, name, lanes, video, ba
         chart.totalCharge = chart.totalCharge + 1 + (note.length or 0)
     end
 
-    chart.name = name or "Chart"
-    chart.lanes = lanes or 4
+    chart.name = data.name or "Chart"
+    chart.lanes = data.lanes or 4
 
-    chart.charter = charter or "Charter"
+    chart.charter = data.charter or "Charter"
+
+    chart.hideDifficulty = data.hideDifficulty
 
     return chart
 end
@@ -693,7 +718,7 @@ function Chart.fromFile(path,b)
     for i,effect in ipairs(data.effects) do
         data.effects[i] = Effect:new(effect.time,effect.type,effect.data)
     end
-    return Chart:new(data.song,data.bpm,data.notes,data.effects,data.bpmChanges,data.name,data.lanes,data.video,data.background,data.backgroundInit,data.charter)
+    return Chart:new(data)
 end
 
 function Chart:save(path)
@@ -716,7 +741,8 @@ function Chart:save(path)
         notes = notes,
         effects = effects,
         bpmChanges = self.bpmChanges,
-        charter = self.charter
+        charter = self.charter,
+        hideDifficulty = self.hideDifficulty
     }))
 end
 
@@ -750,4 +776,98 @@ function Chart:getBalance()
         balance = balance + (note.lane - (self.lanes-1)/2)
     end
     return balance / #self.notes
+end
+
+---@alias LyricComponent {type: "text"|"image"|"key", text?: string, key?: 0|1|2|3, path?: string, x?: number, y?: number, width?: number, height?: number}
+---@alias Transformation {shift?: {[1]: number, [2]: number}, scale?: {[1]: number, [2]: number}, shear?: {[1]: number, [2]: number}, rotation?: number}
+---@alias Lyric {startTime: number, endTime: number, components: LyricComponent[], transformation?: Transformation, followChart?: boolean, hideBox?: boolean, boxWidth?: number, boxHeight?: number}
+
+---@class Lyrics
+---@field script Lyric[]
+Lyrics = {}
+Lyrics.__index = Lyrics
+
+function Lyrics:new(script)
+    local lyrics = setmetatable({}, self)
+
+    lyrics.script = script or {}
+    for _,lyric in ipairs(lyrics.script) do
+        local boundingBox = {math.huge,math.huge,-math.huge,-math.huge}
+        for _,component in ipairs(lyric.components) do
+            if component.type == "text" then
+                local w,wrap = Font:getWrap(component.text, Font:getWidth(component.text))
+                local x1,y1,x2,y2 = component.x, component.y, component.x+w, component.y+(#wrap * Font:getHeight())
+                boundingBox[1] = math.min(boundingBox[1], x1, x2)
+                boundingBox[2] = math.min(boundingBox[2], y1, y2)
+                boundingBox[3] = math.max(boundingBox[3], x1, x2)
+                boundingBox[4] = math.max(boundingBox[4], y1, y2)
+            end
+            if component.type == "key" then
+                local text = Keybinds[4][component.key+1] or "?"
+                local w,wrap = Font:getWrap(text, Font:getWidth(text))
+                local x1,y1,x2,y2 = component.x, component.y, component.x+w, component.y+(#wrap * Font:getHeight())
+                boundingBox[1] = math.min(boundingBox[1], x1, x2)
+                boundingBox[2] = math.min(boundingBox[2], y1, y2)
+                boundingBox[3] = math.max(boundingBox[3], x1, x2)
+                boundingBox[4] = math.max(boundingBox[4], y1, y2)
+            end
+        end
+        if not lyric.boxWidth then
+            lyric.boxWidth = (boundingBox[3]-boundingBox[1])/8+2
+        end
+        if not lyric.boxHeight then
+            lyric.boxHeight = (boundingBox[4]-boundingBox[2])/16
+        end
+    end
+
+    return lyrics
+end
+
+function Lyrics:draw(time)
+    for _,lyric in ipairs(self.script) do
+        if time < lyric.startTime or time > lyric.endTime then
+            goto continue
+        end
+
+        love.graphics.push()
+
+        if lyric.followChart then
+            love.graphics.translate(DisplayShift[1], DisplayShift[2])
+            love.graphics.translate(320,240)
+            love.graphics.scale(DisplayScale[1], DisplayScale[2])
+            love.graphics.rotate(DisplayRotation)
+            love.graphics.shear(DisplayShear[1], DisplayShear[2])
+            love.graphics.translate(-320,-240)
+        end
+
+        local transformation = lyric.transformation or {}
+        local shift = (transformation.shift or {0,0})
+        local scale = (transformation.scale or {1,1})
+        local shear = (transformation.shear or {0,0})
+        local rotation = (transformation.rotation or 0)
+        love.graphics.translate(320,240)
+        love.graphics.translate(shift[1], shift[2])
+        love.graphics.scale(scale[1], scale[2])
+        love.graphics.rotate(rotation)
+        love.graphics.shear(shear[1], shear[2])
+        love.graphics.translate(-(lyric.boxWidth+2)/2*8, -(lyric.boxHeight+2)/2*16)
+
+        if not lyric.hideBox then
+            DrawBoxHalfWidth(0, 0, lyric.boxWidth, lyric.boxHeight)
+        end
+        for _,component in ipairs(lyric.components) do
+            if component.type == "text" then
+                local w = Font:getWidth(component.text)
+                love.graphics.printf(component.text, 16+component.x, 16+component.y, w, "center")
+            end
+            if component.type == "key" then
+                local text = (Keybinds[4][component.key+1] or "?"):upper()
+                local w = Font:getWidth(text)
+                love.graphics.printf(text, 16+component.x, 16+component.y, w, "center")
+            end
+        end
+        love.graphics.pop()
+
+        ::continue::
+    end
 end

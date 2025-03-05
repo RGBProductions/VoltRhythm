@@ -1,0 +1,45 @@
+local scene = {}
+
+function scene.load()
+    scene.going = false
+    scene.complete = false
+    scene.offset = 0
+    scene.hits = 0
+    scene.source = Assets.Source("sounds/calibration.ogg")
+    scene.source:setLooping(true)
+end
+
+function scene.keypressed(k)
+    if k == "return" then
+        if not scene.going and not scene.complete then
+            scene.going = true
+            scene.source:play()
+        elseif not scene.complete then
+            scene.going = false
+            scene.complete = true
+            scene.source:stop()
+            AudioOffset = scene.offset/scene.hits
+        else
+            SceneManager.Transition("scenes/menu")
+        end
+    elseif scene.going then
+        local hitOffset = (scene.source:tell("seconds") - (61062/44100))
+        print(hitOffset)
+        scene.offset = scene.offset + hitOffset
+        scene.hits = scene.hits + 1
+    end
+end
+
+function scene.draw()
+    if not scene.going and not scene.complete then
+        love.graphics.printf("Press enter to begin calibration.", 0, 240-8, 640, "center")
+    end
+    if scene.going then
+        love.graphics.printf("Press any key on the fourth beat.\nPress enter to stop.\n\nOffset is " .. math.floor((scene.offset/scene.hits)*1000*100)/100 .. "ms", 0, 240-16-16, 640, "center")
+    end
+    if scene.complete then
+        love.graphics.printf("Your new offset is " .. math.floor((scene.offset/scene.hits)*1000*100)/100 .. "ms.\n\nPress enter to exit", 0, 240-8-16, 640, "center")
+    end
+end
+
+return scene

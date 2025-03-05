@@ -40,6 +40,7 @@ end
 
 ---@param args {songData: SongData, difficulty: string, modifiers: table, isEditor?: boolean, forced?: boolean, masquerade?: string}
 function scene.load(args)
+    ResetEffects()
     love.keyboard.setKeyRepeat(false)
     LastOffset = nil
     scene.isEditor = args.isEditor
@@ -64,10 +65,12 @@ function scene.load(args)
             scene.background.init(scene.chart.backgroundInit or {})
         end
         scene.chart:recalculateCharge()
+        scene.chart:resetAllNotes()
     end
     scene.modifiers = args.modifiers or {}
     scene.chartName = "UNRAVELING STASIS"
-    AudioOffset = Autoplay and 0 or 0/1000
+    -- AudioOffset = Autoplay and 0 or 0/1000
+    scene.audioOffset = Autoplay and 0 or AudioOffset
     HitOffset = 0
     RealHits = 0
     Charge = 0
@@ -113,19 +116,6 @@ function scene.load(args)
         HitAmounts[i] = 0
     end
 
-    DisplayShift = {0,0}
-    DisplayShiftTarget = {0,0}
-    DisplayShiftSmoothing = 0
-    DisplayScale = {1,1}
-    DisplayScaleTarget = {1,1}
-    DisplayScaleSmoothing = 0
-    DisplayRotation = 0
-    DisplayRotationTarget = 0
-    DisplayRotationSmoothing = 0
-    DisplayShear = {0,0}
-    DisplayShearTarget = {0,0}
-    DisplayShearSmoothing = 0
-
     NoteBrightness = 1
     NoteBrightnessTarget = 1
     NoteBrightnessSmoothing = 0
@@ -142,6 +132,19 @@ function scene.load(args)
 end
 
 function ResetEffects()
+    DisplayShift = {0,0}
+    DisplayShiftTarget = {0,0}
+    DisplayShiftSmoothing = 0
+    DisplayScale = {1,1}
+    DisplayScaleTarget = {1,1}
+    DisplayScaleSmoothing = 0
+    DisplayRotation = 0
+    DisplayRotationTarget = 0
+    DisplayRotationSmoothing = 0
+    DisplayShear = {0,0}
+    DisplayShearTarget = {0,0}
+    DisplayShearSmoothing = 0
+
     BloomStrengthModifier = 1
     BloomStrengthModifierTarget = 1
     BloomStrengthModifierSmoothing = 0
@@ -167,7 +170,7 @@ end
 function Restart()
     if scene.song then scene.song:stop() end
     scene.chart:resetAllNotes()
-    SceneManager.Transition("scenes/game", {songData = scene.songData, difficulty = scene.difficulty, isEditor = scene.isEditor})
+    SceneManager.Transition("scenes/game", {songData = scene.songData, difficulty = scene.difficulty, isEditor = scene.isEditor, forced = scene.forced})
 end
 
 function Exit()
@@ -224,6 +227,7 @@ function scene.keypressed(k)
         Restart()
     end
     if k == "f8" then
+        if scene.forced then return end
         if scene.song then scene.song:stop() end
         scene.chart.time = 0
         scene.chart:resetAllNotes()
@@ -389,15 +393,15 @@ function scene.update(dt)
     -- Update chart time and scroll chart
     local lastTime = scene.chart.time
     scene.chart.time = scene.chart.time + dt*(scene.modifiers.speed or 1)
-    if scene.chart.time > -AudioOffset then
-        if scene.lastTime <= -AudioOffset then
+    if scene.chart.time > -scene.audioOffset then
+        if scene.lastTime <= -scene.audioOffset then
             SongStarted = true
             if scene.song then scene.song:setPitch(scene.modifiers.speed or 1); scene.song:play() end
             if scene.video then scene.video:getSource():setPitch(scene.modifiers.speed or 1); scene.video:play() end
         end
         if scene.song then
             if scene.song:isPlaying() then
-                local st = scene.song:tell("seconds")-AudioOffset
+                local st = scene.song:tell("seconds")-scene.audioOffset
                 local drift = st-scene.chart.time
                 -- Only fix drift if we're NOT at the end of song AND we are too much offset
                 if math.abs(drift) >= 0.05 and drift > -scene.song:getDuration("seconds") then
@@ -583,7 +587,7 @@ function scene.update(dt)
     HandleChartEffects()
 
     if scene.song then
-        if scene.chart.time >= scene.song:getDuration("seconds")-AudioOffset then
+        if scene.chart.time >= scene.song:getDuration("seconds")-scene.audioOffset then
             if not SceneManager.TransitionState.Transitioning then
                 if FullOvercharge then
                     Charge = scene.chart.totalCharge
@@ -764,16 +768,16 @@ function scene.draw()
     local difficultyName = SongDifficulty[scene.masquerade or "easy"].name or scene.masquerade:upper()
     local difficultyColor = SongDifficulty[scene.masquerade or "easy"].color or TerminalColors[ColorID.WHITE]
     local level = scene.songData:getLevel(scene.difficulty)
-    local fullText = scene.songData.name .. " - " .. SongDifficulty[scene.masquerade].name .. (level ~= nil and (" " .. level) or "")
+    local fullText = scene.songData.name .. (scene.chart.hideDifficulty and "" or (" - " .. SongDifficulty[scene.masquerade].name .. (level ~= nil and (" " .. level) or "")))
     -- local fullText = scene.songData.name .. " - " .. difficultyName .. " " .. level
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     local r1,g1,b1,a1 = love.graphics.getColor()
     love.graphics.setColor(r1*BoardBrightness,g1*BoardBrightness,b1*BoardBrightness,a1)
     love.graphics.print("┌─" .. ("─"):rep(utf8.len(fullText)) .. "─┐\n│ " .. (" "):rep(utf8.len(fullText)) .. " │\n└─" .. ("─"):rep(utf8.len(fullText)) .. "─┘", ((80-(utf8.len(fullText)+4))/2)*8, 1*16)
-    love.graphics.print(scene.songData.name .. " - ", ((80-(utf8.len(fullText)+4))/2 + 2)*8, 2*16)
+    love.graphics.print(scene.songData.name .. (scene.chart.hideDifficulty and "" or " - "), ((80-(utf8.len(fullText)+4))/2 + 2)*8, 2*16)
     -- love.graphics.setColor(difficultyColor)
     -- love.graphics.print(difficultyName, ((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - "))*8, 2*16)
-    PrintDifficulty(((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - "))*8, 2*16, scene.masquerade or "easy", level, "left")
+    if not scene.chart.hideDifficulty then PrintDifficulty(((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - "))*8, 2*16, scene.masquerade or "easy", level, "left") end
     love.graphics.setColor(r1*BoardBrightness,g1*BoardBrightness,b1*BoardBrightness,a1)
     -- love.graphics.print(tostring(level), ((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - " .. difficultyName .. " "))*8, 2*16)
 
@@ -881,6 +885,12 @@ function scene.draw()
     end
 
     love.graphics.pop()
+
+    love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    local lyrics = scene.songData.lyrics[scene.difficulty] or scene.songData.lyrics.main
+    if lyrics then
+        lyrics:draw(scene.chart.time)
+    end
 
     if Paused or PauseTimer > 0 then
         love.graphics.setColor(0,0,0,0.75)

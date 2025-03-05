@@ -23,6 +23,9 @@ local options = {
     {"SETTINGS", "CONFIGURE SYSTEM", love.graphics.newImage("images/menu/cfg.png"), function()
         SceneManager.Transition("scenes/settings")
     end},
+    {"CALIBRATE", "TEMPORARY SOLUTION", love.graphics.newImage("images/menu/cfg.png"), function()
+        SceneManager.Transition("scenes/calibration")
+    end},
     {"EXIT", "SHUTDOWN SYSTEM", love.graphics.newImage("images/menu/exit.png"), function()
         love.event.push("quit")
     end}
