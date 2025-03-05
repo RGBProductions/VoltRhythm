@@ -5,6 +5,7 @@
             {
                 "name": "mainline.section1",
                 "songs": [
+                    {"song": "tutorial", "difficulties": ["easy"]},
                     {"song": "cute", "difficulties": ["hard"]},
                     
                     {"song": "worstnightmare", "difficulties": ["overvolt"], "lock": {
@@ -22,6 +23,7 @@
             {
                 "name": "mainline.section1",
                 "songs": [
+                    {"song": "tutorial", "difficulties": ["easy"]},
                     {"song": "cute", "difficulties": ["hard"]},
                     
                     {"song": "worstnightmare", "difficulties": ["overvolt"], "lock": {
