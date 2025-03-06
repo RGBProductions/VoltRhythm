@@ -70,7 +70,7 @@ function scene.load(args)
     scene.modifiers = args.modifiers or {}
     scene.chartName = "UNRAVELING STASIS"
     -- AudioOffset = Autoplay and 0 or 0/1000
-    scene.audioOffset = Autoplay and 0 or AudioOffset
+    scene.audioOffset = Autoplay and 0 or Save.Read("audio_offset") or 0
     HitOffset = 0
     RealHits = 0
     Charge = 0

@@ -27,7 +27,7 @@ function scene.keypressed(k)
             scene.going = false
             scene.complete = true
             scene.source:stop()
-            AudioOffset = scene.offset/scene.hits
+            Save.Write("audio_offset", scene.offset/scene.hits)
         else
             SceneManager.Transition("scenes/menu")
         end

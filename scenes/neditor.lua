@@ -773,6 +773,7 @@ end
 local scrollbarX = 472
 
 function scene.load(args)
+    scene.audioOffset = Save.Read("audio_offset") or 0
     scene.songData = args.songData
     scene.difficulty = args.difficulty
 
@@ -861,7 +862,7 @@ function scene.update(dt)
         if source:isPlaying() then
             scene.chartTimeTemp = scene.chartTimeTemp + dt
             
-            local st = source:tell("seconds")-AudioOffset
+            local st = source:tell("seconds")-scene.audioOffset
             local drift = st-scene.chart.time
             -- Only fix drift if we're NOT at the end of song AND we are too much offset
             if math.abs(drift) >= 0.05 and drift > -source:getDuration("seconds") then
