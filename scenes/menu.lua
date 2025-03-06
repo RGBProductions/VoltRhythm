@@ -116,6 +116,17 @@ function scene.draw()
             love.graphics.printf(label3Wrapped[1], math.floor((x-16)/8)*8, y+32, 112, "center")
         end
     end
+
+    local x = 320-4-(#options-1)/2*16
+    love.graphics.print((" "):rep(#options*2+1), x-8, 352)
+    for i = 1, #options do
+        love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
+        if i == MenuSelection+1 then
+            love.graphics.setColor(TerminalColors[ColorID.WHITE])
+        end
+        love.graphics.print("○", x+(i-1)*16, 352)
+    end
+    
     love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
     love.graphics.printf("LOGGED IN AS " .. Save.Read("name"), 0, 400, 640, "center")
 end

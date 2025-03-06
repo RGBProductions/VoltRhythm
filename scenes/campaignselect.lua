@@ -121,6 +121,16 @@ function scene.draw()
             love.graphics.printf(option[1], math.floor((x-32)/8)*8, y+16-(8*(#wrap-1)), 144, "center")
         end
     end
+
+    local x = 320-4-(#options-1)/2*16
+    love.graphics.print((" "):rep(#options*2+1), x-8, 352)
+    for i = 1, #options do
+        love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
+        if i == CampaignSelectIndex then
+            love.graphics.setColor(TerminalColors[ColorID.WHITE])
+        end
+        love.graphics.print("○", x+(i-1)*16, 352)
+    end
 end
 
 return scene
