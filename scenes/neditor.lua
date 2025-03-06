@@ -866,7 +866,7 @@ function scene.update(dt)
             local drift = st-scene.chart.time
             -- Only fix drift if we're NOT at the end of song AND we are too much offset
             if math.abs(drift) >= 0.05 and drift > -source:getDuration("seconds") then
-                scene.chartTimeTemp = source:tell("seconds")
+                scene.chartTimeTemp = source:tell("seconds")-scene.audioOffset
             end
         end
     end
@@ -1018,7 +1018,7 @@ function scene.keypressed(k)
                             source:pause()
                         else
                             source:play()
-                            source:seek(math.max(0,scene.chartTimeTemp), "seconds")
+                            source:seek(math.max(0,scene.chartTimeTemp+scene.audioOffset), "seconds")
                         end
                     end
                 end
