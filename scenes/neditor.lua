@@ -855,7 +855,7 @@ function scene.update(dt)
 
     local source = Assets.Source((scene.chart or {}).song)
     if source then
-        scene.chartTimeTemp = math.max(0,math.min(source:getDuration("seconds"), scene.chartTimeTemp))
+        scene.chartTimeTemp = math.max(-scene.audioOffset,math.min(source:getDuration("seconds"), scene.chartTimeTemp))
     end
     
     if source then
@@ -1018,7 +1018,7 @@ function scene.keypressed(k)
                             source:pause()
                         else
                             source:play()
-                            source:seek(math.max(0,scene.chartTimeTemp+scene.audioOffset), "seconds")
+                            source:seek(math.max(-scene.audioOffset,scene.chartTimeTemp+scene.audioOffset), "seconds")
                         end
                     end
                 end
