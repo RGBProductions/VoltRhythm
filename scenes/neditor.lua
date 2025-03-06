@@ -860,9 +860,12 @@ function scene.update(dt)
     if source then
         if source:isPlaying() then
             scene.chartTimeTemp = scene.chartTimeTemp + dt
-            local sourceTime = source:tell("seconds")-AudioOffset
-            if math.abs(scene.chartTimeTemp - sourceTime) >= 0.03 then
-                scene.chartTimeTemp = source:tell("seconds")-AudioOffset
+            
+            local st = source:tell("seconds")-AudioOffset
+            local drift = st-scene.chart.time
+            -- Only fix drift if we're NOT at the end of song AND we are too much offset
+            if math.abs(drift) >= 0.05 and drift > -source:getDuration("seconds") then
+                scene.chartTimeTemp = source:tell("seconds")
             end
         end
     end
