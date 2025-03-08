@@ -38,7 +38,7 @@ function GetRating(accValue)
     return #NoteRatings
 end
 
----@param args {songData: SongData, difficulty: string, modifiers: table, isEditor?: boolean, forced?: boolean, masquerade?: string}
+---@param args {songData: SongData, difficulty: string, modifiers: table, isEditor?: boolean, forced?: boolean, masquerade?: string, chargeGate?: number}
 function scene.load(args)
     ResetEffects()
     love.keyboard.setKeyRepeat(false)
@@ -69,7 +69,7 @@ function scene.load(args)
     end
     scene.modifiers = args.modifiers or {}
     scene.chartName = "UNRAVELING STASIS"
-    -- AudioOffset = Autoplay and 0 or 0/1000
+    scene.chargeGate = args.chargeGate or 0.2
     scene.audioOffset = Autoplay and 0 or Save.Read("audio_offset") or 0
     HitOffset = 0
     RealHits = 0
@@ -599,7 +599,7 @@ function scene.update(dt)
                     Charge = 0
                     SceneManager.Transition("scenes/neditor", {songData = scene.songData, difficulty = scene.difficulty})
                 else
-                    SceneManager.Transition("scenes/rating", {chart = scene.chart, songData = scene.songData, difficulty = scene.difficulty, offset = HitOffset/RealHits, ratings = RatingCounts, accuracy = Accuracy/math.max(Hits,1), charge = (Charge*100)/scene.chart.totalCharge, fullCombo = ComboBreaks == 0, fullOvercharge = FullOvercharge})
+                    SceneManager.Transition("scenes/rating", {chart = scene.chart, songData = scene.songData, difficulty = scene.difficulty, offset = HitOffset/RealHits, ratings = RatingCounts, accuracy = Accuracy/math.max(Hits,1), charge = (Charge*100)/scene.chart.totalCharge, chargeGate = scene.chargeGate, fullCombo = ComboBreaks == 0, fullOvercharge = FullOvercharge})
                 end
             end
         end
@@ -791,15 +791,31 @@ function scene.draw()
     if c ~= c then chargeAmount = 0 end
     love.graphics.print(" ", 62*8, 22*16) -- Empty space
     love.graphics.print("┌──────────┐\n│  " .. (" "):rep(5-#tostring(chargeAmount)) .. chargeAmount .."¤  │\n┴──────────┤", 54*8, 21*16)
+    -- Gate
+    if scene.chargeGate > 0 and scene.chargeGate < 1 then
+        love.graphics.setColor(r1*BoardBrightness,g1*BoardBrightness,b1*BoardBrightness,a1)
+        local gateX = (15+math.floor(49*scene.chargeGate))
+        local symbol = (gateX == 25 or gateX == 54) and "┼" or "┬"
+        love.graphics.print(symbol.."\n\n┴", gateX*8, 23*16)
+        love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
+        local r2,g2,b2,a2 = love.graphics.getColor()
+        love.graphics.setColor(r2*BoardBrightness,g2*BoardBrightness,b2*BoardBrightness,a2)
+        love.graphics.print("┊", gateX*8, 24*16)
+    end
+    -- Overcharge Threshold
+    do
+        love.graphics.setColor(r1*BoardBrightness,g1*BoardBrightness,b1*BoardBrightness,a1)
+        local thresholdX = (15+math.floor(50*0.8))
+        love.graphics.print("┬\n\n┴", thresholdX*8, 23*16)
+        love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
+        local r2,g2,b2,a2 = love.graphics.getColor()
+        love.graphics.setColor(r2*BoardBrightness,g2*BoardBrightness,b2*BoardBrightness,a2)
+        love.graphics.print("┊", thresholdX*8, 24*16)
+    end
 
     -- Bar fill
     c = math.floor((Charge*100)/scene.chart.totalCharge)
-    love.graphics.print("┬\n\n┴", 55*8, 23*16)
-    love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
-    local r2,g2,b2,a2 = love.graphics.getColor()
-    love.graphics.setColor(r2*BoardBrightness,g2*BoardBrightness,b2*BoardBrightness,a2)
-    love.graphics.print("┊", 55*8, 24*16)
-    love.graphics.setColor(TerminalColors[(c < 40 and 5) or (c < 80 and 15) or 11])
+    love.graphics.setColor(TerminalColors[(c < (scene.chargeGate/2*100) and 5) or (c < (scene.chargeGate*100) and 15) or 11])
     love.graphics.print(("█"):rep(math.min(41,c/2)), 15*8, 24*16)
     -- OVERCHARGE
     if c == c then

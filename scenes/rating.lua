@@ -14,6 +14,7 @@ function scene.load(args)
     scene.rank,scene.plus = GetRank(args.accuracy or 0)
     scene.charge = math.floor((math.min(args.charge, 80)*ChargeYield)/100)
     scene.overcharge = math.floor((math.max((args.charge)-80, 0)*ChargeYield)/100)
+    scene.chargeGate = args.chargeGate or 0.8
     scene.accuracy = args.accuracy
     scene.fullCombo = args.fullCombo
     scene.fullOvercharge = args.fullOvercharge
@@ -158,11 +159,20 @@ function scene.draw()
         love.graphics.setColor(TerminalColors[ColorID.MAGENTA])
         love.graphics.print(fcText, 424+8*(22-#fcText)/2, 352)
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    elseif scene.charge < scene.chargeGate*ChargeYield then
+        local uvText = "UNDERVOLTED..."
+        love.graphics.setColor(TerminalColors[ColorID.RED])
+        love.graphics.print(uvText, 424+8*(22-#uvText)/2, 352)
+        love.graphics.setColor(TerminalColors[ColorID.WHITE])
     end
 
     DrawBoxHalfWidth(14, 8, 50, 1)
     -- Bar fill
     local c = math.floor(Charge/scene.chart.totalCharge*100)
+    if scene.chargeGate > 0 and scene.chargeGate < 1 then
+        local gateX = (15+math.floor(49*scene.chargeGate))
+        love.graphics.print("┬\n\n┴", gateX*8, 8*16)
+    end
     love.graphics.print("┬\n\n┴", 55*8, 8*16)
     love.graphics.setColor(TerminalColors[(c < 40 and 5) or (c < 80 and 15) or 11])
     love.graphics.print(("█"):rep(math.min(41,c/2)), 15*8, 9*16)
