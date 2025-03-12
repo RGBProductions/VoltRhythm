@@ -170,7 +170,7 @@ function scene.draw()
     -- Bar fill
     local c = math.floor(Charge/scene.chart.totalCharge*100)
     if scene.chargeGate > 0 and scene.chargeGate < 1 then
-        local gateX = (15+math.floor(49*scene.chargeGate))
+        local gateX = (15+math.floor(50*scene.chargeGate))
         love.graphics.print("┬\n\n┴", gateX*8, 8*16)
     end
     love.graphics.print("┬\n\n┴", 55*8, 8*16)

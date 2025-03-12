@@ -88,7 +88,7 @@ local function finishSelection()
 end
 
 function scene.load(args)
-    scene.source = args.source or "campaignselect"
+    scene.source = args.source or "songdiskselect"
     scene.destination = args.destination or "game"
 
     -- scene.campaigns = json.decode(love.filesystem.read("campaign/campaigns.json"))
@@ -106,9 +106,9 @@ function scene.load(args)
     SongSelectOffsetViewTarget = SongSelectOffsetViewTarget or 0
     SongSelectDifficulty = SongSelectDifficulty or 3
     SongSelectOvervoltMode = SongSelectOvervoltMode or false
-    scene.campaign = Campaign.Get(SongSelectCampaign)
-    local metrics = Campaign.Load(SongSelectCampaign)
-    local chargeMetrics = Campaign.GetChargeMetrics(SongSelectCampaign)
+    scene.campaign = SongDisk.Get(SongSelectCampaign)
+    local metrics = SongDisk.Load(SongSelectCampaign)
+    local chargeMetrics = SongDisk.GetChargeMetrics(SongSelectCampaign)
     scene.showMore = false
     scene.totalCharge = chargeMetrics.totalCharge
     scene.totalOvercharge = chargeMetrics.totalOvercharge
@@ -169,7 +169,7 @@ function scene.load(args)
     for s,section in ipairs(scene.campaign.sections) do
         for S,song in ipairs(section.songs) do
             song.unlockConditions, song.isUnlocked = testLock(song.lock or {})
-            if song.isUnlocked and table.index(song.difficulties, "overvolt") then
+            if song.isUnlocked and (table.index(song.difficulties, "overvolt") or table.index(song.difficulties, "hidden")) then
                 SongSelectHasOvervolt = true
             end
         end
@@ -189,7 +189,7 @@ function scene.keypressed(k)
             scene.showMore = not scene.showMore
         end
     end
-    if k == "o" then
+    if k == "o" and scene.campaign.hasOvervolt then
         MissTime = 2
         SongSelectOvervoltMode = not SongSelectOvervoltMode
         local prev = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
@@ -513,7 +513,7 @@ function scene.draw()
         if data then
             local hasEffects = #((data:loadChart(difficulties[difficulty] or "easy") or {}).effects or {}) ~= 0
             if hasEffects then
-                local x = 592 - 8 * (utf8.len(SongDifficulty[difficulties[difficulty] or "easy"].name .. " " .. (difficultyLevel or 0)) + 3)
+                local x = 592 - 8 * (utf8.len(SongDifficulty[difficulties[difficulty] or "easy"].name .. (difficultyLevel ~= nil and (" " .. (difficultyLevel or 0)) or "")) + 3)
                 love.graphics.print("✨", x, 360)
             end
         end

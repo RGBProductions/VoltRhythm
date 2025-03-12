@@ -1,59 +1,91 @@
-Campaign = {
-    NumCampaigns = 0
+SongDisk = {
+    NumDisks = 0
 }
 
-local campaigns = {}
+local disks = {}
 local loaded = {}
 local songnames = {}
 
-function Campaign.Retrieve()
-    for _,file in ipairs(love.filesystem.getDirectoryItems("campaign")) do
-        local s,r = pcall(json.decode, love.filesystem.read("campaign/" .. file))
-        if s then
-            for _,campaign in ipairs(r) do
-                local foundC = false
-                for _,data in ipairs(campaigns) do
-                    if data.name == campaign.name then
-                        for _,section in ipairs(campaign.sections) do
-                            local foundS = false
-                            for _,section2 in ipairs(data.sections) do
-                                if section2.name == section.name then
-                                    for _,song in ipairs(section.songs) do
-                                        table.insert(section2.songs, song)
-                                    end
-                                    foundS = true
-                                    break
-                                end
+function SongDisk.Retrieve()
+    local function l(disk)
+        local foundC = false
+        for _,data in ipairs(disks) do
+            if data.name == disk.name then
+                for _,section in ipairs(disk.sections) do
+                    local foundS = false
+                    for _,section2 in ipairs(data.sections) do
+                        if section2.name == section.name then
+                            for _,song in ipairs(section.songs) do
+                                table.insert(section2.songs, song)
                             end
-                            if not foundS then
-                                table.insert(data.sections, section)
-                            end
+                            foundS = true
+                            break
                         end
-                        foundC = true
-                        break
+                    end
+                    if not foundS then
+                        table.insert(data.sections, section)
                     end
                 end
-                if not foundC then
-                    table.insert(campaigns, campaign)
-                end
+                foundC = true
+                break
+            end
+        end
+        if not foundC then
+            table.insert(disks, disk)
+        end
+    end
+    for _,file in ipairs(love.filesystem.getDirectoryItems("songdisk")) do
+        local s,r = pcall(json.decode, love.filesystem.read("songdisk/" .. file))
+        if s then
+            for _,disk in ipairs(r) do
+                l(disk)
+                l({
+                    name = "FULL LIBRARY",
+                    sections = table.merge({}, disk.sections)
+                })
             end
         end
     end
-    Campaign.NumCampaigns = #campaigns
+    if #love.filesystem.getDirectoryItems("custom") > 0 then
+        local songs = {}
+        for _,song in ipairs(love.filesystem.getDirectoryItems("custom")) do
+            local s,info = pcall(json.decode, love.filesystem.read("custom/"..song.."/info.json"))
+            if s then
+                local data = {song = song, difficulties = {}}
+                for name,_ in pairs(info.charts) do
+                    table.insert(data.difficulties, name)
+                end
+                table.insert(songs, data)
+            end
+        end
+        local disk = {
+            name = "CUSTOM SONGS",
+            source = "custom",
+            icon = "images/menu/edit.png",
+            sections = {
+                {
+                    name = "custom",
+                    songs = songs
+                }
+            }
+        }
+        l(disk)
+    end
+    SongDisk.NumDisks = #disks
 end
 
-function Campaign.Get(campaign)
-    for _,data in ipairs(campaigns) do
-        if data.name == campaign then
+function SongDisk.Get(disk)
+    for _,data in ipairs(disks) do
+        if data.name == disk then
             return data
         end
     end
     return nil
 end
 
-function Campaign.GetChargeMetrics(campaign)
-    if type(campaign) == "string" then
-        campaign = Campaign.Get(campaign)
+function SongDisk.GetChargeMetrics(disk)
+    if type(disk) == "string" then
+        disk = SongDisk.Get(disk)
     end
     local metrics = {
         totalCharge = 0,
@@ -63,8 +95,8 @@ function Campaign.GetChargeMetrics(campaign)
         potentialOvercharge = 0,
         potentialXCharge = 0
     }
-    if not campaign then return metrics end
-    for s,section in ipairs(campaign.sections) do
+    if not disk then return metrics end
+    for s,section in ipairs(disk.sections) do
         for S,song in ipairs(section.songs) do
             for _,name in ipairs(song.difficulties) do
                 metrics.potentialCharge = metrics.potentialCharge + 160*ChargeValues[name].charge
@@ -82,12 +114,12 @@ function Campaign.GetChargeMetrics(campaign)
     return metrics
 end
 
-function Campaign.Load(campaign)
-    if loaded[campaign] then
-        return loaded[campaign]
+function SongDisk.Load(disk)
+    if loaded[disk] then
+        return loaded[disk]
     end
-    if type(campaign) == "string" then
-        campaign = Campaign.Get(campaign)
+    if type(disk) == "string" then
+        disk = SongDisk.Get(disk)
     end
     local metrics = {
         songCount = 0,
@@ -103,18 +135,18 @@ function Campaign.Load(campaign)
         potentialOvercharge = 0,
         potentialXCharge = 0
     }
-    if not campaign then return metrics end
+    if not disk then return metrics end
     local lastPosition = 0
     local lastOVPosition = 0
-    for s,section in ipairs(campaign.sections) do
+    for s,section in ipairs(disk.sections) do
         for S,song in ipairs(section.songs) do
             metrics.songCount = metrics.songCount + 1
             section.songs[S] = {
                 name = song.song,
                 difficulties = song.difficulties,
                 lock = song.lock or {},
-                songData = LoadSongData("songs/" .. song.song),
-                cover = Assets.GetCover("songs/" .. song.song),
+                songData = LoadSongData((disk.source or "songs") .. "/" .. song.song),
+                cover = Assets.GetCover((disk.source or "songs") .. "/" .. song.song),
             }
             if section.songs[S].songData then
                 section.songs[S].preview = Assets.Preview(section.songs[S].songData.songPath, section.songs[S].songData.songPreview)
@@ -122,6 +154,7 @@ function Campaign.Load(campaign)
             metrics.songNames[song.song] = (section.songs[S].songData or {}).name or song.song
             for _,name in ipairs(song.difficulties) do
                 if name == "overvolt" or name == "hidden" then
+                    disk.hasOvervolt = true
                     metrics.overvoltPositions[section.songs[S]] = lastOVPosition
                     metrics.overvoltPositionsByName[song.song] = lastOVPosition
                     lastOVPosition = lastOVPosition + 1
@@ -145,11 +178,11 @@ function Campaign.Load(campaign)
             end
         end
     end
-    loaded[campaign.name] = metrics
+    loaded[disk.name] = metrics
     return metrics
 end
 
-function Campaign.GetTotalProgress()
+function SongDisk.GetTotalProgress()
     local scores = {
         totalCharge = 0,
         totalOvercharge = 0,
@@ -158,9 +191,9 @@ function Campaign.GetTotalProgress()
         potentialOvercharge = 0,
         potentialXCharge = 0
     }
-    for _,campaign in pairs(campaigns) do
-        if not campaign.unscored then
-            for s,section in ipairs(campaign.sections) do
+    for _,disk in pairs(disks) do
+        if not disk.unscored then
+            for s,section in ipairs(disk.sections) do
                 for S,song in ipairs(section.songs) do
                     for _,name in ipairs(song.difficulties) do
                         scores.potentialCharge = scores.potentialCharge + 160*ChargeValues[name].charge
@@ -181,9 +214,9 @@ function Campaign.GetTotalProgress()
     return scores
 end
 
-function Campaign.GetScores(campaign)
-    if type(campaign) == "string" then
-        campaign = Campaign.Get(campaign)
+function SongDisk.GetScores(disk)
+    if type(disk) == "string" then
+        disk = SongDisk.Get(disk)
     end
     local scores = {
         totalCharge = 0,
@@ -193,11 +226,11 @@ function Campaign.GetScores(campaign)
         potentialOvercharge = 0,
         potentialXCharge = 0
     }
-    if not campaign then return scores end
-    if campaign.unscored then
+    if not disk then return scores end
+    if disk.unscored then
         return scores
     end
-    for s,section in ipairs(campaign.sections) do
+    for s,section in ipairs(disk.sections) do
         for S,song in ipairs(section.songs) do
             for _,name in ipairs(song.difficulties) do
                 scores.potentialCharge = scores.potentialCharge + 160*ChargeValues[name].charge
@@ -215,6 +248,6 @@ function Campaign.GetScores(campaign)
     return scores
 end
 
-function Campaign.GetByIndex(i)
-    return campaigns[((i-1) % #campaigns) + 1]
+function SongDisk.GetByIndex(i)
+    return disks[((i-1) % #disks) + 1]
 end

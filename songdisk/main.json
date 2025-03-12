@@ -1,0 +1,20 @@
+[
+    {
+        "name": "MAINLINE",
+        "sections": [
+            {
+                "name": "mainline.section1",
+                "songs": [
+                    {"song": "tutorial", "difficulties": ["easy"]},
+                    {"song": "cute", "difficulties": ["hard"]},
+                    
+                    {"song": "worstnightmare", "difficulties": ["overvolt"], "lock": {
+                        "global": {
+                            "xcharge": 2
+                        }
+                    }}
+                ]
+            }
+        ]
+    }
+]

@@ -5,14 +5,14 @@ local scene = {}
 local options = {}
 
 function scene.load(args)
-    CampaignSelectIndex = CampaignSelectIndex or 1
+    SongDiskSelectIndex = SongDiskSelectIndex or 1
     CampaignView = CampaignView or 0
     CampaignViewTarget = CampaignViewTarget or 0
-    scene.campaign = Campaign.GetByIndex(CampaignSelectIndex)
-    scene.scores = Campaign.GetScores(scene.campaign)
-    for i = 1, Campaign.NumCampaigns do
-        local c = Campaign.GetByIndex(i)
-        table.insert(options, {c.name,love.graphics.newImage(c.icon or "images/menu/sp.png")})
+    scene.campaign = SongDisk.GetByIndex(SongDiskSelectIndex)
+    scene.scores = SongDisk.GetScores(scene.campaign)
+    for i = 1, SongDisk.NumDisks do
+        local c = SongDisk.GetByIndex(i)
+        table.insert(options, {c.name,love.graphics.newImage(c.icon or "images/songdisk/default.png")})
     end
 end
 
@@ -35,19 +35,19 @@ end
 function scene.keypressed(k)
     if SceneManager.TransitioningIn() then return end
     if k == "left" then
-        CampaignSelectIndex = ((CampaignSelectIndex-2) % Campaign.NumCampaigns) + 1
-        scene.campaign = Campaign.GetByIndex(CampaignSelectIndex)
-        scene.scores = Campaign.GetScores(scene.campaign)
+        SongDiskSelectIndex = ((SongDiskSelectIndex-2) % SongDisk.NumDisks) + 1
+        scene.campaign = SongDisk.GetByIndex(SongDiskSelectIndex)
+        scene.scores = SongDisk.GetScores(scene.campaign)
         CampaignViewTarget = CampaignViewTarget - 1
     end
     if k == "right" then
-        CampaignSelectIndex = ((CampaignSelectIndex) % Campaign.NumCampaigns) + 1
-        scene.campaign = Campaign.GetByIndex(CampaignSelectIndex)
-        scene.scores = Campaign.GetScores(scene.campaign)
+        SongDiskSelectIndex = ((SongDiskSelectIndex) % SongDisk.NumDisks) + 1
+        scene.campaign = SongDisk.GetByIndex(SongDiskSelectIndex)
+        scene.scores = SongDisk.GetScores(scene.campaign)
         CampaignViewTarget = CampaignViewTarget + 1
     end
     if k == "return" then
-        SceneManager.Transition("scenes/songselect", {campaign = options[CampaignSelectIndex][1], source = "campaignselect", destination = "game"})
+        SceneManager.Transition("scenes/songselect", {campaign = options[SongDiskSelectIndex][1], source = "songdiskselect", destination = "game"})
     end
     if k == "escape" then
         SceneManager.Transition("scenes/menu")
@@ -58,11 +58,11 @@ local function lerp(a,b,t)
     return t*(b-a)+a
 end
 
-local campaignselectText = love.graphics.newImage("images/campaignselect.png")
+local songdiskselectText = love.graphics.newImage("images/songdiskselect.png")
 
 function scene.draw()
     DrawBoxHalfWidth(2, 1, 74, 3)
-    love.graphics.draw(campaignselectText, 320, 32, 0, 2, 2, campaignselectText:getWidth()/2, 0)
+    love.graphics.draw(songdiskselectText, 320, 32, 0, 2, 2, songdiskselectText:getWidth()/2, 0)
 
     if not scene.campaign.unscored then
         love.graphics.print("┌─────────────────────────────────────────────┬────┐", 14*8,  8*16)
@@ -126,7 +126,7 @@ function scene.draw()
     love.graphics.print((" "):rep(#options*2+1), x-8, 352)
     for i = 1, #options do
         love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
-        if i == CampaignSelectIndex then
+        if i == SongDiskSelectIndex then
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
         end
         love.graphics.print("○", x+(i-1)*16, 352)

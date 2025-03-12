@@ -71,6 +71,10 @@ function scene.load(args)
     scene.chartName = "UNRAVELING STASIS"
     scene.chargeGate = args.chargeGate or 0.8
     scene.audioOffset = Autoplay and 0 or Save.Read("audio_offset") or 0
+    scene.bpmChangeTime = 0
+    scene.bpmChangeBeats = 0
+    scene.bpm = scene.chart.bpm
+    scene.beatCount = WhichSixteenth(scene.chart.time - scene.bpmChangeTime, scene.bpm) / 4 + scene.bpmChangeBeats
     HitOffset = 0
     RealHits = 0
     Charge = 0
@@ -418,6 +422,17 @@ function scene.update(dt)
     -- then to calculate current beat, take the beat count as:
     -- WhichSixteenth(time - bpmChangeTime) / 4 + bpmChangeBeats
 
+    local lastBeatCount = scene.beatCount
+    for _,bpmChange in ipairs(scene.chart.bpmChanges) do
+        if scene.chart.time >= bpmChange.time and lastTime < bpmChange.time then
+            -- Cross bpm change!
+            scene.bpmChangeBeats = WhichSixteenth(bpmChange.time - scene.bpmChangeTime, scene.bpm) / 4 + scene.bpmChangeBeats
+            scene.bpmChangeTime = bpmChange.time
+            scene.bpm = bpmChange.bpm
+        end
+    end
+    scene.beatCount = WhichSixteenth(scene.chart.time - scene.bpmChangeTime, scene.bpm) / 4 + scene.bpmChangeBeats
+
     -- Freeze notes in place and move judgement line instead
     local diff = scene.chart.time - lastTime
     if ChartFrozen then
@@ -514,6 +529,13 @@ function scene.update(dt)
                             local lastHeldFor = note.heldFor or 0
                             note.heldFor = math.min(note.length, lastHeldFor + dt)
                             Charge = Charge + (note.heldFor-lastHeldFor)
+                            if (lastBeatCount % 0.5) > (scene.beatCount % 0.5) then
+                                local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
+                                for _=1, 4 do
+                                    local drawPos = (5)+(15)+(ViewOffset+ViewOffsetFreeze)*(ScrollSpeed*ScrollSpeedMod)
+                                    table.insert(Particles, {id = "holdgrind", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*32, vy = -(love.math.random()*2)*64, life = (love.math.random()*0.5+0.5)*0.25, color = NoteColors[note.lane+1][3], char = "¤"})
+                                end
+                            end
                             HitAmounts[note.lane+1] = 1
                             if note.heldFor >= note.length then
                                 note.destroyed = true

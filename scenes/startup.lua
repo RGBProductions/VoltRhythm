@@ -26,6 +26,13 @@ local opening = {
                 num = num + 1
             end
         end
+        for _,song in ipairs(love.filesystem.getDirectoryItems("custom")) do
+            local s,songInfo = pcall(json.decode, love.filesystem.read("custom/"..song.."/info.json"))
+            if s then
+                Assets.Preview("custom/"..song.."/"..songInfo.song, songInfo.songPreview)
+                num = num + 1
+            end
+        end
     end},
     {type = "dynamic", func = function()
         return "FOUND " .. num .. " SONGS"

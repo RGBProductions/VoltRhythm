@@ -3,12 +3,12 @@ require "assets"
 require "util"
 require "colors"
 require "chart"
-require "campaign"
+require "songdisk"
 require "save"
 json = require "json"
 texture = require "texture"
 
-Campaign.Retrieve()
+SongDisk.Retrieve()
 
 love.audio.setVolume(0.5)
 
