@@ -45,7 +45,6 @@ end
 function scene.update(dt)
     bg.update(dt)
     local blend = math.pow(1/((5/4)^60), dt)
-    -- local closer = view+math.min(math.abs(selected-view),math.abs((selected+#options)-view),math.abs((selected-#options)-view))
     MenuView = blend*(MenuView-MenuViewTarget)+MenuViewTarget
     if math.abs(MenuViewTarget-MenuView) <= 8/128 then
         MenuView = MenuViewTarget
@@ -127,8 +126,17 @@ function scene.draw()
         love.graphics.print("○", x+(i-1)*16, 352)
     end
     
+    love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    ProfileIconShader:send("color1", TerminalColors[Save.Read("main_color") or ColorID.LIGHT_RED])
+    ProfileIconShader:send("color2", TerminalColors[Save.Read("accent_color") or ColorID.BLUE])
+    love.graphics.setShader(ProfileIconShader)
+    local loginText = "LOGGED IN AS " .. Save.Read("name")
+    local icon = Assets.ProfileIcon(Save.Read("icon") or "icon1")
+    if icon then
+        love.graphics.draw(icon, 320-Font:getWidth(loginText)/2-32+32, 400+8, 0, 1, 1, 16, 16)
+    end
     love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
-    love.graphics.printf("LOGGED IN AS " .. Save.Read("name"), 0, 400, 640, "center")
+    love.graphics.printf(loginText, 32, 400, 640, "center")
 end
 
 return scene

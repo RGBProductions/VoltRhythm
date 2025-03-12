@@ -69,7 +69,7 @@ function scene.load(args)
     end
     scene.modifiers = args.modifiers or {}
     scene.chartName = "UNRAVELING STASIS"
-    scene.chargeGate = args.chargeGate or 0.2
+    scene.chargeGate = args.chargeGate or 0.8
     scene.audioOffset = Autoplay and 0 or Save.Read("audio_offset") or 0
     HitOffset = 0
     RealHits = 0
@@ -794,10 +794,10 @@ function scene.draw()
     -- Gate
     if scene.chargeGate > 0 and scene.chargeGate < 1 then
         love.graphics.setColor(r1*BoardBrightness,g1*BoardBrightness,b1*BoardBrightness,a1)
-        local gateX = (15+math.floor(49*scene.chargeGate))
+        local gateX = (15+math.floor(50*scene.chargeGate))
         local symbol = (gateX == 25 or gateX == 54) and "┼" or "┬"
         love.graphics.print(symbol.."\n\n┴", gateX*8, 23*16)
-        love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
+        love.graphics.setColor(TerminalColors[ColorID.GOLD])
         local r2,g2,b2,a2 = love.graphics.getColor()
         love.graphics.setColor(r2*BoardBrightness,g2*BoardBrightness,b2*BoardBrightness,a2)
         love.graphics.print("┊", gateX*8, 24*16)

@@ -10,6 +10,7 @@ local accepting = {false,0,0}
 local reading = {false,""}
 
 local lines = {}
+local loadedProfile = false
 
 local opening = {
     {type = "line", text = "VOLTRPPGS INIT STARTED", duration = 0.01},
@@ -19,9 +20,9 @@ local opening = {
     {type = "line", text = "READING SONG DATA AT /dev/fd1", duration = 0},
     {type = "run", func = function()
         for _,song in ipairs(love.filesystem.getDirectoryItems("songs")) do
-            local songData = LoadSongData("songs/" .. song)
-            if songData then
-                Assets.Preview(songData.songPath, songData.songPreview)
+            local s,songInfo = pcall(json.decode, love.filesystem.read("songs/"..song.."/info.json"))
+            if s then
+                Assets.Preview("songs/"..song.."/"..songInfo.song, songInfo.songPreview)
                 num = num + 1
             end
         end
@@ -33,30 +34,21 @@ local opening = {
     {type = "line", text = "E: could not read /dev/fd2: no such file or directory", color = ColorID.LIGHT_RED, duration = 0.01},
     {type = "line", text = "RETRIEVING PROFILE INFORMATION", duration = 0.05},
     {type = "run", func = function()
-        local loadedProfile = Save.Load()
+        loadedProfile = Save.Load()
         if loadedProfile then
-            index = 20
+            index = 12
         end
     end},
     {type = "line", text = "NO PROFILES FOUND", duration = 0},
-    {type = "accept", text = "CREATE A PROFILE? (Y/N) ", yes = 16, no = 14},
-    {type = "line", text = "REJECTED, SHUTTING DOWN", duration = 2},
-    {type = "run", func = function()
-        love.event.push("quit")
-    end},
-    {type = "read", text = "TYPE A PROFILE NAME: "},
-    {type = "dynamic", func = function()
-        return "CREATING PROFILE " .. reading[2]
-    end, duration = 0},
-    {type = "run", func = function()
-        Save.SetProfile(reading[2])
-    end},
-    {type = "pause", duration = 1},
-    {type = "line", text = "PROFILE CREATED", duration = 0.1},
     {type = "line", text = "VOLTOS BOOT FINISHED", duration = 0.05},
+    {type = "pause", duration = 0.5},
     {type = "run", func = function()
         SuppressBorder = false
-        SceneManager.Transition("scenes/menu")
+        if not loadedProfile then
+            SceneManager.LoadScene("scenes/setup", {destination = "menu", set = true, transition = true, quitOnFail = true})
+        else
+            SceneManager.Transition("scenes/menu")
+        end
     end}
 }
 

@@ -6,6 +6,9 @@ local profiles = {}
 
 local defaultSave = {
     name = "Broken Profile",
+    icon = "icon1",
+    main_color = ColorID.LIGHT_RED,
+    accent_color = ColorID.BLUE,
     songs = {}
 }
 
@@ -78,9 +81,13 @@ end
 
 function Save.GetProfileList()
     local list = {}
+    local saveProfile = Save.Profile
     for k,v in pairs(profiles) do
-        table.insert(list, {id = k, name = v.name, lastAccess = v.lastAccess or 0})
+        Save.Profile = k
+        local scores = Campaign.GetTotalProgress()
+        table.insert(list, {id = k, name = v.name, icon = v.icon, main_color = v.main_color, accent_color = v.accent_color, scores = scores, lastAccess = v.lastAccess or 0})
     end
+    Save.Profile = saveProfile
     table.sort(list, function (a, b)
         return (a.lastAccess or 0) > (b.lastAccess or 0)
     end)

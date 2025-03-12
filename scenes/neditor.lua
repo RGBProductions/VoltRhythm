@@ -826,6 +826,8 @@ function scene.load(args)
     end
 
     SetCursor("🮰", 0, 0)
+
+    love.keyboard.setKeyRepeat(true)
 end
 
 function scene.update(dt)
@@ -1666,6 +1668,7 @@ end
 
 function scene.unload()
     Particles = {}
+    love.keyboard.setKeyRepeat(false)
 end
 
 return scene

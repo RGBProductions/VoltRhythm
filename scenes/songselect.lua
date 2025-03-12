@@ -92,7 +92,7 @@ function scene.load(args)
     scene.destination = args.destination or "game"
 
     -- scene.campaigns = json.decode(love.filesystem.read("campaign/campaigns.json"))
-    if args.campaign ~= SongSelectCampaign then
+    if (args.campaign or SongSelectCampaign) ~= SongSelectCampaign then
         SongSelectSelectedSong = 1
         SongSelectSelectedSection = 1
         SongSelectOffsetView = 0
@@ -108,13 +108,14 @@ function scene.load(args)
     SongSelectOvervoltMode = SongSelectOvervoltMode or false
     scene.campaign = Campaign.Get(SongSelectCampaign)
     local metrics = Campaign.Load(SongSelectCampaign)
+    local chargeMetrics = Campaign.GetChargeMetrics(SongSelectCampaign)
     scene.showMore = false
-    scene.totalCharge = metrics.totalCharge
-    scene.totalOvercharge = metrics.totalOvercharge
-    scene.totalXCharge = metrics.totalXCharge
-    scene.potentialCharge = metrics.potentialCharge
-    scene.potentialOvercharge = metrics.potentialOvercharge
-    scene.potentialXCharge = metrics.potentialXCharge
+    scene.totalCharge = chargeMetrics.totalCharge
+    scene.totalOvercharge = chargeMetrics.totalOvercharge
+    scene.totalXCharge = chargeMetrics.totalXCharge
+    scene.potentialCharge = chargeMetrics.potentialCharge
+    scene.potentialOvercharge = chargeMetrics.potentialOvercharge
+    scene.potentialXCharge = chargeMetrics.potentialXCharge
     scene.positions = metrics.positions
     scene.overvoltPositions = metrics.overvoltPositions
     scene.positionsByName = metrics.positionsByName

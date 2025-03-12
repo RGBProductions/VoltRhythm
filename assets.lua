@@ -27,7 +27,6 @@ function Assets.Preview(path,section)
     local channels = r:getChannelCount()
     local result = love.sound.newSoundData(math.floor((section[2]-section[1])*rate), rate, r:getBitDepth(), channels)
     local A = math.floor(section[1]*rate)*channels-2
-    local OOR = 0
     for i = A, math.floor(section[2]*rate)*channels-3 do
         local S,R = pcall(r.getSample, r, i)
         if S then
@@ -100,4 +99,15 @@ end
 
 function Assets.EraseCover(path)
     covers[path] = nil
+end
+
+local icons = {}
+
+function Assets.ProfileIcon(name)
+    if icons[name] then return icons[name] end
+    if not love.filesystem.getInfo("images/profile/"..name..".png") then
+        return nil
+    end
+    icons[name] = love.graphics.newImage("images/profile/"..name..".png")
+    return icons[name]
 end

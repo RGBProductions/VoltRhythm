@@ -51,6 +51,37 @@ function Campaign.Get(campaign)
     return nil
 end
 
+function Campaign.GetChargeMetrics(campaign)
+    if type(campaign) == "string" then
+        campaign = Campaign.Get(campaign)
+    end
+    local metrics = {
+        totalCharge = 0,
+        totalOvercharge = 0,
+        totalXCharge = 0,
+        potentialCharge = 0,
+        potentialOvercharge = 0,
+        potentialXCharge = 0
+    }
+    if not campaign then return metrics end
+    for s,section in ipairs(campaign.sections) do
+        for S,song in ipairs(section.songs) do
+            for _,name in ipairs(song.difficulties) do
+                metrics.potentialCharge = metrics.potentialCharge + 160*ChargeValues[name].charge
+                metrics.potentialOvercharge = metrics.potentialOvercharge + 40*ChargeValues[name].charge
+                metrics.potentialXCharge = metrics.potentialXCharge + 50*ChargeValues[name].xcharge
+                local savedRating = Save.Read("songs."..song.name.."."..name)
+                if savedRating then
+                    metrics.totalCharge = metrics.totalCharge + savedRating.charge*ChargeValues[name].charge
+                    metrics.totalOvercharge = metrics.totalOvercharge + savedRating.overcharge*ChargeValues[name].charge
+                    metrics.totalXCharge = metrics.totalXCharge + (savedRating.charge+savedRating.overcharge)/ChargeYield*XChargeYield*ChargeValues[name].xcharge
+                end
+            end
+        end
+    end
+    return metrics
+end
+
 function Campaign.Load(campaign)
     if loaded[campaign] then
         return loaded[campaign]
@@ -116,6 +147,38 @@ function Campaign.Load(campaign)
     end
     loaded[campaign.name] = metrics
     return metrics
+end
+
+function Campaign.GetTotalProgress()
+    local scores = {
+        totalCharge = 0,
+        totalOvercharge = 0,
+        totalXCharge = 0,
+        potentialCharge = 0,
+        potentialOvercharge = 0,
+        potentialXCharge = 0
+    }
+    for _,campaign in pairs(campaigns) do
+        if not campaign.unscored then
+            for s,section in ipairs(campaign.sections) do
+                for S,song in ipairs(section.songs) do
+                    for _,name in ipairs(song.difficulties) do
+                        scores.potentialCharge = scores.potentialCharge + 160*ChargeValues[name].charge
+                        scores.potentialOvercharge = scores.potentialOvercharge + 40*ChargeValues[name].charge
+                        scores.potentialXCharge = scores.potentialXCharge + 50*ChargeValues[name].xcharge
+                        local savedRating = Save.Read("songs."..(song.song or song.name).."."..name)
+                        if savedRating then
+                            scores.totalCharge = scores.totalCharge + savedRating.charge*ChargeValues[name].charge
+                            scores.totalOvercharge = scores.totalOvercharge + savedRating.overcharge*ChargeValues[name].charge
+                            scores.totalXCharge = scores.totalXCharge + (savedRating.charge+savedRating.overcharge)/ChargeYield*XChargeYield*ChargeValues[name].xcharge
+                        end
+                    end
+                end
+            end
+        end
+    end
+    scores.percentCompleted = (scores.totalCharge+scores.totalOvercharge)/(scores.potentialCharge+scores.potentialOvercharge)
+    return scores
 end
 
 function Campaign.GetScores(campaign)

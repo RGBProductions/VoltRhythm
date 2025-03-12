@@ -189,7 +189,7 @@ function SetCursor(cursor,x,y)
     CursorY = y or 0
 end
 
-Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%().,'\"!?/:+-_=┌─┐│└┘├┤┴┬┼█▓▒░┊┈╬○◇▷◁║¤👑▧▥▨◐◑◻🡙ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω🮰✨")
+Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%().,'\"!?/:+-_=┌─┐│└┘├┤┴┬┼█▓▒░┊┈╬○◇▷◁║¤👑▧▥▨◐◑◻🡙ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω🮰✨�Ħ")
 NoteFont = love.graphics.newImageFont("images/notes/default.png", "○◇▷◁║▧▥▨◐◑◻◼☓")
 
 function DrawBox(x,y,w,h)
@@ -291,6 +291,8 @@ ScreenShader:send("tearTime", love.timer.getTime())
 
 BloomShader = love.graphics.newShader("bloom.frag")
 BloomShader:send("strength", 2)
+
+ProfileIconShader = love.graphics.newShader("profile_icon.frag")
 
 UseShaders = true
 EnableChartEffects = true
