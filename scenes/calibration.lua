@@ -6,7 +6,6 @@ function scene.load()
     scene.offset = 0
     scene.hits = 0
     scene.source = Assets.Source("sounds/calibration.ogg")
-    scene.source:setLooping(true)
 end
 
 ---@param k love.KeyConstant
@@ -32,10 +31,20 @@ function scene.keypressed(k)
             SceneManager.Transition("scenes/menu")
         end
     elseif scene.going then
-        local hitOffset = (scene.source:tell("seconds") - (61062/44100))
+        local len = scene.source:getDuration("seconds")
+        local t = scene.source:tell("seconds")/len*4
+        local off = ((t-1) % 4) - 2
+        local hitOffset = off*len/4
         print(hitOffset)
         scene.offset = scene.offset + hitOffset
         scene.hits = scene.hits + 1
+    end
+end
+
+function scene.update(dt)
+    if scene.going and not scene.source:isPlaying() then
+        scene.source:seek(0, "seconds")
+        scene.source:play()
     end
 end
 
