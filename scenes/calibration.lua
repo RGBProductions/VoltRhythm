@@ -42,7 +42,7 @@ function scene.keypressed(k)
 end
 
 function scene.update(dt)
-    if scene.going and not scene.source:isPlaying() then
+    if scene.going and not scene.source:isPlaying() and not (SceneManager.TransitioningIn() or SceneManager.TransitioningOut()) then
         scene.source:seek(0, "seconds")
         scene.source:play()
     end

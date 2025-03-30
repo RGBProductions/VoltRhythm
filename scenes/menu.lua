@@ -4,11 +4,6 @@ local logo = love.graphics.newImage("images/logo.png")
 
 local options = {
     {"SINGLEPLAYER", "MAIN GAME", love.graphics.newImage("images/menu/sp.png"), function()
-        if SongSelectOvervoltMode then
-            SongSelectOvervoltMode = false
-            SongSelectSelectedSong = 1
-            SongSelectSelectedSection = 1
-        end
         SceneManager.Transition("scenes/songdiskselect")
     end},
     {"MULTIPLAYER", "PLAY WITH FRIENDS", love.graphics.newImage("images/menu/mp.png"), function()

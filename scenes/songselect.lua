@@ -396,7 +396,8 @@ function scene.draw()
     love.graphics.draw(songselectText, 320, 32, 0, 2, 2, songselectText:getWidth()/2, 0)
 
     DrawBoxHalfWidth(2, 6, 74, 6)
-    local savedRating = Save.Read("songs."..(selected.scorePrefix or "")..selected.name.."."..difficulties[SongSelectDifficulty])
+    local difficulty = SongSelectOvervoltMode and (table.index(difficulties, selected.difficulties[#selected.difficulties]) or 5) or SongSelectDifficulty
+    local savedRating = Save.Read("songs."..(selected.scorePrefix or "")..selected.name.."."..difficulties[difficulty])
     if not selected.isUnlocked then
         local numReqs = #selected.unlockConditions
         local y = 152-((numReqs-1)*16)/2
@@ -446,9 +447,9 @@ function scene.draw()
             love.graphics.print("X-CHARGE", 64, 160-16)
             love.graphics.print("ACCURACY", 64, 176-16)
             
-            local c = math.floor((savedRating.charge or 0)*ChargeValues[difficulties[SongSelectDifficulty]].charge)
-            local o = math.floor((savedRating.overcharge or 0)*ChargeValues[difficulties[SongSelectDifficulty]].charge)
-            local x = math.floor(((savedRating.charge or 0) + (savedRating.overcharge or 0))/ChargeYield*XChargeYield*ChargeValues[difficulties[SongSelectDifficulty]].xcharge)
+            local c = math.floor((savedRating.charge or 0)*ChargeValues[difficulties[difficulty]].charge)
+            local o = math.floor((savedRating.overcharge or 0)*ChargeValues[difficulties[difficulty]].charge)
+            local x = math.floor(((savedRating.charge or 0) + (savedRating.overcharge or 0))/ChargeYield*XChargeYield*ChargeValues[difficulties[difficulty]].xcharge)
             love.graphics.print(c .. "¤", 64+8*(19-#tostring(c)), 128-16)
             love.graphics.print("+" .. o .. "¤", 64+8*(19-#("+" .. tostring(o))), 144-16)
             love.graphics.print(x .. "¤", 64+8*(19-#tostring(x)), 160-16)
@@ -457,8 +458,8 @@ function scene.draw()
             love.graphics.printf("TAB - OVERALL", 64, 192, 160, "center")
         else
             local ratings = {}
-            for _,difficulty in ipairs(selected.difficulties) do
-                ratings[difficulty] = Save.Read("songs."..(selected.scorePrefix or "")..selected.name.."."..difficulty) or {}
+            for _,diff in ipairs(selected.difficulties) do
+                ratings[diff] = Save.Read("songs."..(selected.scorePrefix or "")..selected.name.."."..diff) or {}
             end
             local c,o,x = 0,0,0
             for diff,rating in pairs(ratings) do
@@ -503,7 +504,7 @@ function scene.draw()
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     local charter = "???"
     if selected.songData then
-        local chart = selected.songData:loadChart(difficulties[SongSelectDifficulty])
+        local chart = selected.songData:loadChart(difficulties[difficulty])
         if chart then
             charter = chart.charter or "???"
         end
@@ -513,8 +514,8 @@ function scene.draw()
         love.graphics.printf("COVER ARTIST: " .. ((selected.songData or {}).coverArtist or "???"), 32, 368, 640, "left")
         -- local difficultyName = SongDifficulty[difficulties[SongSelectDifficulty] or "easy"].name or scene.difficulty:upper()
         -- local difficultyColor = SongDifficulty[difficulties[SongSelectDifficulty] or "easy"].color or TerminalColors[ColorID.WHITE]
-        local diffs = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].difficulties
-        local difficulty = SongSelectOvervoltMode and (table.index(difficulties, diffs[#diffs]) or 5) or SongSelectDifficulty
+        -- local diffs = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].difficulties
+        -- local difficulty = SongSelectOvervoltMode and (table.index(difficulties, diffs[#diffs]) or 5) or SongSelectDifficulty
         local difficultyLevel = 0
         if selected.songData then
             difficultyLevel = selected.songData:getLevel(difficulties[difficulty])
