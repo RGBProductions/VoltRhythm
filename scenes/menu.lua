@@ -3,7 +3,7 @@ local scene = {}
 local logo = love.graphics.newImage("images/logo.png")
 
 local options = {
-    {"SINGLEPLAYER", "PLAY ALONE", love.graphics.newImage("images/menu/sp.png"), function()
+    {"SINGLEPLAYER", "MAIN GAME", love.graphics.newImage("images/menu/sp.png"), function()
         if SongSelectOvervoltMode then
             SongSelectOvervoltMode = false
             SongSelectSelectedSong = 1
@@ -40,6 +40,14 @@ local bg = Assets.Background("boxesbg.lua") or {}
 
 function scene.load()
     bg.init()
+
+    local colorIndexes = Save.Read("note_colors") or {ColorID.LIGHT_RED, ColorID.YELLOW, ColorID.LIGHT_GREEN, ColorID.LIGHT_BLUE}
+    NoteColors = {
+        ColorTransitionTable[colorIndexes[1]],
+        ColorTransitionTable[colorIndexes[2]],
+        ColorTransitionTable[colorIndexes[3]],
+        ColorTransitionTable[colorIndexes[4]]
+    }
 end
 
 function scene.update(dt)

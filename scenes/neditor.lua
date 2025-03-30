@@ -9,11 +9,12 @@ local placementModes = {
     normal = 1,
     swap = 2,
     merge = 3,
-    bpm = 4,
-    effect = 5
+    mine = 4,
+    bpm = 5,
+    effect = 6
 }
 
-local notes = {"normal", "swap", "merge"}
+local notes = {"normal", "swap", "merge", "mine"}
 
 local function getDirectorySeparator()
 	if love.system.getOS() == "Windows" then
@@ -628,6 +629,16 @@ local editorMenu = {
                 end
             },
             {
+                id = "note.mine",
+                type = "action",
+                label = "MINE",
+                onclick = function()
+                    SetCursor("☓", 4, 8)
+                    scene.placementMode = placementModes.mine
+                    return true
+                end
+            },
+            {
                 id = "note.bpm",
                 type = "action",
                 label = "BPM CHANGE",
@@ -857,6 +868,7 @@ function scene.update(dt)
 
     local source = Assets.Source((scene.chart or {}).song)
     if source then
+        source:setVolume(SystemSettings.song_volume)
         scene.chartTimeTemp = math.max(-scene.audioOffset,math.min(source:getDuration("seconds"), scene.chartTimeTemp))
     end
     
@@ -891,7 +903,7 @@ function scene.update(dt)
                 local endLane = math.max(0,math.min(3,note.lane + dir))
                 note.extra.dir = endLane - note.lane
             end
-            if noteType ~= "merge" then
+            if noteType ~= "merge" and noteType ~= "mine" then
                 local a,b = math.min(scene.placement.start[2],scene.placement.stop[2]),math.max(scene.placement.start[2],scene.placement.stop[2])
                 note.length = math.max(0,b-a)
                 note.time = a
@@ -1282,7 +1294,7 @@ function scene.draw()
         end
 
         if scene.lastNoteLane >= 0 and scene.lastNoteLane < 4 then
-            local t = (scene.placementMode == placementModes.normal and NoteTypes.normal) or (scene.placementMode == placementModes.swap and NoteTypes.swap) or (scene.placementMode == placementModes.merge and NoteTypes.merge)
+            local t = (scene.placementMode == placementModes.normal and NoteTypes.normal) or (scene.placementMode == placementModes.swap and NoteTypes.swap) or (scene.placementMode == placementModes.merge and NoteTypes.merge) or (scene.placementMode == placementModes.mine and NoteTypes.mine)
             if t then
                 love.graphics.setFont(NoteFont)
                 love.graphics.setColor(1,1,1)

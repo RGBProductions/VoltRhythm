@@ -23,6 +23,8 @@ function Assets.Preview(path,section)
     local s,r = pcall(love.sound.newSoundData, path)
     if not s then return nil end
     section = section or {0,r:getDuration()}
+    section[1] = math.max(0,section[1] or 0)
+    section[2] = math.min(r:getDuration(),section[2] or r:getDuration())
     local rate = r:getSampleRate()
     local channels = r:getChannelCount()
     local result = love.sound.newSoundData(math.floor((section[2]-section[1])*rate), rate, r:getBitDepth(), channels)
@@ -36,6 +38,10 @@ function Assets.Preview(path,section)
     local source = love.audio.newSource(result)
     previews[path] = source
     return previews[path]
+end
+
+function Assets.ManualAddPreview(path,data)
+    previews[path] = data
 end
 
 function Assets.ErasePreview(path)
@@ -69,15 +75,6 @@ function Assets.Background(path)
     backgrounds[path] = r
     return backgrounds[path]
 end
-
-local defaultCovers = {
-    love.graphics.newImage("images/default0.png"),
-    love.graphics.newImage("images/default1.png"),
-    love.graphics.newImage("images/default2.png"),
-    love.graphics.newImage("images/default3.png"),
-    love.graphics.newImage("images/default4.png"),
-    love.graphics.newImage("images/default5.png")
-}
 
 function Assets.GetDefaultCover(name)
     local hashed = love.data.hash("md5", name)

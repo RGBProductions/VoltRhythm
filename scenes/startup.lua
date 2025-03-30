@@ -3,6 +3,8 @@ local utf8 = require "utf8"
 local scene = {}
 
 local num = 0
+local done = 0
+local missed = {}
 
 local index = 1
 local timer = 0
@@ -19,23 +21,65 @@ local opening = {
     {type = "line", text = "Booting from /dev/fd0", duration = 0.1},
     {type = "line", text = "READING SONG DATA AT /dev/fd1", duration = 0},
     {type = "run", func = function()
+        local channels = {}
+        local threads = {}
+        local did = {}
+        local numThreads = 8
+        for i = 1, numThreads do
+            threads[i] = love.thread.newThread("thread/previewloader.lua")
+            channels[i] = {love.thread.getChannel("previewloader"..i.."i"),love.thread.getChannel("previewloader"..i.."o")}
+        end
+        local queue = {}
+        local t = love.timer.getTime()
         for _,song in ipairs(love.filesystem.getDirectoryItems("songs")) do
             local s,songInfo = pcall(json.decode, love.filesystem.read("songs/"..song.."/info.json"))
             if s then
-                Assets.Preview("songs/"..song.."/"..songInfo.song, songInfo.songPreview)
-                num = num + 1
+                if queue["songs/"..song.."/"..songInfo.song] == nil  then
+                    queue["songs/"..song.."/"..songInfo.song] = songInfo.songPreview
+                    num = num + 1
+                end
             end
         end
         for _,song in ipairs(love.filesystem.getDirectoryItems("custom")) do
             local s,songInfo = pcall(json.decode, love.filesystem.read("custom/"..song.."/info.json"))
             if s then
-                Assets.Preview("custom/"..song.."/"..songInfo.song, songInfo.songPreview)
-                num = num + 1
+                if queue["custom/"..song.."/"..songInfo.song] == nil then
+                    queue["custom/"..song.."/"..songInfo.song] = songInfo.songPreview or {}
+                    num = num + 1
+                end
+            end
+        end
+        do
+            local i = 1
+            for path,section in pairs(queue) do
+                channels[i][1]:push({t="gen",p=path,s=section})
+                i = (i%numThreads)+1
+            end
+        end
+        for i = 1, numThreads do
+            threads[i]:start(i)
+        end
+        while done < num and love.timer.getTime()-t < 5 do
+            for i = 1, numThreads do
+                for j = 1, channels[i][2]:getCount() do
+                    local m = channels[i][2]:pop()
+                    did[m[1]] = true
+                    Assets.ManualAddPreview(m[1],m[2])
+                    done = done + 1
+                    if channels[i][1]:getCount() == 0 then
+                        channels[i][1]:push({t="done"})
+                    end
+                end
+            end
+        end
+        for name,_ in pairs(queue) do
+            if not did[name] then
+                table.insert(missed, name)
             end
         end
     end},
     {type = "dynamic", func = function()
-        return "FOUND " .. num .. " SONGS"
+        return done < num and (num-done .. " SONGS FAILED TO RETRIEVE, EXPECT MINOR STUTTERING (" .. table.concat(missed, ", ") .. ")") or ("FOUND " .. num .. " SONGS")
     end},
     {type = "line", text = "READING STORY DATA AT /dev/fd2", duration = 0.05},
     {type = "line", text = "E: could not read /dev/fd2: no such file or directory", color = ColorID.LIGHT_RED, duration = 0.01},

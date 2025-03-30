@@ -36,7 +36,7 @@ function scene.load(args)
     local spl = scene.songData.path:split("/")
     local id = spl[#spl]
 
-    local savedRating = Save.Read("songs."..id.."."..scene.difficulty)
+    local savedRating = Save.Read("songs."..(args.scorePrefix or "")..id.."."..scene.difficulty)
     local shouldSave = not Autoplay and not Showcase
     if savedRating then
         if (savedRating.accuracy or 0) > scene.accuracy or (savedRating.charge or 0) > scene.charge or (savedRating.overcharge or 0) > scene.overcharge then
@@ -44,7 +44,7 @@ function scene.load(args)
         end
     end
     if shouldSave then
-        Save.Write("songs."..id.."."..scene.difficulty,{
+        Save.Write("songs."..(args.scorePrefix or "")..id.."."..scene.difficulty,{
             ratings = scene.ratings,
             charge = scene.charge,
             overcharge = scene.overcharge,

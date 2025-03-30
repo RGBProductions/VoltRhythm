@@ -3,7 +3,10 @@
         "Game Lead",
         "Programming",
         "Graphics",
-        "Charting"
+        "Charting",
+        "Cover Art",
+        "Music - Tutorial",
+        "Music - Fracturing Circuit"
     ],
     "MichaelEpicA": [
         "Programming"
@@ -11,10 +14,24 @@
     "TotallyNotFrisk": [
         "UI Design"
     ],
+    "lunasquidd": [
+        "Cover Art"
+    ],
+    "nicholas": [
+        "Charting"
+    ],
+    "AZALI": [
+        "Music - unable to rea� save fiĦe",
+        "Music - DIVINITY DISSONANT",
+        "Music - tiny aether rat (battle)",
+        "Cover Art"
+    ],
     "Return to Nothing": [
         "Music - I'm a rhythm gamers worst nightmare"
     ],
-    "joegran": [
-        "Music - CUTE"
+    "Playtesting": [
+        "nicholas",
+        "TotallyNotFrisk",
+        "MichaelEpicA"
     ]
 }

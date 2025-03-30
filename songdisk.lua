@@ -1,5 +1,6 @@
 SongDisk = {
-    NumDisks = 0
+    NumDisks = 0,
+    AllSongNames = {}
 }
 
 local disks = {}
@@ -34,26 +35,50 @@ function SongDisk.Retrieve()
             table.insert(disks, disk)
         end
     end
+    local full_library = {
+        name = "FULL LIBRARY",
+        icon = "images/songdisk/full_library.png",
+        sections = {}
+    }
+    local inFullLibrary = {}
     for _,file in ipairs(love.filesystem.getDirectoryItems("songdisk")) do
         local s,r = pcall(json.decode, love.filesystem.read("songdisk/" .. file))
         if s then
             for _,disk in ipairs(r) do
                 l(disk)
-                l({
-                    name = "FULL LIBRARY",
-                    sections = table.merge({}, disk.sections)
-                })
+                for _,section in ipairs(disk.sections) do
+                    local sec = {name = section.name, songs = {}}
+                    for _,song in ipairs(section.songs) do
+                        if not inFullLibrary[song.song] then
+                            table.insert(sec.songs, song)
+                            inFullLibrary[song.song] = song
+                        else
+                            for _,difficulty in ipairs(song.difficulties) do
+                                if not table.index(inFullLibrary[song.song].difficulties, difficulty) then
+                                    table.insert(inFullLibrary[song.song].difficulties, difficulty)
+                                end
+                            end
+                        end
+                    end
+                    table.insert(full_library.sections, sec)
+                end
             end
         end
     end
+    if #disks > 1 then
+        l(full_library)
+    end
     if #love.filesystem.getDirectoryItems("custom") > 0 then
         local songs = {}
+        local difficulties = {"easy","medium","hard","extreme","overvolt","hidden"}
         for _,song in ipairs(love.filesystem.getDirectoryItems("custom")) do
             local s,info = pcall(json.decode, love.filesystem.read("custom/"..song.."/info.json"))
             if s then
-                local data = {song = song, difficulties = {}}
-                for name,_ in pairs(info.charts) do
-                    table.insert(data.difficulties, name)
+                local data = {song = song, difficulties = {}, scorePrefix = "custom_"}
+                for _,difficulty in ipairs(difficulties) do
+                    if info.charts[difficulty] then
+                        table.insert(data.difficulties, difficulty)
+                    end
                 end
                 table.insert(songs, data)
             end
@@ -61,7 +86,8 @@ function SongDisk.Retrieve()
         local disk = {
             name = "CUSTOM SONGS",
             source = "custom",
-            icon = "images/menu/edit.png",
+            icon = "images/songdisk/custom.png",
+            unscored = true,
             sections = {
                 {
                     name = "custom",
@@ -102,7 +128,7 @@ function SongDisk.GetChargeMetrics(disk)
                 metrics.potentialCharge = metrics.potentialCharge + 160*ChargeValues[name].charge
                 metrics.potentialOvercharge = metrics.potentialOvercharge + 40*ChargeValues[name].charge
                 metrics.potentialXCharge = metrics.potentialXCharge + 50*ChargeValues[name].xcharge
-                local savedRating = Save.Read("songs."..song.name.."."..name)
+                local savedRating = Save.Read("songs."..(song.scorePrefix or "")..song.name.."."..name)
                 if savedRating then
                     metrics.totalCharge = metrics.totalCharge + savedRating.charge*ChargeValues[name].charge
                     metrics.totalOvercharge = metrics.totalOvercharge + savedRating.overcharge*ChargeValues[name].charge
@@ -123,7 +149,6 @@ function SongDisk.Load(disk)
     end
     local metrics = {
         songCount = 0,
-        songNames = {},
         positions = {},
         positionsByName = {},
         overvoltPositions = {},
@@ -143,6 +168,7 @@ function SongDisk.Load(disk)
             metrics.songCount = metrics.songCount + 1
             section.songs[S] = {
                 name = song.song,
+                scorePrefix = song.scorePrefix,
                 difficulties = song.difficulties,
                 lock = song.lock or {},
                 songData = LoadSongData((disk.source or "songs") .. "/" .. song.song),
@@ -151,7 +177,7 @@ function SongDisk.Load(disk)
             if section.songs[S].songData then
                 section.songs[S].preview = Assets.Preview(section.songs[S].songData.songPath, section.songs[S].songData.songPreview)
             end
-            metrics.songNames[song.song] = (section.songs[S].songData or {}).name or song.song
+            SongDisk.AllSongNames[song.song] = (section.songs[S].songData or {}).name or song.song
             for _,name in ipairs(song.difficulties) do
                 if name == "overvolt" or name == "hidden" then
                     disk.hasOvervolt = true
@@ -166,14 +192,14 @@ function SongDisk.Load(disk)
                 metrics.potentialCharge = metrics.potentialCharge + 160*ChargeValues[name].charge
                 metrics.potentialOvercharge = metrics.potentialOvercharge + 40*ChargeValues[name].charge
                 metrics.potentialXCharge = metrics.potentialXCharge + 50*ChargeValues[name].xcharge
-                local savedRating = Save.Read("songs."..song.song.."."..name)
+                local savedRating = Save.Read("songs."..(song.scorePrefix or "")..song.song.."."..name)
                 if savedRating then
                     metrics.totalCharge = metrics.totalCharge + savedRating.charge*ChargeValues[name].charge
                     metrics.totalOvercharge = metrics.totalOvercharge + savedRating.overcharge*ChargeValues[name].charge
                     metrics.totalXCharge = metrics.totalXCharge + (savedRating.charge+savedRating.overcharge)/ChargeYield*XChargeYield*ChargeValues[name].xcharge
                     local reRank, rePlus = GetRank(savedRating.accuracy)
-                    Save.Write("songs."..song.song.."."..name..".rank", reRank)
-                    Save.Write("songs."..song.song.."."..name..".plus", rePlus)
+                    Save.Write("songs."..(song.scorePrefix or "")..song.song.."."..name..".rank", reRank)
+                    Save.Write("songs."..(song.scorePrefix or "")..song.song.."."..name..".plus", rePlus)
                 end
             end
         end
@@ -199,7 +225,7 @@ function SongDisk.GetTotalProgress()
                         scores.potentialCharge = scores.potentialCharge + 160*ChargeValues[name].charge
                         scores.potentialOvercharge = scores.potentialOvercharge + 40*ChargeValues[name].charge
                         scores.potentialXCharge = scores.potentialXCharge + 50*ChargeValues[name].xcharge
-                        local savedRating = Save.Read("songs."..(song.song or song.name).."."..name)
+                        local savedRating = Save.Read("songs."..(song.scorePrefix or "")..(song.song or song.name).."."..name)
                         if savedRating then
                             scores.totalCharge = scores.totalCharge + savedRating.charge*ChargeValues[name].charge
                             scores.totalOvercharge = scores.totalOvercharge + savedRating.overcharge*ChargeValues[name].charge
@@ -236,7 +262,7 @@ function SongDisk.GetScores(disk)
                 scores.potentialCharge = scores.potentialCharge + 160*ChargeValues[name].charge
                 scores.potentialOvercharge = scores.potentialOvercharge + 40*ChargeValues[name].charge
                 scores.potentialXCharge = scores.potentialXCharge + 50*ChargeValues[name].xcharge
-                local savedRating = Save.Read("songs."..(song.song or song.name).."."..name)
+                local savedRating = Save.Read("songs."..(song.scorePrefix or "")..(song.song or song.name).."."..name)
                 if savedRating then
                     scores.totalCharge = scores.totalCharge + savedRating.charge*ChargeValues[name].charge
                     scores.totalOvercharge = scores.totalOvercharge + savedRating.overcharge*ChargeValues[name].charge

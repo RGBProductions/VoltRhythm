@@ -211,6 +211,78 @@ NoteTypes = {
         calculateCharge = function(self)
             return math.abs(self.extra.dir) + 1
         end
+    },
+    mine = {
+        ---@param self {time: number, lane: number, length: number, type: string, extra: table, heldFor: number?, visualLane?: number}
+        draw = function (self,time,speed,chartPos,chartHeight,chartX,isEditor)
+            chartX = chartX + AnaglyphSide/8*0.5
+            local mainpos = self.time-time
+            local pos = mainpos
+            chartHeight = chartHeight or 15
+            chartPos = chartPos or 5
+            if not isEditor then pos = pos+math.sin(pos*8)*Waviness/speed end
+            local drawPos = chartPos+chartHeight-pos*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local visualLane = self.visualLane or self.lane
+            if useSteps then drawPos = math.floor(drawPos) end
+
+            local r,g,b,a = love.graphics.getColor()
+
+            if drawPos >= chartPos and drawPos < chartPos+(chartHeight+1) and (self.heldFor or 0) <= 0 then
+                love.graphics.setColor(TerminalColors[ColorID.RED])
+                local R,G,B,A = love.graphics.getColor()
+                love.graphics.setColor(r*R,g*G,b*B,a*A)
+                love.graphics.print("☓", (chartX+visualLane*4)*8+4, math.floor(drawPos*16-8-(isEditor and 0 or 4)), 0, 1, 1, NoteFont:getWidth("○")/2)
+            end
+            
+            love.graphics.setColor(r,g,b,a)
+        end,
+        hit = function(self,time,lane)
+            local pos = self.time-time
+            if math.abs(pos) <= TimingWindow and lane == self.lane and not self.destroyed and not self.holding then
+                self.destroyed = true
+                Hits = Hits + 1
+                MissTime = 1
+                Combo = 0
+                ComboBreaks = ComboBreaks + 1
+                LastRating = #NoteRatings
+                RatingCounts[LastRating] = RatingCounts[LastRating] + 1
+                FullOvercharge = false
+                local x = (80-(SceneManager.ActiveScene.chart.lanes*4-1))/2 - 1+(self.lane)*4 + 1
+                for _=1, 4 do
+                    local drawPos = (5)+(15)+(ViewOffset+ViewOffsetFreeze)*(ScrollSpeed*ScrollSpeedMod)
+                    table.insert(Particles, {id = "badhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = ColorID.RED, char = "¤"})
+                end
+                return false
+            end
+            return false
+        end,
+        miss = function(self)
+            self.destroyed = true
+            Charge = Charge + 1
+            Hits = Hits + 1
+            LastOffset = 0
+            HitOffset = HitOffset + LastOffset
+            RealHits = RealHits + 1
+            Accuracy = Accuracy + 1
+            local c = math.floor(Charge/SceneManager.ActiveScene.chart.totalCharge*100/2-1)
+            local x = (16+c)*8
+            RemoveParticlesByID("chargeup")
+            for _=1,8 do
+                table.insert(Particles, {id = "chargeup", x = x, y = 24*16+8, vx = love.math.random()*32, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = (c < 80 and ColorID.YELLOW) or (OverchargeColors[love.math.random(1,#OverchargeColors)]), char = "¤"})
+            end
+            Combo = Combo + 1
+            LastRating = 1
+            RatingCounts[LastRating] = RatingCounts[LastRating] + 1
+            return true
+        end,
+        getDifficulty = function(self)
+            return 0.75
+        end,
+        calculateCharge = function(self)
+            return 1
+        end,
+        missImmediately = true,
+        autoplayIgnores = true
     }
 }
 

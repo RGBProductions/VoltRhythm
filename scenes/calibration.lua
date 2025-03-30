@@ -26,7 +26,7 @@ function scene.keypressed(k)
             scene.going = false
             scene.complete = true
             scene.source:stop()
-            Save.Write("audio_offset", scene.offset/scene.hits)
+            SystemSettings.audio_offset = math.floor(scene.offset/scene.hits*1000)/1000
         else
             SceneManager.Transition("scenes/menu")
         end
@@ -53,10 +53,10 @@ function scene.draw()
         love.graphics.printf("Press enter to begin calibration.", 0, 240-8, 640, "center")
     end
     if scene.going then
-        love.graphics.printf("Press any key on the fourth beat.\nPress enter to stop.\n\nOffset is " .. math.floor((scene.offset/scene.hits)*1000*100)/100 .. "ms", 0, 240-16-16, 640, "center")
+        love.graphics.printf("Press any key on the fourth beat.\nPress enter to stop.\n\nOffset is " .. math.floor((scene.offset/scene.hits)*1000) .. "ms", 0, 240-16-16, 640, "center")
     end
     if scene.complete then
-        love.graphics.printf("Your new offset is " .. math.floor((scene.offset/scene.hits)*1000*100)/100 .. "ms.\n\nPress enter to exit", 0, 240-8-16, 640, "center")
+        love.graphics.printf("Your new offset is " .. math.floor((scene.offset/scene.hits)*1000) .. "ms.\n\nPress enter to exit", 0, 240-8-16, 640, "center")
     end
 end
 

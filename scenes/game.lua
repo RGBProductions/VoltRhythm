@@ -38,15 +38,17 @@ function GetRating(accValue)
     return #NoteRatings
 end
 
----@param args {songData: SongData, difficulty: string, modifiers: table, isEditor?: boolean, forced?: boolean, masquerade?: string, chargeGate?: number}
+---@param args {songData: SongData, scorePrefix: string?, difficulty: string, modifiers: table, isEditor?: boolean, forced?: boolean, masquerade?: string, chargeGate?: number}
 function scene.load(args)
     ResetEffects()
     love.keyboard.setKeyRepeat(false)
+    ---@type integer
     LastOffset = nil
     scene.isEditor = args.isEditor
     scene.forced = args.forced
     if args.songData then
         scene.songData = args.songData
+        scene.scorePrefix = args.scorePrefix
         scene.difficulty = args.difficulty
         scene.chart = scene.songData:loadChart(args.difficulty or "easy")
         if scene.chart then
@@ -57,6 +59,7 @@ function scene.load(args)
     if scene.chart then
         scene.song = Assets.Source(scene.chart.song)
         if scene.song then
+            scene.song:setVolume(SystemSettings.song_volume)
             scene.song:seek(0, "seconds")
         end
         scene.video = Assets.Video(scene.chart.video)
@@ -70,11 +73,19 @@ function scene.load(args)
     scene.modifiers = args.modifiers or {}
     scene.chartName = "UNRAVELING STASIS"
     scene.chargeGate = args.chargeGate or 0.8
-    scene.audioOffset = Autoplay and 0 or Save.Read("audio_offset") or 0
+    scene.audioOffset = Showcase and 0 or SystemSettings.audio_offset or 0
     scene.bpmChangeTime = 0
     scene.bpmChangeBeats = 0
     scene.bpm = scene.chart.bpm
     scene.beatCount = WhichSixteenth(scene.chart.time - scene.bpmChangeTime, scene.bpm) / 4 + scene.bpmChangeBeats
+    local colorIndexes = Save.Read("note_colors") or {ColorID.LIGHT_RED, ColorID.YELLOW, ColorID.LIGHT_GREEN, ColorID.LIGHT_BLUE}
+    NoteColors = {
+        ColorTransitionTable[colorIndexes[1]],
+        ColorTransitionTable[colorIndexes[2]],
+        ColorTransitionTable[colorIndexes[3]],
+        ColorTransitionTable[colorIndexes[4]]
+    }
+    Keybinds[4] = Save.Read("keybinds")
     HitOffset = 0
     RealHits = 0
     Charge = 0
@@ -84,7 +95,7 @@ function scene.load(args)
     Combo = 0
     ComboBreaks = 0
     FullOvercharge = true
-    ScrollSpeed = 30
+    ScrollSpeed = Save.Read("scroll_speed")
     ScrollSpeedMod = 1
     ScrollSpeedModTarget = 1
     ScrollSpeedModSmoothing = 0
@@ -174,7 +185,7 @@ end
 function Restart()
     if scene.song then scene.song:stop() end
     scene.chart:resetAllNotes()
-    SceneManager.Transition("scenes/game", {songData = scene.songData, difficulty = scene.difficulty, isEditor = scene.isEditor, forced = scene.forced})
+    SceneManager.Transition("scenes/game", {songData = scene.songData, scorePrefix = scene.scorePrefix, difficulty = scene.difficulty, isEditor = scene.isEditor, forced = scene.forced})
 end
 
 function Exit()
@@ -185,7 +196,7 @@ function Exit()
         scene.chart.time = 0
         scene.chart:resetAllNotes()
         Charge = 0
-        SceneManager.Transition("scenes/neditor", {songData = scene.songData, difficulty = scene.difficulty})
+        SceneManager.Transition("scenes/neditor", {songData = scene.songData, scorePrefix = scene.scorePrefix, difficulty = scene.difficulty})
     else
         SceneManager.Transition("scenes/songselect")
     end
@@ -236,7 +247,7 @@ function scene.keypressed(k)
         scene.chart.time = 0
         scene.chart:resetAllNotes()
         Charge = 0
-        SceneManager.Transition("scenes/neditor", {songData = scene.songData, difficulty = scene.difficulty})
+        SceneManager.Transition("scenes/neditor", {songData = scene.songData, scorePrefix = scene.scorePrefix, difficulty = scene.difficulty})
     end
     if PauseTimer > 0 then return end
     if k == "]" then
@@ -355,7 +366,7 @@ function scene.keypressed(k)
 end
 
 function HandleChartEffects()
-    if not EnableChartEffects then return end
+    if not SystemSettings.enable_chart_effects then return end
     local i = 1
     local num = #scene.chart.effects
     while i <= num do
@@ -394,14 +405,15 @@ function scene.update(dt)
         end
         return
     end
+    scene.modifiers.speed = love.keyboard.isDown("lshift") and 16 or 1
     -- Update chart time and scroll chart
     local lastTime = scene.chart.time
     scene.chart.time = scene.chart.time + dt*(scene.modifiers.speed or 1)
     if scene.chart.time > -scene.audioOffset then
         if scene.lastTime <= -scene.audioOffset then
             SongStarted = true
-            if scene.song then scene.song:setPitch(scene.modifiers.speed or 1); scene.song:play() end
-            if scene.video then scene.video:getSource():setPitch(scene.modifiers.speed or 1); scene.video:play() end
+            if scene.song then scene.song:play() end
+            if scene.video then scene.video:play() end
         end
         if scene.song then
             if scene.song:isPlaying() then
@@ -413,6 +425,8 @@ function scene.update(dt)
                 end
             end
         end
+        if scene.song then scene.song:setPitch(scene.modifiers.speed or 1) end
+        if scene.video then scene.video:getSource():setPitch(scene.modifiers.speed or 1) end
     end
 
     -- remember this for later
@@ -472,54 +486,56 @@ function scene.update(dt)
                 if Autoplay then
                     if pos <= 0 then
                         local t = NoteTypes[note.type]
-                        local hit = true
-                        if t.hit then
-                            hit = false
-                            for l = 0, scene.chart.lanes-1 do
-                                local hitThis,_,marked = t.hit(note, note.time, l)
-                                if marked then
-                                    PressAmounts[l+1] = 32
-                                    HitAmounts[l+1] = 1
-                                end
-                                hit = hit or hitThis
-                            end
-                        end
-                        if hit then
-                            local hitSound = hitSounds[lastHitSound+1]
-                            lastHitSound = (lastHitSound + 1) % #hitSounds
-                            if hitSound then
-                                hitSound:stop()
-                                hitSound:play()
-                            end
-                            if (note.heldFor or 0) <= 0 then
-                                Charge = Charge + 1
-                                Combo = Combo + 1
-                                LastRating = 1
-                                RatingCounts[LastRating] = RatingCounts[LastRating] + 1
-                                local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
-                                for _=1, 4 do
-                                    local drawPos = (5)+(15)+(ViewOffset+ViewOffsetFreeze)*(ScrollSpeed*ScrollSpeedMod)
-                                    table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
-                                end
-                                Accuracy = Accuracy + 1
-                                Hits = Hits + 1
-                                HitOffset = HitOffset + 0
-                                LastOffset = 0
-                                RealHits = RealHits + 1
-                                local c = math.floor(Charge/scene.chart.totalCharge*100/2-1)
-                                local x = (16+c)*8
-                                RemoveParticlesByID("chargeup")
-                                for _=1,8 do
-                                    table.insert(Particles, {id = "chargeup", x = x, y = 24*16+8, vx = love.math.random()*32, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = (c < 80 and ColorID.YELLOW) or (OverchargeColors[love.math.random(1,#OverchargeColors)]), char = "¤"})
+                        if not t.autoplayIgnores then
+                            local hit = true
+                            if t.hit then
+                                hit = false
+                                for l = 0, scene.chart.lanes-1 do
+                                    local hitThis,_,marked = t.hit(note, note.time, l)
+                                    if marked then
+                                        PressAmounts[l+1] = 32
+                                        HitAmounts[l+1] = 1
+                                    end
+                                    hit = hit or hitThis
                                 end
                             end
-                            if note.length <= 0 then
-                                note.destroyed = true
-                                i = i - 1
-                            else
-                                note.holding = true
+                            if hit then
+                                local hitSound = hitSounds[lastHitSound+1]
+                                lastHitSound = (lastHitSound + 1) % #hitSounds
+                                if hitSound then
+                                    hitSound:stop()
+                                    hitSound:play()
+                                end
+                                if (note.heldFor or 0) <= 0 then
+                                    Charge = Charge + 1
+                                    Combo = Combo + 1
+                                    LastRating = 1
+                                    RatingCounts[LastRating] = RatingCounts[LastRating] + 1
+                                    local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
+                                    for _=1, 4 do
+                                        local drawPos = (5)+(15)+(ViewOffset+ViewOffsetFreeze)*(ScrollSpeed*ScrollSpeedMod)
+                                        table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
+                                    end
+                                    Accuracy = Accuracy + 1
+                                    Hits = Hits + 1
+                                    HitOffset = HitOffset + 0
+                                    LastOffset = 0
+                                    RealHits = RealHits + 1
+                                    local c = math.floor(Charge/scene.chart.totalCharge*100/2-1)
+                                    local x = (16+c)*8
+                                    RemoveParticlesByID("chargeup")
+                                    for _=1,8 do
+                                        table.insert(Particles, {id = "chargeup", x = x, y = 24*16+8, vx = love.math.random()*32, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = (c < 80 and ColorID.YELLOW) or (OverchargeColors[love.math.random(1,#OverchargeColors)]), char = "¤"})
+                                    end
+                                end
+                                if note.length <= 0 then
+                                    note.destroyed = true
+                                    i = i - 1
+                                else
+                                    note.holding = true
+                                end
+                                if not Autoplay then PressAmounts[note.lane+1] = 1 end
                             end
-                            if not Autoplay then PressAmounts[note.lane+1] = 1 end
                         end
                     end
                 end
@@ -548,36 +564,48 @@ function scene.update(dt)
                     end
                 end
                 local t = NoteTypes[note.type]
-                if pos <= -0.25 then
+                if pos <= (t.missImmediately and 0 or -0.25) then
+                    local permitted = false
                     if t.miss then
-                        t.miss(note)
+                        permitted = t.miss(note) or permitted
                     end
-                    if note.length <= 0 then
-                        note.destroyed = true
-                        i = i - 1
-                        Hits = Hits + 1
-                        MissTime = 1
-                        Combo = 0
-                        ComboBreaks = ComboBreaks + 1
-                        LastRating = #NoteRatings
-                        RatingCounts[LastRating] = RatingCounts[LastRating] + 1
-                        FullOvercharge = false
-                    else
-                        if pos <= -0.25-note.length then
-                            if not note.holding then
-                                MissTime = 1
-                                Combo = 0
-                                ComboBreaks = ComboBreaks + 1
-                                LastRating = #NoteRatings
-                                RatingCounts[LastRating] = RatingCounts[LastRating] + 1
-                                FullOvercharge = false
-                            end
+                    if not permitted then
+                        if note.length <= 0 then
                             note.destroyed = true
                             i = i - 1
+                            Hits = Hits + 1
+                            MissTime = 1
+                            Combo = 0
+                            ComboBreaks = ComboBreaks + 1
+                            LastRating = #NoteRatings
+                            RatingCounts[LastRating] = RatingCounts[LastRating] + 1
+                            FullOvercharge = false
                         else
-                            if not love.keyboard.isDown((Keybinds[scene.chart.lanes] or Keybinds[8])[note.lane+1]) and not Autoplay then
-                                if pos <= -0.25-(note.length-0.4) then
-                                    if note.heldFor == 0 or not note.heldFor then
+                            if pos <= -0.25-note.length then
+                                if not note.holding then
+                                    MissTime = 1
+                                    Combo = 0
+                                    ComboBreaks = ComboBreaks + 1
+                                    LastRating = #NoteRatings
+                                    RatingCounts[LastRating] = RatingCounts[LastRating] + 1
+                                    FullOvercharge = false
+                                end
+                                note.destroyed = true
+                                i = i - 1
+                            else
+                                if not love.keyboard.isDown((Keybinds[scene.chart.lanes] or Keybinds[8])[note.lane+1]) and not Autoplay then
+                                    if pos <= -0.25-(note.length-0.4) then
+                                        if note.heldFor == 0 or not note.heldFor then
+                                            MissTime = 1
+                                            Combo = 0
+                                            ComboBreaks = ComboBreaks + 1
+                                            LastRating = #NoteRatings
+                                            RatingCounts[LastRating] = RatingCounts[LastRating] + 1
+                                            FullOvercharge = false
+                                        end
+                                        note.destroyed = true
+                                        i = i - 1
+                                    else
                                         MissTime = 1
                                         Combo = 0
                                         ComboBreaks = ComboBreaks + 1
@@ -585,15 +613,6 @@ function scene.update(dt)
                                         RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                                         FullOvercharge = false
                                     end
-                                    note.destroyed = true
-                                    i = i - 1
-                                else
-                                    MissTime = 1
-                                    Combo = 0
-                                    ComboBreaks = ComboBreaks + 1
-                                    LastRating = #NoteRatings
-                                    RatingCounts[LastRating] = RatingCounts[LastRating] + 1
-                                    FullOvercharge = false
                                 end
                             end
                         end
@@ -619,9 +638,9 @@ function scene.update(dt)
                     scene.chart.time = 0
                     scene.chart:resetAllNotes()
                     Charge = 0
-                    SceneManager.Transition("scenes/neditor", {songData = scene.songData, difficulty = scene.difficulty})
+                    SceneManager.Transition("scenes/neditor", {songData = scene.songData, scorePrefix = scene.scorePrefix, difficulty = scene.difficulty})
                 else
-                    SceneManager.Transition("scenes/rating", {chart = scene.chart, songData = scene.songData, difficulty = scene.difficulty, offset = HitOffset/RealHits, ratings = RatingCounts, accuracy = Accuracy/math.max(Hits,1), charge = (Charge*100)/scene.chart.totalCharge, chargeGate = scene.chargeGate, fullCombo = ComboBreaks == 0, fullOvercharge = FullOvercharge})
+                    SceneManager.Transition("scenes/rating", {chart = scene.chart, songData = scene.songData, scorePrefix = scene.scorePrefix, difficulty = scene.difficulty, offset = HitOffset/RealHits, ratings = RatingCounts, accuracy = Accuracy/math.max(Hits,1), charge = (Charge*100)/scene.chart.totalCharge, chargeGate = scene.chargeGate, fullCombo = ComboBreaks == 0, fullOvercharge = FullOvercharge})
                 end
             end
         end
@@ -647,7 +666,7 @@ function scene.update(dt)
     -- do
     --     local blend = math.pow(0.01,dt)
     --     CurveModifier = blend*(CurveModifier-1)+1
-    --     ScreenShader:send("curveStrength", CurveStrength*CurveModifier)
+    --     ScreenShader:send("curveStrength", SystemSettings.screen_effects.screen_curvature*CurveModifier)
     -- end
     -- do
     --     local blend = math.pow(0.05,dt)

@@ -20,6 +20,7 @@ local function playSong(songInfo)
     end
     preview = nextPreview
     if preview then
+        preview:setVolume(SystemSettings.song_volume)
         preview:setLooping(true)
         preview:play()
     end
@@ -44,19 +45,27 @@ local function testLock(lock)
     if global.charge then table.insert(requirements, {type = "Get " .. global.charge .. " total Charge", value = global.charge, passed = scene.totalCharge >= global.charge}) end
     if global.overcharge then table.insert(requirements, {type = "Get " .. global.overcharge .. " total Overcharge", value = global.overcharge, passed = scene.totalOvercharge >= global.overcharge}) end
     if global.xcharge then table.insert(requirements, {type = "Get " .. global.xcharge .. " total X-Charge", value = global.xcharge, passed = scene.totalXCharge >= global.xcharge}) end
-    for name,song in pairs(songs) do
+    local namesSorted = {}
+    for name,_ in pairs(songs) do
+        table.insert(namesSorted, name)
+    end
+    table.sort(namesSorted, function (a, b)
+        return (SongDisk.AllSongNames[a] or "ZZZZZZZZZZZZZZ") < (SongDisk.AllSongNames[b] or "ZZZZZZZZZZZZZZ")
+    end)
+    for _,name in pairs(namesSorted) do
+        local song = songs[name]
         local savedRating = Save.Read("songs."..name) or {}
         local savedRatingExists = Save.Read("songs."..name) ~= nil
         local c,o,x = 0,0,0
         for diff,save in pairs(savedRating) do
-            c = c + (save.charge or 0)
-            o = o + (save.overcharge or 0)
+            c = c + (save.charge or 0) * ChargeValues[diff].charge
+            o = o + (save.overcharge or 0) * ChargeValues[diff].charge
             x = x + (c + o)/ChargeYield*XChargeYield
         end
+        if song.completed ~= nil then table.insert(requirements, {type = "Complete \"" .. scene.songNames[name] .. "\" on any difficulty", song = name, value = song.completed, passed = savedRatingExists}) end
         if song.charge then table.insert(requirements, {type = "Get " .. song.charge .. " Charge in \"" .. scene.songNames[name] .. '"', song = name, value = song.charge, passed = c >= song.charge}) end
         if song.overcharge then table.insert(requirements, {type = "Get " .. song.overcharge .. " Overcharge in \"" .. scene.songNames[name] .. '"', song = name, value = song.overcharge, passed = o >= song.overcharge}) end
         if song.xcharge then table.insert(requirements, {type = "Get " .. song.xcharge .. " X-Charge in \"" .. scene.songNames[name] .. '"', song = name, value = song.xcharge, passed = x >= song.xcharge}) end
-        if song.completed ~= nil then table.insert(requirements, {type = "Complete \"" .. scene.songNames[name] .. "\" on any difficulty", song = name, value = song.completed, passed = savedRatingExists}) end
     end
     local meets = true
     for _,requirement in ipairs(requirements) do
@@ -74,12 +83,16 @@ local function finishSelection()
         if not table.index(selected.difficulties, difficulties[SongSelectDifficulty]) then
             for i = 1, 5 do
                 if table.index(selected.difficulties, difficulties[SongSelectDifficulty-i]) then
-                    SongSelectDifficulty = SongSelectDifficulty-i
-                    break
+                    if (not SongSelectOvervoltMode) and difficulties[SongSelectDifficulty-i] ~= "overvolt" and difficulties[SongSelectDifficulty-i] ~= "hidden" then
+                        SongSelectDifficulty = SongSelectDifficulty-i
+                        break
+                    end
                 end
                 if table.index(selected.difficulties, difficulties[SongSelectDifficulty+i]) then
-                    SongSelectDifficulty = SongSelectDifficulty+i
-                    break
+                    if (not SongSelectOvervoltMode) and difficulties[SongSelectDifficulty+i] ~= "overvolt" and difficulties[SongSelectDifficulty+i] ~= "hidden" then
+                        SongSelectDifficulty = SongSelectDifficulty+i
+                        break
+                    end
                 end
             end
         end
@@ -120,7 +133,7 @@ function scene.load(args)
     scene.overvoltPositions = metrics.overvoltPositions
     scene.positionsByName = metrics.positionsByName
     scene.overvoltPositionsByName = metrics.overvoltPositionsByName
-    scene.songNames = metrics.songNames
+    scene.songNames = SongDisk.AllSongNames
     scene.songCount = metrics.songCount
     -- local lastPosition = 0
     -- local lastOVPosition = 0
@@ -184,7 +197,7 @@ function scene.keypressed(k)
     if k == "tab" then
         local selected = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
         local difficulty = SongSelectOvervoltMode and (table.index(difficulties, scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].difficulties[1]) or 5) or SongSelectDifficulty
-        local savedRating = Save.Read("songs."..selected.name.."."..difficulties[difficulty])
+        local savedRating = Save.Read("songs."..(selected.scorePrefix or "")..selected.name.."."..difficulties[difficulty])
         if savedRating and selected.isUnlocked then
             scene.showMore = not scene.showMore
         end
@@ -278,12 +291,13 @@ function scene.keypressed(k)
             local difficulty = SongSelectOvervoltMode and (table.index(difficulties, diffs[#diffs]) or 5) or SongSelectDifficulty
             ---@type SongData?
             local songData = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].songData
+            local scorePrefix = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].scorePrefix
             if songData and songData:loadChart(difficulties[difficulty]) ~= nil then
                 if preview then
                     preview:stop()
                     preview:setLooping(false)
                 end
-                SceneManager.Transition("scenes/" .. scene.destination, {songData = songData, difficulty = difficulties[difficulty]})
+                SceneManager.Transition("scenes/" .. scene.destination, {songData = songData, scorePrefix = scorePrefix, difficulty = difficulties[difficulty]})
             end
         end
     end
@@ -326,7 +340,7 @@ function scene.draw()
                 end
             end
         end
-        local savedRating = Save.Read("songs."..song.name.."."..targetDiff)
+        local savedRating = Save.Read("songs."..(song.scorePrefix or "")..song.name.."."..targetDiff)
         if savedRating and savedRating.fullOvercharge then
             -- draw the overcharge outline
             for Y = -0.5, 5.5 do
@@ -382,7 +396,7 @@ function scene.draw()
     love.graphics.draw(songselectText, 320, 32, 0, 2, 2, songselectText:getWidth()/2, 0)
 
     DrawBoxHalfWidth(2, 6, 74, 6)
-    local savedRating = Save.Read("songs."..selected.name.."."..difficulties[SongSelectDifficulty])
+    local savedRating = Save.Read("songs."..(selected.scorePrefix or "")..selected.name.."."..difficulties[SongSelectDifficulty])
     if not selected.isUnlocked then
         local numReqs = #selected.unlockConditions
         local y = 152-((numReqs-1)*16)/2
@@ -444,7 +458,7 @@ function scene.draw()
         else
             local ratings = {}
             for _,difficulty in ipairs(selected.difficulties) do
-                ratings[difficulty] = Save.Read("songs."..selected.name.."."..difficulty) or {}
+                ratings[difficulty] = Save.Read("songs."..(selected.scorePrefix or "")..selected.name.."."..difficulty) or {}
             end
             local c,o,x = 0,0,0
             for diff,rating in pairs(ratings) do

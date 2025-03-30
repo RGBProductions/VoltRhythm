@@ -5,11 +5,15 @@ Save = {
 local profiles = {}
 
 local defaultSave = {
-    name = "Broken Profile",
+    name = "Profile",
     icon = "icon1",
     main_color = ColorID.LIGHT_RED,
     accent_color = ColorID.BLUE,
-    songs = {}
+    songs = {},
+    keybinds = {"a","s","k","l"},
+    note_colors = {ColorID.LIGHT_RED, ColorID.YELLOW, ColorID.LIGHT_GREEN, ColorID.LIGHT_BLUE},
+    border = "none",
+    scroll_speed = 25
 }
 
 function Save.Flush()
@@ -56,7 +60,9 @@ function Save.Write(key,value)
     local cur = profiles[Save.Profile]
     local spl = key:split("%.")
     local finalKey = table.remove(spl,#spl)
+    finalKey = tonumber(finalKey) or finalKey
     for _,v in ipairs(spl) do
+        v = tonumber(v) or v
         if not cur[v] then
             cur[v] = {}
         end
@@ -70,7 +76,9 @@ function Save.Read(key)
     local cur = profiles[Save.Profile]
     local spl = key:split("%.")
     local finalKey = table.remove(spl,#spl)
+    finalKey = tonumber(finalKey) or finalKey
     for _,v in ipairs(spl) do
+        v = tonumber(v) or v
         if not cur[v] then
             return
         end

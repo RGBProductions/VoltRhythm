@@ -1,0 +1,21 @@
+[
+    {
+        "name": "DEMO DISK",
+        "sections": [
+            {
+                "name": "demo",
+                "songs": [
+                    {"song": "tutorial", "difficulties": ["easy","overvolt"]},
+
+                    {"song": "aetherat", "difficulties": ["extreme"]},
+                    
+                    {"song": "worstnightmare", "difficulties": ["overvolt"], "lock": {
+                        "global": {
+                            "xcharge": 8
+                        }
+                    }}
+                ]
+            }
+        ]
+    }
+]

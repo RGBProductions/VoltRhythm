@@ -1,5 +1,23 @@
 love.graphics.setDefaultFilter("nearest", "nearest")
+
+function table.index(t,v)
+    for k,n in pairs(t) do
+        if n == v then
+            return k
+        end
+    end
+    return nil
+end
+
 require "assets"
+defaultCovers = {
+    love.graphics.newImage("images/default0.png"),
+    love.graphics.newImage("images/default1.png"),
+    love.graphics.newImage("images/default2.png"),
+    love.graphics.newImage("images/default3.png"),
+    love.graphics.newImage("images/default4.png"),
+    love.graphics.newImage("images/default5.png")
+}
 require "util"
 require "colors"
 require "chart"
@@ -9,8 +27,6 @@ json = require "json"
 texture = require "texture"
 
 SongDisk.Retrieve()
-
-love.audio.setVolume(0.5)
 
 Version = (require "version")()
 
@@ -189,7 +205,7 @@ function SetCursor(cursor,x,y)
     CursorY = y or 0
 end
 
-Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%().,'\"!?/:+-_=┌─┐│└┘├┤┴┬┼█▓▒░┊┈╬○◇▷◁║¤👑▧▥▨◐◑◻🡙ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω🮰✨�Ħ")
+Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%().,'\"!?/:+-_=┌─┐│└┘├┤┴┬┼█▓▒░┊┈╬○◇▷◁║¤👑▧▥▨◐◑◻☓🡙ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω🮰✨�Ħ")
 NoteFont = love.graphics.newImageFont("images/notes/default.png", "○◇▷◁║▧▥▨◐◑◻◼☓")
 
 function DrawBox(x,y,w,h)
@@ -202,15 +218,6 @@ end
 
 function DrawBoxHalfWidth(x,y,w,h)
     love.graphics.print("┌"..("─"):rep(w).."┐\n"..("│"..(" "):rep(w).."│\n"):rep(h).."└"..("─"):rep(w).."┘", x*8, y*16)
-end
-
-function table.index(t,v)
-    for k,n in pairs(t) do
-        if n == v then
-            return k
-        end
-    end
-    return nil
 end
 
 require "transition"
@@ -238,7 +245,36 @@ end
 
 -- SceneManager.LoadScene("scenes/game", {chart = "songs/cute/hard.json"})
 
-border = require "borders.overcharged"
+BorderOptions = {"none", "overcharged"}
+
+Borders = {
+    none = nil,
+    overcharged = require("borders.overcharged")
+}
+
+-- border = nil
+
+SystemSettings = {
+    master_volume = 0.5,
+    song_volume = 0.75,
+    sound_volume = 1,
+    audio_offset = 0,
+    enable_chart_effects = true,
+    enable_screen_effects = true,
+    screen_effects = {
+        screen_curvature = 0.5,
+        scanlines = 0.5,
+        chromatic_aberration = 1,
+        bloom = 1
+    }
+}
+
+if love.filesystem.getInfo("settings.json") then
+    local s,r = pcall(json.decode, love.filesystem.read("settings.json"))
+    if s then
+        table.merge(SystemSettings, r)
+    end
+end
 
 Keybinds = {
     [4] = {"d","f","j","k"},
@@ -281,11 +317,11 @@ BloomStrengthModifierTarget = 1
 BloomStrengthModifierSmoothing = 0
 
 ScreenShader = love.graphics.newShader("screen.frag")
-ScreenShader:send("curveStrength", CurveStrength*CurveModifier)
-ScreenShader:send("scanlineStrength", 0.5)
+ScreenShader:send("curveStrength", SystemSettings.screen_effects.screen_curvature*CurveModifier)
+ScreenShader:send("scanlineStrength", 1-SystemSettings.screen_effects.scanlines)
 ScreenShader:send("texSize", {Display:getDimensions()})
 ScreenShader:send("tearStrength", 0)
-ScreenShader:send("chromaticStrength", Chromatic*ChromaticModifier)
+ScreenShader:send("chromaticStrength", SystemSettings.screen_effects.chromatic_aberration*ChromaticModifier)
 ScreenShader:send("horizBlurStrength", 0.5)
 ScreenShader:send("tearTime", love.timer.getTime())
 
@@ -294,16 +330,13 @@ BloomShader:send("strength", 2)
 
 ProfileIconShader = love.graphics.newShader("profile_icon.frag")
 
-UseShaders = true
-EnableChartEffects = true
-
 function love.resize(w,h)
     Bloom = love.graphics.newCanvas(w,h)
     Final = love.graphics.newCanvas(w,h)
     Partial = love.graphics.newCanvas(w,h)
 end
 
-love.mouse.setRelativeMode(true)
+-- love.mouse.setRelativeMode(true)
 
 Particles = {}
 
@@ -343,7 +376,7 @@ function love.keypressed(k)
         love.window.setFullscreen(not love.window.getFullscreen())
     end
     if k == "f1" then
-        UseShaders = not UseShaders
+        SystemSettings.enable_screen_effects = not SystemSettings.enable_screen_effects
     end
     if k == "f5" then
         love.mouse.setRelativeMode(not love.mouse.getRelativeMode())
@@ -390,6 +423,9 @@ AnaglyphSide = 0
 AnaglyphOn = false
 
 function love.update(dt)
+    love.audio.setVolume(SystemSettings.master_volume)
+    
+    local border = Borders[Save.Read("border")]
     if border then border.update(dt) end
 
     do
@@ -427,13 +463,14 @@ function love.update(dt)
     
     MissTime = math.max(0,MissTime - dt * 8)
     
-    ScreenShader:send("curveStrength", CurveStrength*CurveModifier)
+    ScreenShader:send("curveStrength", SystemSettings.screen_effects.screen_curvature*CurveModifier)
+    ScreenShader:send("scanlineStrength", 1-SystemSettings.screen_effects.scanlines)
     ScreenShader:send("tearStrength", TearingStrength*(MissTime*2/Display:getWidth() + TearingModifier))
-    ScreenShader:send("chromaticStrength", Chromatic * ChromaticModifier)
+    ScreenShader:send("chromaticStrength", SystemSettings.screen_effects.chromatic_aberration * ChromaticModifier)
     ScreenShader:send("horizBlurStrength", 0.5)
     ScreenShader:send("tearTime", love.timer.getTime())
 
-    BloomShader:send("strength", BloomStrength*BloomStrengthModifier)
+    BloomShader:send("strength", SystemSettings.screen_effects.bloom*BloomStrengthModifier)
 
     SceneManager.Update(dt)
     SceneManager.UpdateTransition(dt)
@@ -452,6 +489,7 @@ function love.draw()
     love.graphics.setColor(1,1,1)
     SceneManager.DrawTransition()
     love.graphics.setColor(1,1,1)
+    local border = Borders[Save.Read("border")]
     if border and not SuppressBorder then border.draw() end
     love.graphics.setColor(1,1,1)
     love.graphics.print(Version.name .. " v" .. Version.version, 16, 480-16-16)
@@ -491,12 +529,12 @@ function love.draw()
     love.graphics.setColor(1,1,1)
 
     local s = math.min(love.graphics.getWidth()/Display:getWidth(), love.graphics.getHeight()/Display:getHeight())
-    if UseShaders then love.graphics.setShader(ScreenShader) end
+    if SystemSettings.enable_screen_effects then love.graphics.setShader(ScreenShader) end
     love.graphics.draw(Display, (love.graphics.getWidth()-Display:getWidth()*s)/2, (love.graphics.getHeight()-Display:getHeight()*s)/2, 0, s, s)
     love.graphics.setShader()
     love.graphics.setCanvas()
 
-    if UseShaders then
+    if SystemSettings.enable_screen_effects then
         texture.blur(Final, Partial, Bloom, 8, true)
         texture.blur(Final, Partial, Bloom, 8, true)
         love.graphics.setShader(BloomShader)
@@ -512,6 +550,7 @@ end
 
 function love.quit()
     Save.Flush()
+    love.filesystem.write("settings.json", json.encode(SystemSettings))
 end
 
 love.errorhandler = require "errorhandler"

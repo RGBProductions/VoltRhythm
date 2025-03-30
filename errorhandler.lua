@@ -6,6 +6,7 @@ end
 
 return function (msg)
 	Save.Flush()
+    love.filesystem.write("settings.json", json.encode(SystemSettings))
 	
 	msg = tostring(msg)
 
@@ -94,7 +95,7 @@ return function (msg)
     TearingModifierSmoothing = 0
 
     ScreenShader = love.graphics.newShader("screen.frag")
-    ScreenShader:send("curveStrength", CurveStrength*CurveModifier)
+    ScreenShader:send("curveStrength", SystemSettings.screen_effects.screen_curvature*CurveModifier)
     ScreenShader:send("scanlineStrength", 0.5)
     ScreenShader:send("texSize", {Display:getDimensions()})
     ScreenShader:send("tearStrength", 0)
@@ -140,12 +141,12 @@ return function (msg)
             love.graphics.setColor(1,1,1)
 
             local s = math.min(love.graphics.getWidth()/Display:getWidth(), love.graphics.getHeight()/Display:getHeight())
-            if UseShaders then love.graphics.setShader(ScreenShader) end
+            if SystemSettings.enable_screen_effects then love.graphics.setShader(ScreenShader) end
             love.graphics.draw(Display, (love.graphics.getWidth()-Display:getWidth()*s)/2, (love.graphics.getHeight()-Display:getHeight()*s)/2, 0, s, s)
             love.graphics.setShader()
             love.graphics.setCanvas()
 
-            if UseShaders then
+            if SystemSettings.enable_screen_effects then
                 texture.blur(Final, Partial, Bloom, 8, true)
                 texture.blur(Final, Partial, Bloom, 8, true)
                 love.graphics.setShader(BloomShader)

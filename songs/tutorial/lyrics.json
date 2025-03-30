@@ -1,0 +1,112 @@
+[
+    {
+        "startTime": 0,
+        "endTime": 7.384,
+        "components": [
+            {
+                "type": "text",
+                "text": "Welcome to VoltRhythm!\n\nThis tutorial song will cover\nall of the features of the\nVOLTRPPGS and prepare you for\neffective use of the machine.",
+                "x": 0,
+                "y": 0
+            }
+        ]
+    },
+    {
+        "startTime": 7.846,
+        "endTime": 29.538,
+        "components": [
+            {
+                "type": "key",
+                "key": 0,
+                "x": 0,
+                "y": 0
+            }
+        ],
+        "hideBox": true,
+        "followChart": true,
+        "transformation": {
+            "shift": [-48, 88]
+        }
+    },
+    {
+        "startTime": 8.077,
+        "endTime": 29.769,
+        "components": [
+            {
+                "type": "key",
+                "key": 1,
+                "x": 0,
+                "y": 0
+            }
+        ],
+        "hideBox": true,
+        "followChart": true,
+        "transformation": {
+            "shift": [-16, 88]
+        }
+    },
+    {
+        "startTime": 8.308,
+        "endTime": 30,
+        "components": [
+            {
+                "type": "key",
+                "key": 2,
+                "x": 0,
+                "y": 0
+            }
+        ],
+        "hideBox": true,
+        "followChart": true,
+        "transformation": {
+            "shift": [16, 88]
+        }
+    },
+    {
+        "startTime": 8.538,
+        "endTime": 30.23,
+        "components": [
+            {
+                "type": "key",
+                "key": 3,
+                "x": 0,
+                "y": 0
+            }
+        ],
+        "hideBox": true,
+        "followChart": true,
+        "transformation": {
+            "shift": [48, 88]
+        }
+    },
+    {
+        "startTime": 24,
+        "endTime": 32.538,
+        "components": [
+            {
+                "type": "text",
+                "text": "You get CHARGE for\nevery note you hit!",
+                "x": 0,
+                "y": 0
+            }
+        ],
+        "transformation": {
+            "shift": [-192, 64]
+        }
+    },
+    {
+        "startTime": 24,
+        "endTime": 29.538,
+        "components": [
+            {
+                "type": "text",
+                "text": "something about combo here",
+                "x": 0,
+                "y": 0
+            }
+        ],
+        "transformation": {
+            "shift": [192, -112]
+        }
+    }
+]
