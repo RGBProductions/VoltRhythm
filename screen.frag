@@ -5,6 +5,7 @@ uniform float tearStrength;
 uniform float tearTime;
 uniform float horizBlurStrength;
 uniform float chromaticStrength;
+uniform float saturation;
 
 float rand(float n){return fract(sin(n) * 43758.5453123);}
 
@@ -44,5 +45,8 @@ vec4 effect(vec4 c, Image t, vec2 tc, vec2 sc) {
         1.0
     );
     vec4 col = mix(main,blur,horizBlurStrength*0.5);
+    float luminance = (0.2126*col.r + 0.7152*col.g + 0.0722*col.b);
+    col.rgb = mix(vec3(luminance,luminance,luminance), col.rgb, saturation);
+    col.rgb = vec3(clamp(col.r,0.0,1.0),clamp(col.g,0.0,1.0),clamp(col.b,0.0,1.0));
     return vec4(col.rgb*scanline, col.a);
 }

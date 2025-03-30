@@ -122,6 +122,25 @@ local options = {
                 write = function(value)
                     SystemSettings.screen_effects.chromatic_aberration = value/20
                 end
+            },
+            {
+                label = "SATURATION",
+                type = "number",
+                min = 0,
+                max = 40,
+                step = 1,
+                enable = function()
+                    return SystemSettings.enable_screen_effects
+                end,
+                text = function(value)
+                    return value*5 .. "%"
+                end,
+                read = function()
+                    return SystemSettings.screen_effects.saturation*20
+                end,
+                write = function(value)
+                    SystemSettings.screen_effects.saturation = value/20
+                end
             }
         }
     },

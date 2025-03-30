@@ -265,7 +265,8 @@ SystemSettings = {
         screen_curvature = 0.5,
         scanlines = 0.5,
         chromatic_aberration = 1,
-        bloom = 1
+        bloom = 1,
+        saturation = 1
     }
 }
 
@@ -324,6 +325,7 @@ ScreenShader:send("tearStrength", 0)
 ScreenShader:send("chromaticStrength", SystemSettings.screen_effects.chromatic_aberration*ChromaticModifier)
 ScreenShader:send("horizBlurStrength", 0.5)
 ScreenShader:send("tearTime", love.timer.getTime())
+ScreenShader:send("saturation", SystemSettings.screen_effects.saturation)
 
 BloomShader = love.graphics.newShader("bloom.frag")
 BloomShader:send("strength", 2)
@@ -469,6 +471,7 @@ function love.update(dt)
     ScreenShader:send("chromaticStrength", SystemSettings.screen_effects.chromatic_aberration * ChromaticModifier)
     ScreenShader:send("horizBlurStrength", 0.5)
     ScreenShader:send("tearTime", love.timer.getTime())
+    ScreenShader:send("saturation", SystemSettings.screen_effects.saturation)
 
     BloomShader:send("strength", SystemSettings.screen_effects.bloom*BloomStrengthModifier)
 
