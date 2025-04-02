@@ -338,7 +338,7 @@ function love.resize(w,h)
     Partial = love.graphics.newCanvas(w,h)
 end
 
--- love.mouse.setRelativeMode(true)
+love.mouse.setRelativeMode(true)
 
 Particles = {}
 

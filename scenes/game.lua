@@ -3,19 +3,15 @@ local utf8 = require "utf8"
 local scene = {}
 
 local hitSounds = {
-    -- love.audio.newSource("sounds/hit.ogg", "stream"),
-    -- love.audio.newSource("sounds/hit.ogg", "stream"),
-    -- love.audio.newSource("sounds/hit.ogg", "stream"),
-    -- love.audio.newSource("sounds/hit.ogg", "stream"),
-    -- love.audio.newSource("sounds/hit.ogg", "stream"),
-    -- love.audio.newSource("sounds/hit.ogg", "stream"),
-    -- love.audio.newSource("sounds/hit.ogg", "stream"),
-    -- love.audio.newSource("sounds/hit.ogg", "stream")
+    love.audio.newSource("sounds/hit.ogg", "stream"),
+    love.audio.newSource("sounds/hit.ogg", "stream"),
+    love.audio.newSource("sounds/hit.ogg", "stream"),
+    love.audio.newSource("sounds/hit.ogg", "stream"),
+    love.audio.newSource("sounds/hit.ogg", "stream"),
+    love.audio.newSource("sounds/hit.ogg", "stream"),
+    love.audio.newSource("sounds/hit.ogg", "stream"),
+    love.audio.newSource("sounds/hit.ogg", "stream")
 }
-
-for _,hitSound in ipairs(hitSounds) do
-    hitSound:setVolume(1)
-end
 
 local lastHitSound = 0
 
@@ -41,6 +37,9 @@ end
 ---@param args {songData: SongData, scorePrefix: string?, difficulty: string, modifiers: table, isEditor?: boolean, forced?: boolean, masquerade?: string, chargeGate?: number}
 function scene.load(args)
     ResetEffects()
+    for _,hitSound in ipairs(hitSounds) do
+        hitSound:setVolume(SystemSettings.sound_volume)
+    end
     love.keyboard.setKeyRepeat(false)
     ---@type integer
     LastOffset = nil
@@ -267,7 +266,7 @@ function scene.keypressed(k)
                     if hit then
                         local hitSound = hitSounds[lastHitSound+1]
                         lastHitSound = (lastHitSound + 1) % #hitSounds
-                        if hitSound then
+                        if hitSound and Save.Read("enable_hit_sounds") then
                             hitSound:stop()
                             hitSound:play()
                         end
@@ -502,7 +501,7 @@ function scene.update(dt)
                             if hit then
                                 local hitSound = hitSounds[lastHitSound+1]
                                 lastHitSound = (lastHitSound + 1) % #hitSounds
-                                if hitSound then
+                                if hitSound and Save.Read("enable_hit_sounds") then
                                     hitSound:stop()
                                     hitSound:play()
                                 end

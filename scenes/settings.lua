@@ -197,6 +197,16 @@ local options = {
                 end
             },
             {
+                label = "HIT SOUNDS",
+                type = "toggle",
+                read = function()
+                    return Save.Read("enable_hit_sounds")
+                end,
+                write = function(value)
+                    Save.Write("enable_hit_sounds", value)
+                end
+            },
+            {
                 label = "OFFSET",
                 type = "number",
                 min = -math.huge,
