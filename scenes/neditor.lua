@@ -1544,6 +1544,7 @@ function scene.mousepressed(x,y,b)
                             DialogButton:new(40, 80, 64, 16, "PLACE", function ()
                                 table.insert(scene.chart.bpmChanges, {time = time, bpm = tonumber(bpmInput.content)})
                                 table.remove(scene.dialogs, 1)
+                                scene.chart:sort()
                             end)
                         }
                     })
