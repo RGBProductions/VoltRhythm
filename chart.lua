@@ -1,7 +1,7 @@
 local utf8 = require "utf8"
 
 function utf8.sub(txt, i, j)
-    local o1 = (utf8.offset(txt,i) or (#txt))-1
+    local o1 = (utf8.offset(txt,i) or (#txt))
     local o2 = (utf8.offset(txt,j+1) or (#txt+1))-1
     return txt:sub(o1,o2)
 end
@@ -829,17 +829,52 @@ function Chart:getDifficulty()
     if not self.song then return 0 end
     local song = Assets.Source(self.song)
     if not song then return 0 end
-    local startTime = math.huge
-    local endTime = -math.huge
-    local amount = 0
-    for _,note in ipairs(self.notes) do
-        amount = amount + NoteTypes[note.type].getDifficulty(note)
-        startTime = math.min(startTime, note.time, note.time+note.length)
-        endTime = math.max(endTime, note.time, note.time+note.length)
+
+    -- Difficulty Rating Constants
+    local segmentSize = 1
+    local constant = 1.5
+
+    local segmentDensities = {}
+    local numSegments = math.ceil(song:getDuration("seconds")/segmentSize)
+    local lastNote = 1
+    for i = 1, numSegments do
+        local amount = 0
+        for j = lastNote, #self.notes do
+            local note = self.notes[j]
+            if note.time > segmentSize*i or note.time + (note.length or 0) > segmentSize*i then
+                lastNote = math.max(1,j-1)
+                break
+            end
+            if note.time >= segmentSize*(i-1) then
+                local t = NoteTypes[note.type]
+                if t then
+                    amount = amount + t.getDifficulty(note)
+                end
+            end
+        end
+        if amount ~= 0 then
+            local added = false
+            for j = 1, #segmentDensities do
+                if segmentDensities[j] < amount then
+                    table.insert(segmentDensities, j, amount/segmentSize)
+                    added = true
+                    break
+                end
+            end
+            if not added then
+                table.insert(segmentDensities, amount/segmentSize)
+            end
+        end
     end
-    local duration = (endTime-startTime)
-    if duration == 0 then return 0 end
-    return amount / (endTime-startTime) * 1.5
+    if #segmentDensities == 0 then
+        return 0
+    end
+    local result = 0
+    for i = 1, #segmentDensities do
+        result = result + segmentDensities[i]*(1-((i-1)/(#segmentDensities)))
+    end
+    result = result / ((#segmentDensities+1)/2)
+    return result * constant
 end
 
 function Chart:getBalance()
