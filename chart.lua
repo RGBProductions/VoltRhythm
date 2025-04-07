@@ -825,6 +825,7 @@ function Chart:getDensity()
     return #self.notes / song:getDuration("seconds")
 end
 
+-- TODO: This is still not great. Work on this later
 function Chart:getDifficulty()
     if not self.song then return 0 end
     local song = Assets.Source(self.song)
@@ -854,26 +855,30 @@ function Chart:getDifficulty()
         end
         if amount ~= 0 then
             local added = false
+            local value = amount/segmentSize
             for j = 1, #segmentDensities do
                 if segmentDensities[j] < amount then
-                    table.insert(segmentDensities, j, amount/segmentSize)
+                    table.insert(segmentDensities, j, value)
                     added = true
                     break
                 end
             end
             if not added then
-                table.insert(segmentDensities, amount/segmentSize)
+                table.insert(segmentDensities, value)
             end
         end
     end
     if #segmentDensities == 0 then
         return 0
     end
+    local sumOfWeights = 0
     local result = 0
     for i = 1, #segmentDensities do
-        result = result + segmentDensities[i]*(1-((i-1)/(#segmentDensities)))
+        local weight = (1-((i-1)/(#segmentDensities)))
+        sumOfWeights = sumOfWeights + weight
+        result = result + segmentDensities[i]*weight
     end
-    result = result / ((#segmentDensities+1)/2)
+    result = result / sumOfWeights
     return result * constant
 end
 
