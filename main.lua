@@ -132,7 +132,7 @@ Ranks = {
     {
         image = love.graphics.newImage("images/rank/S.png"),
         charge = 0.95,
-        plus = 0.925
+        plus = 0.92
     },
     {
         image = love.graphics.newImage("images/rank/O.png"),
