@@ -287,135 +287,374 @@ NoteTypes = {
 }
 
 EffectTypes = {
-    modify_curve = function(self)
-        CurveModifierTarget = self.data.strength
-        CurveModifierSmoothing = self.data.smoothing or 0
-        if (self.data.smoothing or 0) == 0 then
-            CurveModifier = CurveModifierTarget
+    modify_curve = {
+        readable = "CURVATURE",
+        apply = function(self)
+            CurveModifierTarget = self.data.strength
+            CurveModifierSmoothing = self.data.smoothing or 0
+            if (self.data.smoothing or 0) == 0 then
+                CurveModifier = CurveModifierTarget
+            end
+        end,
+        editor = function(self,container)
+            local strengthIn = DialogInput:new(0,0,container.width,16,"STRENGTH",5)
+            local smoothingIn = DialogInput:new(0,32,container.width,16,"SMOOTHING",5)
+            strengthIn.content = tostring(self.data.strength or "")
+            smoothingIn.content = tostring(self.data.smoothing or "")
+            table.insert(container.contents, strengthIn)
+            table.insert(container.contents, smoothingIn)
+            return function(effect)
+                effect.data.strength = tonumber(strengthIn.content) or effect.data.strength
+                effect.data.smoothing = tonumber(smoothingIn.content) or effect.data.smoothing
+            end
         end
-    end,
-    chromatic = function(self)
-        ChromaticModifierTarget = self.data.strength
-        ChromaticModifierSmoothing = self.data.smoothing or 0
-        if (self.data.smoothing or 0) == 0 then
-            ChromaticModifier = ChromaticModifierTarget
+    },
+    chromatic = {
+        readable = "ABERRATION",
+        apply = function(self)
+            ChromaticModifierTarget = self.data.strength
+            ChromaticModifierSmoothing = self.data.smoothing or 0
+            if (self.data.smoothing or 0) == 0 then
+                ChromaticModifier = ChromaticModifierTarget
+            end
+        end,
+        editor = function(self,container)
+            local strengthIn = DialogInput:new(0,0,container.width,16,"STRENGTH",5)
+            local smoothingIn = DialogInput:new(0,32,container.width,16,"SMOOTHING",5)
+            strengthIn.content = tostring(self.data.strength or "")
+            smoothingIn.content = tostring(self.data.smoothing or "")
+            table.insert(container.contents, strengthIn)
+            table.insert(container.contents, smoothingIn)
+            return function(effect)
+                effect.data.strength = tonumber(strengthIn.content) or effect.data.strength
+                effect.data.smoothing = tonumber(smoothingIn.content) or effect.data.smoothing
+            end
         end
-    end,
-    tear = function(self)
-        TearingModifierTarget = self.data.strength
-        TearingModifierSmoothing = self.data.smoothing or 0
-        if (self.data.smoothing or 0) == 0 then
-            TearingModifier = TearingModifierTarget
+    },
+    tear = {
+        readable = "TEARING",
+        apply = function(self)
+            TearingModifierTarget = self.data.strength
+            TearingModifierSmoothing = self.data.smoothing or 0
+            if (self.data.smoothing or 0) == 0 then
+                TearingModifier = TearingModifierTarget
+            end
+        end,
+        editor = function(self,container)
+            local strengthIn = DialogInput:new(0,0,container.width,16,"STRENGTH",5)
+            local smoothingIn = DialogInput:new(0,32,container.width,16,"SMOOTHING",5)
+            strengthIn.content = tostring(self.data.strength or "")
+            smoothingIn.content = tostring(self.data.smoothing or "")
+            table.insert(container.contents, strengthIn)
+            table.insert(container.contents, smoothingIn)
+            return function(effect)
+                effect.data.strength = tonumber(strengthIn.content) or effect.data.strength
+                effect.data.smoothing = tonumber(smoothingIn.content) or effect.data.smoothing
+            end
         end
-    end,
-    board_brightness = function(self)
-        BoardBrightnessTarget = self.data.brightness or BoardBrightnessTarget
-        BoardBrightnessSmoothing = self.data.smoothing or 0
-        if (self.data.smoothing or 0) == 0 then
-            BoardBrightness = BoardBrightnessTarget
+    },
+    board_brightness = {
+        readable = "BOARD BRIGHTNESS",
+        apply = function(self)
+            BoardBrightnessTarget = self.data.brightness or BoardBrightnessTarget
+            BoardBrightnessSmoothing = self.data.smoothing or 0
+            if (self.data.smoothing or 0) == 0 then
+                BoardBrightness = BoardBrightnessTarget
+            end
+        end,
+        editor = function(self,container)
+            local strengthIn = DialogInput:new(0,0,container.width,16,"BRIGHTNESS",5)
+            local smoothingIn = DialogInput:new(0,32,container.width,16,"SMOOTHING",5)
+            strengthIn.content = tostring(self.data.brightness or "")
+            smoothingIn.content = tostring(self.data.smoothing or "")
+            table.insert(container.contents, strengthIn)
+            table.insert(container.contents, smoothingIn)
+            return function(effect)
+                effect.data.brightness = tonumber(strengthIn.content) or effect.data.brightness
+                effect.data.smoothing = tonumber(smoothingIn.content) or effect.data.smoothing
+            end
         end
-    end,
-    note_brightness = function(self)
-        NoteBrightnessTarget = self.data.brightness or NoteBrightnessTarget
-        NoteBrightnessSmoothing = self.data.smoothing or 0
-        if (self.data.smoothing or 0) == 0 then
-            NoteBrightness = NoteBrightnessTarget
+    },
+    note_brightness = {
+        readable = "NOTE BRIGHTNESS",
+        apply = function(self)
+            NoteBrightnessTarget = self.data.brightness or NoteBrightnessTarget
+            NoteBrightnessSmoothing = self.data.smoothing or 0
+            if (self.data.smoothing or 0) == 0 then
+                NoteBrightness = NoteBrightnessTarget
+            end
+        end,
+        editor = function(self,container)
+            local strengthIn = DialogInput:new(0,0,container.width,16,"BRIGHTNESS",5)
+            local smoothingIn = DialogInput:new(0,32,container.width,16,"SMOOTHING",5)
+            strengthIn.content = tostring(self.data.brightness or "")
+            smoothingIn.content = tostring(self.data.smoothing or "")
+            table.insert(container.contents, strengthIn)
+            table.insert(container.contents, smoothingIn)
+            return function(effect)
+                effect.data.brightness = tonumber(strengthIn.content) or effect.data.brightness
+                effect.data.smoothing = tonumber(smoothingIn.content) or effect.data.smoothing
+            end
         end
-    end,
-    bloom = function(self)
-        BloomStrengthModifierTarget = self.data.strength
-        BloomStrengthModifierSmoothing = self.data.smoothing or 0
-        if (self.data.smoothing or 0) == 0 then
-            BloomStrengthModifier = BloomStrengthModifierTarget
+    },
+    bloom = {
+        readable = "BLOOM",
+        apply = function(self)
+            BloomStrengthModifierTarget = self.data.strength
+            BloomStrengthModifierSmoothing = self.data.smoothing or 0
+            if (self.data.smoothing or 0) == 0 then
+                BloomStrengthModifier = BloomStrengthModifierTarget
+            end
+        end,
+        editor = function(self,container)
+            local strengthIn = DialogInput:new(0,0,container.width,16,"STRENGTH",5)
+            local smoothingIn = DialogInput:new(0,32,container.width,16,"SMOOTHING",5)
+            strengthIn.content = tostring(self.data.strength or "")
+            smoothingIn.content = tostring(self.data.smoothing or "")
+            table.insert(container.contents, strengthIn)
+            table.insert(container.contents, smoothingIn)
+            return function(effect)
+                effect.data.strength = tonumber(strengthIn.content) or effect.data.strength
+                effect.data.smoothing = tonumber(smoothingIn.content) or effect.data.smoothing
+            end
         end
-    end,
-    wave = function(self)
-        WavinessTarget = self.data.strength
-        WavinessSmoothing = self.data.smoothing or 0
-    end,
-    scroll_speed = function(self)
-        ScrollSpeedModTarget = self.data.speed
-        ScrollSpeedModSmoothing = self.data.smoothing or 0
-    end,
-    note_speed = function(self)
-        if NoteSpeedMods[self.data.lane+1] then
-            NoteSpeedMods[self.data.lane+1][2] = self.data.speed
-            NoteSpeedMods[self.data.lane+1][3] = self.data.smoothing or 0
+    },
+    wave = {
+        readable = "NOTE WAVINESS",
+        apply = function(self)
+            WavinessTarget = self.data.strength
+            WavinessSmoothing = self.data.smoothing or 0
+        end,
+        editor = function(self,container)
+            local strengthIn = DialogInput:new(0,0,container.width,16,"STRENGTH",5)
+            local smoothingIn = DialogInput:new(0,32,container.width,16,"SMOOTHING",5)
+            strengthIn.content = tostring(self.data.strength or "")
+            smoothingIn.content = tostring(self.data.smoothing or "")
+            table.insert(container.contents, strengthIn)
+            table.insert(container.contents, smoothingIn)
+            return function(effect)
+                effect.data.strength = tonumber(strengthIn.content) or effect.data.strength
+                effect.data.smoothing = tonumber(smoothingIn.content) or effect.data.smoothing
+            end
         end
-    end,
-    offset = function(self)
-        ViewOffsetTarget = self.data.offset
-        ViewOffsetSmoothing = self.data.smoothing or 0
-        ViewOffsetMoveLine = not self.data.keep_line
-    end,
-    freeze_view = function(self)
-        ViewOffsetFreeze = not ViewOffsetFreeze
-    end,
-    edit_note = function(self,chart)
-        for _,note in ipairs(chart.notes) do
-            if note.extra.id == self.data.id or note.extra.group == self.data.group then
-                if self.data.time then
-                    note.timeTarget = self.data.time
-                end
-                if self.data.lane then
-                    note.laneTarget = self.data.lane
-                end
-                if self.data.type then
-                    note.type = self.data.type
-                end
-                if self.data.extra then
-                    for k,v in pairs(self.data.extra) do
-                        note.extra[k] = v
+    },
+    scroll_speed = {
+        readable = "SCROLL SPEED",
+        apply = function(self)
+            ScrollSpeedModTarget = self.data.speed
+            ScrollSpeedModSmoothing = self.data.smoothing or 0
+        end,
+        editor = function(self,container)
+            local strengthIn = DialogInput:new(0,0,container.width,16,"SPEED MULT",5)
+            local smoothingIn = DialogInput:new(0,32,container.width,16,"SMOOTHING",5)
+            strengthIn.content = tostring(self.data.speed or "")
+            smoothingIn.content = tostring(self.data.smoothing or "")
+            table.insert(container.contents, strengthIn)
+            table.insert(container.contents, smoothingIn)
+            return function(effect)
+                effect.data.speed = tonumber(strengthIn.content) or effect.data.speed
+                effect.data.smoothing = tonumber(smoothingIn.content) or effect.data.smoothing
+            end
+        end
+    },
+    note_speed = {
+        readable = "LANE SPEED",
+        apply = function(self)
+            if NoteSpeedMods[self.data.lane+1] then
+                NoteSpeedMods[self.data.lane+1][2] = self.data.speed
+                NoteSpeedMods[self.data.lane+1][3] = self.data.smoothing or 0
+            end
+        end,
+        editor = function(self,container)
+            local laneIn = DialogInput:new(0,0,container.width,16,"AFFECTED LANE (0-3)",5)
+            local strengthIn = DialogInput:new(0,32,container.width,16,"SPEED MULT",5)
+            local smoothingIn = DialogInput:new(0,64,container.width,16,"SMOOTHING",5)
+            laneIn.content = tostring(self.data.lane or "")
+            strengthIn.content = tostring(self.data.speed or "")
+            smoothingIn.content = tostring(self.data.smoothing or "")
+            table.insert(container.contents, strengthIn)
+            table.insert(container.contents, laneIn)
+            table.insert(container.contents, smoothingIn)
+            return function(effect)
+                effect.data.lane = tonumber(laneIn.content) or effect.data.lane
+                effect.data.speed = tonumber(strengthIn.content) or effect.data.speed
+                effect.data.smoothing = tonumber(smoothingIn.content) or effect.data.smoothing
+            end
+        end
+    },
+    offset = {
+        readable = "VIEW OFFSET",
+        apply = function(self)
+            ViewOffsetTarget = self.data.offset
+            ViewOffsetSmoothing = self.data.smoothing or 0
+            ViewOffsetMoveLine = not self.data.keep_line
+        end,
+        editor = function(self,container)
+            local offsetIn = DialogInput:new(0,0,container.width,16,"OFFSET",5)
+            local smoothingIn = DialogInput:new(0,32,container.width,16,"SMOOTHING",5)
+            local keepIn = DialogToggle:new(0,80,container.width,16,"KEEP LINE")
+            offsetIn.content = tostring(self.data.offset or "")
+            smoothingIn.content = tostring(self.data.smoothing or "")
+            keepIn.active = self.data.keep_line
+            table.insert(container.contents, keepIn)
+            table.insert(container.contents, offsetIn)
+            table.insert(container.contents, smoothingIn)
+            return function(effect)
+                effect.data.offset = tonumber(offsetIn.content) or effect.data.offset
+                effect.data.smoothing = tonumber(smoothingIn.content) or effect.data.smoothing
+                effect.data.keep_line = keepIn.active or effect.data.keep_line
+            end
+        end
+    },
+    freeze_view = {
+        readable = "FREEZE VIEW",
+        apply = function(self)
+            ViewOffsetFreeze = not ViewOffsetFreeze
+        end
+    },
+    edit_note = {
+        readable = "[ADV] EDIT NOTE",
+        apply = function(self,chart)
+            for _,note in ipairs(chart.notes) do
+                if note.extra.id == self.data.id or note.extra.group == self.data.group then
+                    if self.data.time then
+                        note.timeTarget = self.data.time
                     end
+                    if self.data.lane then
+                        note.laneTarget = self.data.lane
+                    end
+                    if self.data.type then
+                        note.type = self.data.type
+                    end
+                    if self.data.extra then
+                        for k,v in pairs(self.data.extra) do
+                            note.extra[k] = v
+                        end
+                    end
+                    if self.data.smoothing then
+                        note.smoothing = self.data.smoothing
+                    else
+                        if note.timeTarget then note.time = note.timeTarget end
+                        if note.laneTarget then note.lane = note.laneTarget ; note.visualLane = note.laneTarget end
+                    end
+                    if self.data.id then return end
                 end
-                if self.data.smoothing then
-                    note.smoothing = self.data.smoothing
-                else
-                    if note.timeTarget then note.time = note.timeTarget end
-                    if note.laneTarget then note.lane = note.laneTarget ; note.visualLane = note.laneTarget end
-                end
-                if self.data.id then return end
+            end
+        end,
+        editor = function(self,container)
+            local groupIn = DialogInput:new(0,0,container.width,16,"NOTE GROUP",5)
+            local timeIn = DialogInput:new(0,32,container.width,16,"TYPE",5)
+            local laneIn = DialogInput:new(0,64,container.width,16,"LANE",5)
+            local typeIn = DialogInput:new(0,96,container.width,16,"TYPE",5)
+            local smoothingIn = DialogInput:new(0,128,container.width,16,"SMOOTHING",5)
+            groupIn.content = tostring(self.data.group or "")
+            timeIn.content = tostring(self.data.time or "")
+            laneIn.content = tostring(self.data.lane or "")
+            typeIn.content = tostring(self.data.type or "")
+            smoothingIn.content = tostring(self.data.smoothing or "")
+            table.insert(container.contents, groupIn)
+            table.insert(container.contents, timeIn)
+            table.insert(container.contents, laneIn)
+            table.insert(container.contents, typeIn)
+            table.insert(container.contents, smoothingIn)
+            return function(effect)
+                effect.data.group = groupIn.content or effect.data.group
+                effect.data.time = tonumber(timeIn.content) or effect.data.time
+                effect.data.lane = tonumber(laneIn.content) or effect.data.lane
+                effect.data.type = typeIn.content or effect.data.type
+                effect.data.smoothing = tonumber(smoothingIn.content) or effect.data.smoothing
             end
         end
-    end,
-    transform = function(self)
-        if self.data.shift then
-            DisplayShiftTarget[1] = (self.data.shift or DisplayShiftTarget)[1]
-            DisplayShiftTarget[2] = (self.data.shift or DisplayShiftTarget)[2]
-            DisplayShiftSmoothing = self.data.smoothing or 0
-        end
-        if self.data.scale then
-            DisplayScaleTarget[1] = (self.data.scale or DisplayScaleTarget)[1]
-            DisplayScaleTarget[2] = (self.data.scale or DisplayScaleTarget)[2]
-            DisplayScaleSmoothing = self.data.smoothing or 0
-        end
-        if self.data.rotation then
-            DisplayRotationTarget = self.data.rotation or DisplayRotationTarget
-            DisplayRotationSmoothing = self.data.smoothing or 0
-        end
-        if self.data.shear then
-            DisplayShearTarget[1] = (self.data.shear or DisplayShearTarget)[1]
-            DisplayShearTarget[2] = (self.data.shear or DisplayShearTarget)[2]
-            DisplayShearSmoothing = self.data.smoothing or 0
-        end
-        if (self.data.smoothing or 0) == 0 then
-            DisplayShift[1] = DisplayShiftTarget[1]
-            DisplayShift[2] = DisplayShiftTarget[2]
-            DisplayScale[1] = DisplayScaleTarget[1]
-            DisplayScale[2] = DisplayScaleTarget[2]
-            DisplayRotation = DisplayRotationTarget
-            DisplayShear[1] = DisplayShearTarget[1]
-            DisplayShear[2] = DisplayShearTarget[2]
-        end
-    end,
-    modify_bg = function(self,chart)
-        local background = Assets.Background(chart.background)
-        if background then
-            for k,v in pairs(self.data) do
-                background[k] = v
+    },
+    transform = {
+        readable = "TRANSFORMATIONS",
+        apply = function(self)
+            if self.data.shift then
+                DisplayShiftTarget[1] = (self.data.shift or DisplayShiftTarget)[1]
+                DisplayShiftTarget[2] = (self.data.shift or DisplayShiftTarget)[2]
+                DisplayShiftSmoothing = self.data.smoothing or 0
+            end
+            if self.data.scale then
+                DisplayScaleTarget[1] = (self.data.scale or DisplayScaleTarget)[1]
+                DisplayScaleTarget[2] = (self.data.scale or DisplayScaleTarget)[2]
+                DisplayScaleSmoothing = self.data.smoothing or 0
+            end
+            if self.data.rotation then
+                DisplayRotationTarget = self.data.rotation or DisplayRotationTarget
+                DisplayRotationSmoothing = self.data.smoothing or 0
+            end
+            if self.data.shear then
+                DisplayShearTarget[1] = (self.data.shear or DisplayShearTarget)[1]
+                DisplayShearTarget[2] = (self.data.shear or DisplayShearTarget)[2]
+                DisplayShearSmoothing = self.data.smoothing or 0
+            end
+            if (self.data.smoothing or 0) == 0 then
+                DisplayShift[1] = DisplayShiftTarget[1]
+                DisplayShift[2] = DisplayShiftTarget[2]
+                DisplayScale[1] = DisplayScaleTarget[1]
+                DisplayScale[2] = DisplayScaleTarget[2]
+                DisplayRotation = DisplayRotationTarget
+                DisplayShear[1] = DisplayShearTarget[1]
+                DisplayShear[2] = DisplayShearTarget[2]
+            end
+        end,
+        editor = function(self,container)
+            local shiftXIn = DialogInput:new(0,0,container.width/2-8,16,"SHIFT X",5)
+            local shiftYIn = DialogInput:new(container.width/2+8,0,container.width/2-8,16,"SHIFT Y",5)
+            local scaleXIn = DialogInput:new(0,32,container.width/2-8,16,"SCALE X",5)
+            local scaleYIn = DialogInput:new(container.width/2+8,32,container.width/2-8,16,"SCALE Y",5)
+            local shearXIn = DialogInput:new(0,64,container.width/2-8,16,"SHEAR X",5)
+            local shearYIn = DialogInput:new(container.width/2+8,64,container.width/2-8,16,"SHEAR Y",5)
+            local rotationIn = DialogInput:new(0,96,container.width,16,"ROTATION",5)
+            local smoothingIn = DialogInput:new(0,128,container.width,16,"SMOOTHING",5)
+            shiftXIn.content = tostring((self.data.shift or {})[1] or "")
+            shiftYIn.content = tostring((self.data.shift or {})[2] or "")
+            scaleXIn.content = tostring((self.data.scale or {})[1] or "")
+            scaleYIn.content = tostring((self.data.scale or {})[2] or "")
+            shearXIn.content = tostring((self.data.shear or {})[1] or "")
+            shearYIn.content = tostring((self.data.shear or {})[2] or "")
+            rotationIn.content = tostring(self.data.rotation or "")
+            smoothingIn.content = tostring(self.data.smoothing or "")
+            table.insert(container.contents, shiftXIn)
+            table.insert(container.contents, shiftYIn)
+            table.insert(container.contents, scaleXIn)
+            table.insert(container.contents, scaleYIn)
+            table.insert(container.contents, shearXIn)
+            table.insert(container.contents, shearYIn)
+            table.insert(container.contents, rotationIn)
+            table.insert(container.contents, smoothingIn)
+            return function(effect)
+                local shiftX = tonumber(shiftXIn.content)
+                local shiftY = tonumber(shiftYIn.content)
+                local scaleX = tonumber(scaleXIn.content)
+                local scaleY = tonumber(scaleYIn.content)
+                local shearX = tonumber(shearXIn.content)
+                local shearY = tonumber(shearYIn.content)
+                if shiftX or shiftY then
+                    effect.data.shift = {shiftX or (effect.data.shift or {})[1] or 0, shiftY or (effect.data.shift or {})[2] or 0}
+                end
+                if scaleX or scaleY then
+                    effect.data.scale = {scaleX or (effect.data.scale or {})[1] or 1, scaleY or (effect.data.scale or {})[2] or 1}
+                end
+                if shearX or shearY then
+                    effect.data.shear = {shearX or (effect.data.shear or {})[1] or 0, shearY or (effect.data.shear or {})[2] or 0}
+                end
+                effect.data.rotation = tonumber(rotationIn.content) or effect.data.rotation
+                effect.data.smoothing = tonumber(smoothingIn.content) or effect.data.smoothing
             end
         end
-    end,
+    },
+    modify_bg = {
+        readable = "[ADV] MODIFY BG",
+        apply = function(self,chart)
+            local background = Assets.Background(chart.background)
+            if background then
+                for k,v in pairs(self.data) do
+                    background[k] = v
+                end
+            end
+        end
+    }
 }
 
 Note = {}
@@ -506,7 +745,7 @@ function PrintDifficulty(x,y,difficulty,level,align)
             love.graphics.setColor(color[colorIndex])
             local R,G,B,A = love.graphics.getColor()
             love.graphics.setColor(r*R,g*G,b*B,a*A)
-            love.graphics.print(utf8.sub(SongDifficulty[difficulty].name, i+1, i+1), currentX, y)
+            love.graphics.print(utf8.sub(SongDifficulty[difficulty].name, i, i), currentX, y)
             currentX = currentX + 8
         end
     else

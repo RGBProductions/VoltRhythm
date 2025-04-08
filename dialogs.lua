@@ -1,5 +1,74 @@
 local utf8 = require "utf8"
 
+DialogContainer = {}
+DialogContainer.__index = DialogContainer
+
+function DialogContainer:new(x,y,width,height,contents)
+    local container = setmetatable({},DialogContainer)
+
+    container.x = x
+    container.y = y
+    container.width = width
+    container.height = height
+    container.contents = contents or {}
+
+    return container
+end
+
+function DialogContainer:draw(x,y)
+    for _,itm in ipairs(self.contents) do
+        if type(itm.draw) == "function" then
+            itm:draw(self.x+x,self.y+y)
+        end
+    end
+end
+
+function DialogContainer:click(x,y)
+    for _,itm in ipairs(self.contents) do
+        if type(itm.click) == "function" then
+            if itm:click(x-self.x,y-self.y) then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+function DialogContainer:unclick(x,y)
+    for _,itm in ipairs(self.contents) do
+        if type(itm.unclick) == "function" then
+            itm:unclick(x-self.x,y-self.y)
+        end
+    end
+end
+
+function DialogContainer:filedropped(x,y,file)
+    for _,itm in ipairs(self.contents) do
+        if type(itm.filedropped) == "function" then
+            if itm:filedropped(x-self.x,y-self.y,file) then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+function DialogContainer:textinput(t)
+    for _,itm in ipairs(self.contents) do
+        if type(itm.textinput) == "function" then
+            itm:textinput(t)
+        end
+    end
+end
+
+function DialogContainer:keypressed(k)
+    for _,itm in ipairs(self.contents) do
+        if type(itm.keypressed) == "function" then
+            itm:keypressed(k)
+        end
+    end
+end
+
 DialogLabel = {}
 DialogLabel.__index = DialogLabel
 
@@ -89,6 +158,42 @@ end
 
 function DialogButton:click(x,y)
     if x >= self.x-8 and x < self.x+self.width+8 and y >= self.y-16 and y < self.y+self.height+16 then
+        if type(self.onpress) == "function" then
+            self:onpress()
+        end
+        return true
+    end
+    return false
+end
+
+
+
+DialogToggle = {}
+DialogToggle.__index = DialogToggle
+
+function DialogToggle:new(x,y,width,height,label,onpress)
+    local button = setmetatable({}, DialogToggle)
+
+    button.x = x
+    button.y = y
+    button.width = width
+    button.height = height
+    button.label = label
+    button.onpress = onpress
+    button.active = true
+
+    return button
+end
+
+function DialogToggle:draw(x,y)
+    love.graphics.setColor(TerminalColors[self.active and ColorID.LIGHT_BLUE or ColorID.WHITE])
+    DrawBoxHalfWidth((self.x+x)/8-1, (self.y+y)/16-1, self.width/8, self.height/16)
+    love.graphics.printf(self.label .. " - " .. (self.active and "ON" or "OFF"), self.x+x, self.y+y, self.width, "center")
+end
+
+function DialogToggle:click(x,y)
+    if x >= self.x-8 and x < self.x+self.width+8 and y >= self.y-16 and y < self.y+self.height+16 then
+        self.active = not self.active
         if type(self.onpress) == "function" then
             self:onpress()
         end

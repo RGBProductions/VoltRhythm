@@ -205,7 +205,7 @@ function SetCursor(cursor,x,y)
     CursorY = y or 0
 end
 
-Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%().,'\"!?/:+-_=┌─┐│└┘├┤┴┬┼█▓▒░┊┈╬○◇▷◁║¤👑▧▥▨◐◑◻☓🡙ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω🮰✨�Ħ")
+Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%()[].,'\"!?/:+-_=┌─┐│└┘├┤┴┬┼█▓▒░┊┈╬○◇▷◁║¤👑▧▥▨◐◑◻☓🡙ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω🮰✨�Ħ")
 NoteFont = love.graphics.newImageFont("images/notes/default.png", "○◇▷◁║▧▥▨◐◑◻◼☓")
 
 function DrawBox(x,y,w,h)

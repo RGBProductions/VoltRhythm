@@ -174,9 +174,81 @@ end
 
 local function effectPlacementDialog(effect, editing)
     local copy = table.merge({}, effect)
-    local typeInput = DialogInput:new(0, 0, 304, 16, "EFFECT TYPE", 35, nil)
+    local container = DialogContainer:new(0,64,304,304,{})
+    local typeButton
+    local apply = function(self) end
+    local function set(effectType)
+        copy.type = effectType
+        typeButton.label = (EffectTypes[effectType] or {readable = effectType}).readable
+        container.contents = {}
+        local t = EffectTypes[effectType] or {}
+        if type(t.editor) == "function" then
+            apply = t.editor(copy, container)
+        end
+    end
+
+    local effectType = copy.type or "EFFECT TYPE"
+    typeButton = DialogButton:new(0, 0, 304, 16, "EFFECT TYPE", function()
+        local buttons = {}
+        local names = {}
+        for name,_ in pairs(EffectTypes) do
+            table.insert(names, {_.readable or name,name})
+        end
+        table.sort(names,function (a, b)
+            return a[1] < b[1]
+        end)
+        local optionContainer = DialogContainer:new(0,0,304,240,{})
+        local scroll = 0
+        local function setscroll(n) end
+        local max = 0
+        local dialog = {
+            title = "EFFECT TYPE",
+            width = 20,
+            height = 20,
+            contents = {
+                optionContainer,
+                DialogButton:new(120, 256, 64, 16, "CANCEL", function ()
+                    table.remove(scene.dialogs, 1)
+                end),
+                DialogButton:new(16, 256, 32, 16, "UP", function ()
+                    setscroll(math.max(scroll-5, 0))
+                end),
+                DialogButton:new(264, 256, 32, 16, "DN", function ()
+                    setscroll(math.min(scroll+5,math.ceil(max/5)*5-5))
+                end)
+            }
+        }
+        local pos = 0
+        for _,val in pairs(names) do
+            local name = val[2]
+            local readable = val[1]
+            local button = DialogButton:new(16, 48*pos, 272, 16, readable, function ()
+                effectType = name
+                set(effectType)
+                table.remove(scene.dialogs, 1)
+            end)
+            max = max + 1
+            table.insert(buttons, button)
+            pos = pos + 1
+        end
+        setscroll = function(n)
+            scroll = n
+            optionContainer.contents = {}
+            for i,button in ipairs(buttons) do
+                button.y = 48*(i-1-scroll)
+                if button.y >= 0 and button.y < 240 then
+                    table.insert(optionContainer.contents, button)
+                end
+            end
+        end
+        setscroll(scroll)
+        table.insert(scene.dialogs, 1, dialog)
+    end)
+    -- local typeInput = DialogInput:new(0, 0, 304, 16, "EFFECT TYPE", 35, nil, function(self)
+    --     set(self.content)
+    -- end)
     local data = copy.data
-    typeInput.content = copy.type or ""
+    set(effectType)
     local pos = 0
     local dataElements = {}
     local dialog = {
@@ -184,8 +256,9 @@ local function effectPlacementDialog(effect, editing)
         width = 20,
         height = 20,
         contents = {
-            typeInput,
+            typeButton,
             DialogLabel:new(0, 32, 304, "EFFECT DATA", "center"),
+            container,
             DialogButton:new(216, 256, 64, 16, "CANCEL", function ()
                 table.remove(scene.dialogs, 1)
             end),
@@ -194,12 +267,15 @@ local function effectPlacementDialog(effect, editing)
                 copy.time = copy.time + 0.001
             end),
             DialogButton:new(24, 256, 64, 16, editing and "APPLY" or "PLACE", function ()
-                effect.type = typeInput.content
-                effect.data = {}
-                for _,item in ipairs(dataElements) do
-                    local v = item.value.content
-                    effect.data[item.key.content] = tonumber(v) or v
+                effect.type = effectType
+                if type(apply) == "function" then
+                    apply(effect)
                 end
+                -- effect.data = {}
+                -- for _,item in ipairs(dataElements) do
+                --     local v = item.value.content
+                --     effect.data[item.key.content] = tonumber(v) or v
+                -- end
                 if not editing then
                     local final = {time = copy.time, type = effect.type, data = effect.data}
                     table.insert(scene.chart.effects, final)
@@ -209,44 +285,43 @@ local function effectPlacementDialog(effect, editing)
             end)
         }
     }
-    local function addDataElement(k,v) end
-    local addButton = DialogButton:new(264,pos+64,32,16,"+",function(self)
-        addDataElement("","")
-    end)
-    addDataElement = function(k,v)
-        addButton.y = addButton.y + 48
-        local i = #dataElements+1
-        local key = DialogInput:new(0,pos+64,128,16,"KEY", 16, nil, nil)
-        local equals = DialogLabel:new(132, pos+64, 8, "=", "center")
-        local value = DialogInput:new(144,pos+64,96,16,"VALUE", 12, nil, nil)
-        local remove = DialogButton:new(264,pos+64,32,16,"-",function(self)
-            table.remove(dataElements,i)
-            table.remove(dialog.contents, table.index(dialog.contents, key))
-            table.remove(dialog.contents, table.index(dialog.contents, equals))
-            table.remove(dialog.contents, table.index(dialog.contents, value))
-            table.remove(dialog.contents, table.index(dialog.contents, self))
-            for j = i, #dataElements do
-                dataElements[j].key.y = dataElements[j].key.y - 48
-                dataElements[j].equals.y = dataElements[j].equals.y - 48
-                dataElements[j].value.y = dataElements[j].value.y - 48
-                dataElements[j].remove.y = dataElements[j].remove.y - 48
-            end
-            addButton.y = addButton.y - 48
-            pos = pos - 48
-        end)
-        key.content = k
-        value.content = tostring(v)
-        table.insert(dialog.contents, key)
-        table.insert(dialog.contents, equals)
-        table.insert(dialog.contents, value)
-        table.insert(dialog.contents, remove)
-        dataElements[i] = { key = key, equals = equals, value = value, remove = remove }
-        pos = pos + 48
-    end
-    for k,v in pairs(data) do
-        addDataElement(k,v)
-    end
-    table.insert(dialog.contents, addButton)
+    -- local function addDataElement(k,v) end
+    -- local addButton = DialogButton:new(264,pos+64,32,16,"+",function(self)
+    --     addDataElement("","")
+    -- end)
+    -- addDataElement = function(k,v)
+    --     addButton.y = addButton.y + 48
+    --     local i = #dataElements+1
+    --     local key = DialogInput:new(0,pos+64,128,16,"KEY", 16, nil, nil)
+    --     local equals = DialogLabel:new(132, pos+64, 8, "=", "center")
+    --     local value = DialogInput:new(144,pos+64,96,16,"VALUE", 12, nil, nil)
+    --     local remove = DialogButton:new(264,pos+64,32,16,"-",function(self)
+    --         table.remove(dataElements,i)
+    --         table.remove(dialog.contents, table.index(dialog.contents, key))
+    --         table.remove(dialog.contents, table.index(dialog.contents, equals))
+    --         table.remove(dialog.contents, table.index(dialog.contents, value))
+    --         table.remove(dialog.contents, table.index(dialog.contents, self))
+    --         for j = i, #dataElements do
+    --             dataElements[j].key.y = dataElements[j].key.y - 48
+    --             dataElements[j].equals.y = dataElements[j].equals.y - 48
+    --             dataElements[j].value.y = dataElements[j].value.y - 48
+    --             dataElements[j].remove.y = dataElements[j].remove.y - 48
+    --         end
+    --         addButton.y = addButton.y - 48
+    --         pos = pos - 48
+    --     end)
+    --     key.content = k
+    --     value.content = tostring(v)
+    --     table.insert(dialog.contents, key)
+    --     table.insert(dialog.contents, equals)
+    --     table.insert(dialog.contents, value)
+    --     table.insert(dialog.contents, remove)
+    --     dataElements[i] = { key = key, equals = equals, value = value, remove = remove }
+    --     pos = pos + 48
+    -- end
+    -- for k,v in pairs(data) do
+    --     addDataElement(k,v)
+    -- end
     table.insert(scene.dialogs, 1, dialog)
 end
 
@@ -508,9 +583,8 @@ local editorMenu = {
                         local difficultyLabel = DialogDifficulty:new(16,48*(i-1),128,difficulty,nil,"left")
 
                         local levelInput = DialogInput:new(96,48*(i-1),32,16,"LVL",4,nil,function(self)
-                            self.content = tostring(tonumber(self.content) or 0)
-                            scene.songData.levels[difficulty] = tonumber(self.content) or 0
-                            scene.songData.charts[difficulty].level = tonumber(self.content) or 0
+                            scene.songData.levels[difficulty] = tonumber(self.content) or self.content
+                            scene.songData.charts[difficulty].level = tonumber(self.content) or self.content
                         end)
                         levelInput.content = tostring(level)
 
@@ -1550,7 +1624,7 @@ function scene.mousepressed(x,y,b)
                     })
                 end
                 if scene.placementMode == placementModes.effect then
-                    effectPlacementDialog({time = scene.lastNoteTime, data = {}, type = ""}, false)
+                    effectPlacementDialog({time = scene.lastNoteTime, data = {}}, false)
                 end
             elseif not scene.scrollbarGrab then
                 for i,note in ipairs(scene.selectedNotes) do

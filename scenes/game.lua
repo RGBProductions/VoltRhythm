@@ -379,9 +379,9 @@ function HandleChartEffects()
             goto continue
         end
         if pos <= 0 then
-            local t = EffectTypes[effect.type]
-            if type(t) == "function" then
-                t(effect,scene.chart)
+            local t = EffectTypes[effect.type] or {}
+            if type(t.apply) == "function" then
+                t.apply(effect,scene.chart)
             end
             effect.destroyed = true
             i = i - 1
@@ -627,7 +627,7 @@ function scene.update(dt)
     HandleChartEffects()
 
     if scene.song then
-        if scene.chart.time >= scene.song:getDuration("seconds")-scene.audioOffset then
+        if scene.chart.time >= scene.song:getDuration("seconds") then
             if not SceneManager.TransitionState.Transitioning then
                 if FullOvercharge then
                     Charge = scene.chart.totalCharge
