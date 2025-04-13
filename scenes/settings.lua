@@ -636,7 +636,7 @@ function scene.draw()
         if type(option.enable) == "function" then
             enabled = option.enable()
         end
-        love.graphics.setColor(TerminalColors[selection == i-1 and (enabled and ColorID.WHITE or ColorID.LIGHT_RED) or (enabled and ColorID.DARK_GRAY or ColorID.RED)])
+        love.graphics.setColor(TerminalColors[selection == i-1 and ColorID.WHITE or ColorID.DARK_GRAY])
         local text = ""
         if option.type ~= "menu" and option.type ~= "label" then
             text = option.read()
@@ -654,6 +654,9 @@ function scene.draw()
                 text = option.text(text)
             end
         end
+        if not enabled then
+            text = "- DISABLED -"
+        end
         local itmY = (i-y)*80
         local itmX = (640-256)/2+menuX
         DrawBoxHalfWidth(itmX/8-1, itmY/16-1, 256/8, 3)
@@ -662,7 +665,7 @@ function scene.draw()
             love.graphics.setColor(TerminalColors[tonumber(text) or 1])
             love.graphics.rectangle("fill", itmX+(256-16)/2, itmY+32, 16, 16)
         else
-            love.graphics.setColor(TerminalColors[selection == i-1 and (enabled and ColorID.LIGHT_GRAY or ColorID.RED) or (enabled and ColorID.DARK_GRAY or ColorID.RED)])
+            love.graphics.setColor(TerminalColors[selection == i-1 and ColorID.LIGHT_GRAY or ColorID.DARK_GRAY])
             love.graphics.printf(tostring(text), itmX, itmY+32, 256, "center")
         end
     end
