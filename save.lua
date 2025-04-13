@@ -12,6 +12,7 @@ local defaultSave = {
     songs = {},
     keybinds = {"a","s","k","l"},
     note_colors = {ColorID.LIGHT_RED, ColorID.YELLOW, ColorID.LIGHT_GREEN, ColorID.LIGHT_BLUE},
+    mine_color = ColorID.RED,
     border = "none",
     scroll_speed = 25,
     enable_hit_sounds = false

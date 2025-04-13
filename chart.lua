@@ -228,7 +228,7 @@ NoteTypes = {
             local r,g,b,a = love.graphics.getColor()
 
             if drawPos >= chartPos and drawPos < chartPos+(chartHeight+1) and (self.heldFor or 0) <= 0 then
-                love.graphics.setColor(TerminalColors[ColorID.RED])
+                love.graphics.setColor(TerminalColors[Save.Read("mine_color")])
                 local R,G,B,A = love.graphics.getColor()
                 love.graphics.setColor(r*R,g*G,b*B,a*A)
                 love.graphics.print("☓", (chartX+visualLane*4)*8+4, math.floor(drawPos*16-8-(isEditor and 0 or 4)), 0, 1, 1, NoteFont:getWidth("○")/2)
