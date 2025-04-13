@@ -1,7 +1,5 @@
 local scene = {}
 
-local selection = 0
-local view = 0
 local rebinding = nil
 
 SettingsChart = SettingsChart or {
@@ -246,6 +244,13 @@ local root = {
                     write = function(value)
                         SystemSettings.audio_offset = value/1000
                     end
+                },
+                {
+                    label = "CALIBRATE OFFSET",
+                    type = "action",
+                    run = function()
+                        SceneManager.Transition("scenes/calibration")
+                    end
                 }
             }
         },
@@ -298,7 +303,7 @@ local root = {
         {
             label = "GAME UI",
             type = "menu",
-            x = -80, -- TODO: set this number reasonably
+            x = -80,
             showChart = true,
             options = {
                 {
@@ -388,9 +393,6 @@ local root = {
     }
 }
 
-local stack = {}
-local current = root
-
 function scene.keypressed(k)
     if rebinding then
         rebinding.write(k)
@@ -398,29 +400,29 @@ function scene.keypressed(k)
         return
     end
     if k == "escape" then
-        if #stack > 0 then
-            local pop = table.remove(stack, #stack)
-            current = pop[1]
-            selection = pop[2]
-            view = selection
+        if #SettingsStack > 0 then
+            local pop = table.remove(SettingsStack, #SettingsStack)
+            SettingsCurrent = pop[1]
+            SettingsSelection = pop[2]
+            SettingsView = SettingsSelection
         else
             SceneManager.Transition("scenes/menu")
         end
     end
     if k == "up" then
-        selection = (selection - 1) % #current.options
+        SettingsSelection = (SettingsSelection - 1) % #SettingsCurrent.options
     end
     if k == "down" then
-        selection = (selection + 1) % #current.options
+        SettingsSelection = (SettingsSelection + 1) % #SettingsCurrent.options
     end
-    if current.options[selection+1] then
-        local t = current.options[selection+1].type
-        local write = current.options[selection+1].write
-        local read = current.options[selection+1].read
+    if SettingsCurrent.options[SettingsSelection+1] then
+        local t = SettingsCurrent.options[SettingsSelection+1].type
+        local write = SettingsCurrent.options[SettingsSelection+1].write
+        local read = SettingsCurrent.options[SettingsSelection+1].read
 
         local enabled = true
-        if type(current.options[selection+1].enable) == "function" then
-            enabled = current.options[selection+1].enable()
+        if type(SettingsCurrent.options[SettingsSelection+1].enable) == "function" then
+            enabled = SettingsCurrent.options[SettingsSelection+1].enable()
         end
         if not enabled then
             return
@@ -429,13 +431,16 @@ function scene.keypressed(k)
         if k == "return" then
             -- menus, toggles, and keys use this
             if t == "menu" then
-                table.insert(stack, {current,selection})
-                current = current.options[selection+1]
-                selection = 0
-                view = selection
+                table.insert(SettingsStack, {SettingsCurrent,SettingsSelection})
+                SettingsCurrent = SettingsCurrent.options[SettingsSelection+1]
+                SettingsSelection = 0
+                SettingsView = SettingsSelection
             end
             if t == "key" then
-                rebinding = current.options[selection+1]
+                rebinding = SettingsCurrent.options[SettingsSelection+1]
+            end
+            if t == "action" then
+                SettingsCurrent.options[SettingsSelection+1].run()
             end
         end
         if k == "return" or k == "right" or k == "left" then
@@ -444,7 +449,7 @@ function scene.keypressed(k)
             end
         end
         if t == "number" then
-            local m,M,s = current.options[selection+1].min or 0, current.options[selection+1].max or 1, current.options[selection+1].step or 0.1
+            local m,M,s = SettingsCurrent.options[SettingsSelection+1].min or 0, SettingsCurrent.options[SettingsSelection+1].max or 1, SettingsCurrent.options[SettingsSelection+1].step or 0.1
             if love.keyboard.isDown("lshift") then
                 s = s * 2
             end
@@ -476,7 +481,18 @@ function scene.keypressed(k)
     end
 end
 
-function scene.load()
+function scene.load(args)
+    if not args.stay then
+        SettingsSelection = 0
+        SettingsView = 0
+        SettingsStack = {}
+        SettingsCurrent = root
+    else
+        SettingsSelection = SettingsSelection or 0
+        SettingsView = SettingsView or 0
+        SettingsStack = SettingsStack or {}
+        SettingsCurrent = SettingsCurrent or root
+    end
     for _,note in ipairs(SettingsChart) do
         note.destroyed = false
         note.heldFor = nil
@@ -514,9 +530,9 @@ function scene.update(dt)
     end
 
     local blend = math.pow(1/((5/4)^60), dt)
-    view = blend*(view-selection)+selection
-    if math.abs(selection-view) <= 8/128 then
-        view = selection
+    SettingsView = blend*(SettingsView-SettingsSelection)+SettingsSelection
+    if math.abs(SettingsSelection-SettingsView) <= 8/128 then
+        SettingsView = SettingsSelection
     end
 
     local lastBeatCount = beatCount
@@ -629,17 +645,19 @@ end
 local settingsText = love.graphics.newImage("images/settings.png")
 
 function scene.draw()
-    local menuX = current.x or 0
-    local y = view-2
-    for i,option in ipairs(current.options) do
+    local menuX = SettingsCurrent.x or 0
+    local y = SettingsView-2
+    for i,option in ipairs(SettingsCurrent.options) do
         local enabled = true
         if type(option.enable) == "function" then
             enabled = option.enable()
         end
-        love.graphics.setColor(TerminalColors[selection == i-1 and ColorID.WHITE or ColorID.DARK_GRAY])
+        love.graphics.setColor(TerminalColors[SettingsSelection == i-1 and ColorID.WHITE or ColorID.DARK_GRAY])
         local text = ""
-        if option.type ~= "menu" and option.type ~= "label" then
+        local value
+        if option.type ~= "menu" and option.type ~= "label" and option.type ~= "action" then
             text = option.read()
+            value = option.read()
             if option.type == "toggle" then
                 text = (text and "ON" or "OFF")
             end
@@ -660,17 +678,22 @@ function scene.draw()
         local itmY = (i-y)*80
         local itmX = (640-256)/2+menuX
         DrawBoxHalfWidth(itmX/8-1, itmY/16-1, 256/8, 3)
-        love.graphics.printf(option.label or "", itmX, itmY+(option.type == "menu" and 16 or 0), 256, "center")
+        love.graphics.printf(option.label or "", itmX, itmY+((option.type == "menu" or option.type == "action") and 16 or 0), 256, "center")
         if option.type == "color" then
             love.graphics.setColor(TerminalColors[tonumber(text) or 1])
             love.graphics.rectangle("fill", itmX+(256-16)/2, itmY+32, 16, 16)
         else
-            love.graphics.setColor(TerminalColors[selection == i-1 and ColorID.LIGHT_GRAY or ColorID.DARK_GRAY])
+            love.graphics.setColor(TerminalColors[SettingsSelection == i-1 and ColorID.LIGHT_GRAY or ColorID.DARK_GRAY])
             love.graphics.printf(tostring(text), itmX, itmY+32, 256, "center")
+        end
+        if option.type == "number" or option.type == "color" then
+            love.graphics.setColor(TerminalColors[SettingsSelection == i-1 and ColorID.WHITE or ColorID.DARK_GRAY])
+            if value > (option.min or -math.huge) then love.graphics.print("◁", itmX+28, itmY+16) end
+            if value < (option.max or math.huge) then love.graphics.print("▷", itmX+220, itmY+16) end
         end
     end
 
-    if current.showChart then
+    if SettingsCurrent.showChart then
         -- Chart
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
         DrawBoxHalfWidth(chartX, 7, 15, 16)

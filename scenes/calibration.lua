@@ -15,7 +15,7 @@ function scene.keypressed(k)
     end
     if k == "escape" then
         scene.source:stop()
-        SceneManager.Transition("scenes/menu")
+        SceneManager.Transition("scenes/settings", {stay=true})
         return
     end
     if k == "return" then
@@ -28,7 +28,7 @@ function scene.keypressed(k)
             scene.source:stop()
             SystemSettings.audio_offset = math.floor(scene.offset/scene.hits*1000)/1000
         else
-            SceneManager.Transition("scenes/menu")
+            SceneManager.Transition("scenes/settings", {stay=true})
         end
     elseif scene.going then
         local len = scene.source:getDuration("seconds")

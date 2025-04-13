@@ -6,9 +6,6 @@ local options = {
     {"SINGLEPLAYER", "MAIN GAME", love.graphics.newImage("images/menu/sp.png"), function()
         SceneManager.Transition("scenes/songdiskselect")
     end},
-    {"MULTIPLAYER", "PLAY WITH FRIENDS", love.graphics.newImage("images/menu/mp.png"), function()
-        SceneManager.Transition("scenes/mpmenu")
-    end},
     {"EDITOR", "CREATE CHARTS", love.graphics.newImage("images/menu/edit.png"), function()
         SceneManager.Transition("scenes/neditor")
     end},
@@ -17,9 +14,6 @@ local options = {
     end},
     {"SETTINGS", "CONFIGURE SYSTEM", love.graphics.newImage("images/menu/cfg.png"), function()
         SceneManager.Transition("scenes/settings")
-    end},
-    {"CALIBRATE", "TEMPORARY SOLUTION", love.graphics.newImage("images/menu/cfg.png"), function()
-        SceneManager.Transition("scenes/calibration")
     end},
     {"EXIT", "SHUTDOWN SYSTEM", love.graphics.newImage("images/menu/exit.png"), function()
         love.event.push("quit")
