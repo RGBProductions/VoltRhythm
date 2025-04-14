@@ -51,21 +51,21 @@ NoteRatings = {
     },
     {
         draw = function(ox,oy,center)
-            love.graphics.setColor(TerminalColors[ColorID.GOLD])
+            love.graphics.setColor(TerminalColors[ColorID.YELLOW])
             local txt = "SURGE"
             love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
         end,
-        sampleColor = function() return ColorID.GOLD end,
+        sampleColor = function() return ColorID.YELLOW end,
         min = 0.8,
         max = 0.9
     },
     {
         draw = function(ox,oy,center)
-            love.graphics.setColor(TerminalColors[ColorID.YELLOW])
+            love.graphics.setColor(TerminalColors[ColorID.GOLD])
             local txt = "AMP"
             love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
         end,
-        sampleColor = function() return ColorID.YELLOW end,
+        sampleColor = function() return ColorID.GOLD end,
         min = 0.6,
         max = 0.8
     },
