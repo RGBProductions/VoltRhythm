@@ -94,6 +94,8 @@ function scene.load(args)
     Combo = 0
     ComboBreaks = 0
     FullOvercharge = true
+    HideTitlebar = false
+    ShowReducedInfo = false
     ScrollSpeed = Save.Read("scroll_speed")
     ScrollSpeedMod = 1
     ScrollSpeedModTarget = 1
@@ -405,6 +407,7 @@ function scene.update(dt)
         return
     end
     scene.modifiers.speed = love.keyboard.isDown("lshift") and 16 or 1
+    EffectTimescale = scene.modifiers.speed
     -- Update chart time and scroll chart
     local lastTime = scene.chart.time
     scene.chart.time = scene.chart.time + dt*(scene.modifiers.speed or 1)
@@ -677,7 +680,7 @@ function scene.update(dt)
             DisplayShift[1] = DisplayShiftTarget[1]
             DisplayShift[2] = DisplayShiftTarget[2]
         else
-            local blend = math.pow(1/DisplayShiftSmoothing,dt)
+            local blend = math.pow(1/DisplayShiftSmoothing,dt*EffectTimescale)
             DisplayShift[1] = blend*(DisplayShift[1]-DisplayShiftTarget[1])+DisplayShiftTarget[1]
             DisplayShift[2] = blend*(DisplayShift[2]-DisplayShiftTarget[2])+DisplayShiftTarget[2]
         end
@@ -687,7 +690,7 @@ function scene.update(dt)
             DisplayScale[1] = DisplayScaleTarget[1]
             DisplayScale[2] = DisplayScaleTarget[2]
         else
-            local blend = math.pow(1/DisplayScaleSmoothing,dt)
+            local blend = math.pow(1/DisplayScaleSmoothing,dt*EffectTimescale)
             DisplayScale[1] = blend*(DisplayScale[1]-DisplayScaleTarget[1])+DisplayScaleTarget[1]
             DisplayScale[2] = blend*(DisplayScale[2]-DisplayScaleTarget[2])+DisplayScaleTarget[2]
         end
@@ -696,7 +699,7 @@ function scene.update(dt)
         if DisplayRotationSmoothing == 0 then
             DisplayRotation = DisplayRotationTarget
         else
-            local blend = math.pow(1/DisplayRotationSmoothing,dt)
+            local blend = math.pow(1/DisplayRotationSmoothing,dt*EffectTimescale)
             DisplayRotation = blend*(DisplayRotation-DisplayRotationTarget)+DisplayRotationTarget
         end
     end
@@ -705,7 +708,7 @@ function scene.update(dt)
             DisplayShear[1] = DisplayShearTarget[1]
             DisplayShear[2] = DisplayShearTarget[2]
         else
-            local blend = math.pow(1/DisplayShearSmoothing,dt)
+            local blend = math.pow(1/DisplayShearSmoothing,dt*EffectTimescale)
             DisplayShear[1] = blend*(DisplayShear[1]-DisplayShearTarget[1])+DisplayShearTarget[1]
             DisplayShear[2] = blend*(DisplayShear[2]-DisplayShearTarget[2])+DisplayShearTarget[2]
         end
@@ -714,7 +717,7 @@ function scene.update(dt)
         if ViewOffsetSmoothing == 0 then
             ViewOffset = ViewOffsetTarget
         else
-            local blend = math.pow(1/ViewOffsetSmoothing,dt)
+            local blend = math.pow(1/ViewOffsetSmoothing,dt*EffectTimescale)
             ViewOffset = blend*(ViewOffset-ViewOffsetTarget)+ViewOffsetTarget
         end
     end
@@ -722,7 +725,7 @@ function scene.update(dt)
         if ScrollSpeedModSmoothing == 0 then
             ScrollSpeedMod = ScrollSpeedModTarget
         else
-            local blend = math.pow(1/ScrollSpeedModSmoothing,dt)
+            local blend = math.pow(1/ScrollSpeedModSmoothing,dt*EffectTimescale)
             ScrollSpeedMod = blend*(ScrollSpeedMod-ScrollSpeedModTarget)+ScrollSpeedModTarget
         end
 
@@ -730,7 +733,7 @@ function scene.update(dt)
             if mod[3] == 0 then
                 mod[1] = mod[2]
             else
-                local blend = math.pow(1/mod[3],dt)
+                local blend = math.pow(1/mod[3],dt*EffectTimescale)
                 mod[1] = blend*(mod[1]-mod[2])+mod[2]
             end
         end
@@ -739,7 +742,7 @@ function scene.update(dt)
         if WavinessSmoothing == 0 then
             Waviness = WavinessTarget
         else
-            local blend = math.pow(1/WavinessSmoothing,dt)
+            local blend = math.pow(1/WavinessSmoothing,dt*EffectTimescale)
             Waviness = blend*(Waviness-WavinessTarget)+WavinessTarget
         end
     end
@@ -747,7 +750,7 @@ function scene.update(dt)
         if NoteBrightnessSmoothing == 0 then
             NoteBrightness = NoteBrightnessTarget
         else
-            local blend = math.pow(1/NoteBrightnessSmoothing,dt)
+            local blend = math.pow(1/NoteBrightnessSmoothing,dt*EffectTimescale)
             NoteBrightness = blend*(NoteBrightness-NoteBrightnessTarget)+NoteBrightnessTarget
         end
     end
@@ -755,7 +758,7 @@ function scene.update(dt)
         if BoardBrightnessSmoothing == 0 then
             BoardBrightness = BoardBrightnessTarget
         else
-            local blend = math.pow(1/BoardBrightnessSmoothing,dt)
+            local blend = math.pow(1/BoardBrightnessSmoothing,dt*EffectTimescale)
             BoardBrightness = blend*(BoardBrightness-BoardBrightnessTarget)+BoardBrightnessTarget
         end
     end
@@ -804,33 +807,38 @@ function scene.draw()
     DrawBoxHalfWidth((80-(scene.chart.lanes*4-1))/2 - 1, 4, scene.chart.lanes*4-1, 16)
     DrawBoxHalfWidth(14, 23, 50, 1)
 
-    -- Text Displays
-    local difficultyName = SongDifficulty[scene.masquerade or "easy"].name or scene.masquerade:upper()
-    local difficultyColor = SongDifficulty[scene.masquerade or "easy"].color or TerminalColors[ColorID.WHITE]
-    local level = scene.songData:getLevel(scene.difficulty)
-    local fullText = scene.songData.name .. (scene.chart.hideDifficulty and "" or (" - " .. SongDifficulty[scene.masquerade].name .. (level ~= nil and (" " .. level) or "")))
-    -- local fullText = scene.songData.name .. " - " .. difficultyName .. " " .. level
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     local r1,g1,b1,a1 = love.graphics.getColor()
     love.graphics.setColor(r1*BoardBrightness,g1*BoardBrightness,b1*BoardBrightness,a1)
-    love.graphics.print("┌─" .. ("─"):rep(utf8.len(fullText)) .. "─┐\n│ " .. (" "):rep(utf8.len(fullText)) .. " │\n└─" .. ("─"):rep(utf8.len(fullText)) .. "─┘", ((80-(utf8.len(fullText)+4))/2)*8, 1*16)
-    love.graphics.print(scene.songData.name .. (scene.chart.hideDifficulty and "" or " - "), ((80-(utf8.len(fullText)+4))/2 + 2)*8, 2*16)
-    -- love.graphics.setColor(difficultyColor)
-    -- love.graphics.print(difficultyName, ((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - "))*8, 2*16)
-    if not scene.chart.hideDifficulty then PrintDifficulty(((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - "))*8, 2*16, scene.masquerade or "easy", level, "left") end
-    love.graphics.setColor(r1*BoardBrightness,g1*BoardBrightness,b1*BoardBrightness,a1)
+    -- Text Displays
+    if not HideTitlebar then
+        local difficultyName = SongDifficulty[scene.masquerade or "easy"].name or scene.masquerade:upper()
+        local difficultyColor = SongDifficulty[scene.masquerade or "easy"].color or TerminalColors[ColorID.WHITE]
+        local level = scene.songData:getLevel(scene.difficulty)
+        local fullText = scene.songData.name .. (scene.chart.hideDifficulty and "" or (" - " .. SongDifficulty[scene.masquerade].name .. (level ~= nil and (" " .. level) or "")))
+        -- local fullText = scene.songData.name .. " - " .. difficultyName .. " " .. level
+        love.graphics.print("┌─" .. ("─"):rep(utf8.len(fullText)) .. "─┐\n│ " .. (" "):rep(utf8.len(fullText)) .. " │\n└─" .. ("─"):rep(utf8.len(fullText)) .. "─┘", ((80-(utf8.len(fullText)+4))/2)*8, 1*16)
+        love.graphics.print(scene.songData.name .. (scene.chart.hideDifficulty and "" or " - "), ((80-(utf8.len(fullText)+4))/2 + 2)*8, 2*16)
+        -- love.graphics.setColor(difficultyColor)
+        -- love.graphics.print(difficultyName, ((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - "))*8, 2*16)
+        if not scene.chart.hideDifficulty then PrintDifficulty(((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - "))*8, 2*16, scene.masquerade or "easy", level, "left") end
+        love.graphics.setColor(r1*BoardBrightness,g1*BoardBrightness,b1*BoardBrightness,a1)
+    end
     -- love.graphics.print(tostring(level), ((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - " .. difficultyName .. " "))*8, 2*16)
 
     if Autoplay then love.graphics.print("┬──────────┬\n│ ".. (Showcase and "SHOWCASE" or "AUTOPLAY") .. " │\n┴──────────┴", 34*8, 21*16) end
-    local acc = math.floor(Accuracy/math.max(Hits,1)*100)
 
-    love.graphics.print("┬──────────┬\n│ ACC " .. (" "):rep(3-#tostring(acc))..acc.. "% │\n└──────────┘", 34*8, 25*16)
-    love.graphics.print("┌──────────┐\n│  CHARGE  │\n├──────────┴", 14*8, 21*16)
-    local c = (Charge*100)/scene.chart.totalCharge
-    local chargeAmount = math.floor(c/100*ChargeYield)
-    if c ~= c then chargeAmount = 0 end
-    love.graphics.print(" ", 62*8, 22*16) -- Empty space
-    love.graphics.print("┌──────────┐\n│  " .. (" "):rep(5-#tostring(chargeAmount)) .. chargeAmount .."¤  │\n┴──────────┤", 54*8, 21*16)
+    if not ShowReducedInfo then
+        local acc = math.floor(Accuracy/math.max(Hits,1)*100)
+
+        love.graphics.print("┬──────────┬\n│ ACC " .. (" "):rep(3-#tostring(acc))..acc.. "% │\n└──────────┘", 34*8, 25*16)
+        love.graphics.print("┌──────────┐\n│  CHARGE  │\n├──────────┴", 14*8, 21*16)
+        local c = (Charge*100)/scene.chart.totalCharge
+        local chargeAmount = math.floor(c/100*ChargeYield)
+        if c ~= c then chargeAmount = 0 end
+        love.graphics.print(" ", 62*8, 22*16) -- Empty space
+        love.graphics.print("┌──────────┐\n│  " .. (" "):rep(5-#tostring(chargeAmount)) .. chargeAmount .."¤  │\n┴──────────┤", 54*8, 21*16)
+    end
     -- Gate
     if scene.chargeGate > 0 and scene.chargeGate < 1 then
         love.graphics.setColor(r1*BoardBrightness,g1*BoardBrightness,b1*BoardBrightness,a1)
@@ -976,6 +984,7 @@ function scene.draw()
 end
 
 function scene.unload()
+    EffectTimescale = 1
     Particles = {}
     ResetEffects()
 end

@@ -35,6 +35,8 @@ XChargeYield = 50
 TimingWindow = 0.2
 OverchargeWindow = 0.125
 
+EffectTimescale = 1
+
 NoteRatings = {
     {
         draw = function(ox,oy,center)
@@ -434,7 +436,7 @@ function love.update(dt)
         if CurveModifierSmoothing == 0 then
             CurveModifier = CurveModifierTarget
         else
-            local blend = math.pow(1/CurveModifierSmoothing,dt)
+            local blend = math.pow(1/CurveModifierSmoothing,dt*EffectTimescale)
             CurveModifier = blend*(CurveModifier-CurveModifierTarget)+CurveModifierTarget
         end
     end
@@ -442,7 +444,7 @@ function love.update(dt)
         if ChromaticModifierSmoothing == 0 then
             ChromaticModifier = ChromaticModifierTarget
         else
-            local blend = math.pow(1/ChromaticModifierSmoothing,dt)
+            local blend = math.pow(1/ChromaticModifierSmoothing,dt*EffectTimescale)
             ChromaticModifier = blend*(ChromaticModifier-ChromaticModifierTarget)+ChromaticModifierTarget
         end
     end
@@ -450,7 +452,7 @@ function love.update(dt)
         if TearingModifierSmoothing == 0 then
             TearingModifier = TearingModifierTarget
         else
-            local blend = math.pow(1/TearingModifierSmoothing,dt)
+            local blend = math.pow(1/TearingModifierSmoothing,dt*EffectTimescale)
             TearingModifier = blend*(TearingModifier-TearingModifierTarget)+TearingModifierTarget
         end
     end
@@ -458,12 +460,12 @@ function love.update(dt)
         if BloomStrengthModifierSmoothing == 0 then
             BloomStrengthModifier = BloomStrengthModifierTarget
         else
-            local blend = math.pow(1/BloomStrengthModifierSmoothing,dt)
+            local blend = math.pow(1/BloomStrengthModifierSmoothing,dt*EffectTimescale)
             BloomStrengthModifier = blend*(BloomStrengthModifier-BloomStrengthModifierTarget)+BloomStrengthModifierTarget
         end
     end
     
-    MissTime = math.max(0,MissTime - dt * 8)
+    MissTime = math.max(0,MissTime - dt * 8 * EffectTimescale)
     
     ScreenShader:send("curveStrength", SystemSettings.screen_effects.screen_curvature*CurveModifier)
     ScreenShader:send("scanlineStrength", 1-SystemSettings.screen_effects.scanlines)

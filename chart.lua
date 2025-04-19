@@ -512,6 +512,34 @@ EffectTypes = {
             ViewOffsetFreeze = not ViewOffsetFreeze
         end
     },
+    hide_titlebar = {
+        readable = "HIDE TITLEBAR",
+        apply = function(self)
+            HideTitlebar = self.data.hide
+        end,
+        editor = function(self,container)
+            local showIn = DialogToggle:new(0,0,container.width,16,"HIDE")
+            showIn.active = self.data.keep_line
+            table.insert(container.contents, showIn)
+            return function(effect)
+                effect.data.hide = showIn.active or effect.data.hide
+            end
+        end
+    },
+    show_reduced_info = {
+        readable = "REDUCED INFO",
+        apply = function(self)
+            ShowReducedInfo = self.data.reduced
+        end,
+        editor = function(self,container)
+            local showIn = DialogToggle:new(0,0,container.width,16,"REDUCE")
+            showIn.active = self.data.keep_line
+            table.insert(container.contents, showIn)
+            return function(effect)
+                effect.data.reduced = showIn.active or effect.data.reduced
+            end
+        end
+    },
     edit_note = {
         readable = "[ADV] EDIT NOTE",
         apply = function(self,chart)
@@ -1129,7 +1157,7 @@ function Chart:getBalance()
     return balance / #self.notes
 end
 
----@alias LyricComponent {type: "text"|"image"|"key", text?: string, key?: 0|1|2|3, path?: string, x?: number, y?: number, width?: number, height?: number}
+---@alias LyricComponent {type: "text"|"image"|"key", color?: integer, text?: string, key?: 0|1|2|3, path?: string, x?: number, y?: number, width?: number, height?: number}
 ---@alias Transformation {shift?: {[1]: number, [2]: number}, scale?: {[1]: number, [2]: number}, shear?: {[1]: number, [2]: number}, rotation?: number}
 ---@alias Lyric {startTime: number, endTime: number, components: LyricComponent[], transformation?: Transformation, followChart?: boolean, hideBox?: boolean, boxWidth?: number, boxHeight?: number}
 
@@ -1207,6 +1235,7 @@ function Lyrics:draw(time)
             DrawBoxHalfWidth(0, 0, lyric.boxWidth, lyric.boxHeight)
         end
         for _,component in ipairs(lyric.components) do
+            love.graphics.setColor(TerminalColors[component.color or ColorID.WHITE])
             if component.type == "text" then
                 local w = Font:getWidth(component.text)
                 love.graphics.printf(component.text, 16+component.x, 16+component.y, w, "center")
