@@ -1159,7 +1159,7 @@ end
 
 ---@alias LyricComponent {type: "text"|"image"|"key", color?: integer, text?: string, key?: 0|1|2|3, path?: string, x?: number, y?: number, width?: number, height?: number}
 ---@alias Transformation {shift?: {[1]: number, [2]: number}, scale?: {[1]: number, [2]: number}, shear?: {[1]: number, [2]: number}, rotation?: number}
----@alias Lyric {startTime: number, endTime: number, components: LyricComponent[], transformation?: Transformation, followChart?: boolean, hideBox?: boolean, boxWidth?: number, boxHeight?: number}
+---@alias Lyric {startTime: number, endTime: number, components: LyricComponent[], transformation?: Transformation, followChart?: boolean, hideBox?: boolean, boxWidth?: number, boxHeight?: number, boxColor?: integer}
 
 ---@class Lyrics
 ---@field script Lyric[]
@@ -1232,6 +1232,7 @@ function Lyrics:draw(time)
         love.graphics.translate(-(lyric.boxWidth+2)/2*8, -(lyric.boxHeight+2)/2*16)
 
         if not lyric.hideBox then
+            love.graphics.setColor(TerminalColors[lyric.boxColor or ColorID.WHITE])
             DrawBoxHalfWidth(0, 0, lyric.boxWidth, lyric.boxHeight)
         end
         for _,component in ipairs(lyric.components) do
