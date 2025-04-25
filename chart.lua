@@ -805,6 +805,7 @@ end
 ---@field levels {easy: number, medium: number, hard: number, extreme: number, overvolt: number}
 ---@field lyrics {easy: Lyrics?, medium: Lyrics?, hard: Lyrics?, extreme: Lyrics?, overvolt: Lyrics?, main: Lyrics?}
 ---@field songPreview {[1]: number, [2]: number}
+---@field coverAnimSpeed number?
 SongData = {}
 SongData.__index = SongData
 
@@ -813,7 +814,7 @@ SongData.__index = SongData
 function LoadSongData(path)
     local infoPath = path.."/info.json"
     if not love.filesystem.getInfo(infoPath) then return nil end
-    ---@type boolean, {name: string, author: string, bpm: number, song: string, songPreview: {[1]: number, [2]: number}, charts: {easy: chartdata?, medium: chartdata?, hard: chartdata?, extreme: chartdata?, overvolt: chartdata?}, coverArtist: string}
+    ---@type boolean, {name: string, author: string, bpm: number, song: string, songPreview: {[1]: number, [2]: number}, charts: {easy: chartdata?, medium: chartdata?, hard: chartdata?, extreme: chartdata?, overvolt: chartdata?}, coverArtist: string, coverAnimSpeed: number?}
     local loadedInfo,songInfo = pcall(json.decode, love.filesystem.read(infoPath))
     if not loadedInfo then return nil end
 
@@ -828,6 +829,8 @@ function LoadSongData(path)
 
     songData.song = songInfo.song
     songData.songPath = path.."/"..songInfo.song
+
+    songData.coverAnimSpeed = songInfo.coverAnimSpeed
 
     songData.charts = songInfo.charts
     songData.levels = {}
@@ -919,6 +922,7 @@ function SongData:save(path)
         song = self.song,
         songPreview = self.songPreview,
         charts = charts,
+        coverAnimSpeed = self.coverAnimSpeed
     }))
     self.path = path
 end

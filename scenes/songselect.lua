@@ -384,7 +384,10 @@ function scene.draw()
         if song == selected then
             love.graphics.setColor(1*b,1*b,1*b)
         end
-        love.graphics.draw(song.cover, x, 280, 0, s, s, 48, 48)
+        if song.songData.coverAnimSpeed then
+            song.cover = Assets.GetAnimatedCover(song.songData.path, song.songData.coverAnimSpeed)
+        end
+        love.graphics.draw(song.cover, x, 280, 0, s*96/song.cover:getWidth(), s*96/song.cover:getHeight(), song.cover:getWidth()/2, song.cover:getHeight()/2)
         love.graphics.setColor(1,1,1)
 
         if not song.isUnlocked then

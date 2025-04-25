@@ -1477,7 +1477,7 @@ function scene.draw()
         love.graphics.printf(scene.songData.name, 0, 400, 568, "right")
         PrintDifficulty(568, 416, scene.difficulty or "easy", level or 0, "right")
 
-        local cover = Assets.GetCover(scene.songData.path)
+        local cover = Assets.GetCover(scene.songData.path, scene.songData.coverAnimSpeed)
         love.graphics.draw(cover, 576, 400, 0, 32/cover:getWidth(), 32/cover:getHeight())
     end
 

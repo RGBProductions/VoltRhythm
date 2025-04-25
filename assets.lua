@@ -82,8 +82,31 @@ function Assets.GetDefaultCover(name)
 end
 
 local covers = {}
+local animatedCovers = {}
 
-function Assets.GetCover(path)
+function Assets.GetAnimatedCover(path,animSpeed)
+    if animatedCovers[path] then return animatedCovers[path][math.floor(love.timer.getTime() * animSpeed) % #animatedCovers[path] + 1] end
+    if not love.filesystem.getInfo(path.."/cover.png") then
+        return Assets.GetCover(path)
+    end
+    animatedCovers[path] = {}
+    local data = love.image.newImageData(path.."/cover.png")
+    local s = data:getHeight()
+    local sprites = math.floor(data:getWidth()/s)
+    for i = 1, sprites do
+        local img = love.image.newImageData(s,s)
+        img:paste(data, 0, 0, (i-1)*s, 0, s, s)
+        animatedCovers[path][i] = love.graphics.newImage(img)
+    end
+    print(math.floor(love.timer.getTime() * animSpeed) % #animatedCovers[path] + 1)
+    print(animatedCovers[path][math.floor(love.timer.getTime() * animSpeed) % #animatedCovers[path] + 1])
+    return animatedCovers[path][math.floor(love.timer.getTime() * animSpeed) % #animatedCovers[path] + 1]
+end
+
+function Assets.GetCover(path,animSpeed)
+    if animSpeed then
+        return Assets.GetAnimatedCover(path,animSpeed)
+    end
     if covers[path] then return covers[path] end
     if not love.filesystem.getInfo(path.."/cover.png") then
         local splitPath = path:split("/")

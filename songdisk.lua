@@ -175,6 +175,9 @@ function SongDisk.Load(disk)
                 cover = Assets.GetCover((disk.source or "songs") .. "/" .. song.song),
             }
             if section.songs[S].songData then
+                if section.songs[S].songData.coverAnimSpeed then
+                    section.songs[S].cover = Assets.GetAnimatedCover(section.songs[S].songData.path, section.songs[S].songData.coverAnimSpeed)
+                end
                 section.songs[S].preview = Assets.Preview(section.songs[S].songData.songPath, section.songs[S].songData.songPreview)
             end
             SongDisk.AllSongNames[song.song] = (section.songs[S].songData or {}).name or song.song

@@ -58,6 +58,9 @@ function scene.load(args)
 end
 
 function scene.update(dt)
+    if scene.songData.coverAnimSpeed then
+        scene.cover = Assets.GetAnimatedCover(scene.songData.path, scene.songData.coverAnimSpeed)
+    end
     local songName = scene.songData.name
     if #songName > 20 then
         if scene.textScrollTimer <= 0 then
@@ -126,7 +129,7 @@ function scene.draw()
     local level = scene.songData:getLevel(scene.difficulty or "easy")
     -- local combinedDifficultyString = difficulty .. " " .. level
     love.graphics.setColor(1,1,1)
-    love.graphics.draw(scene.cover, 272, 224)
+    love.graphics.draw(scene.cover, 272, 224, 0, 96/scene.cover:getWidth(), 96/scene.cover:getHeight())
     -- love.graphics.setColor(difficultyColor)
     -- love.graphics.print(difficulty, 232+8*(22-#combinedDifficultyString)/2, 192)
     PrintDifficulty(232+88, 192, scene.difficulty or "easy", level, "center")
