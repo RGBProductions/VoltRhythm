@@ -36,6 +36,7 @@ TimingWindow = 0.2
 OverchargeWindow = 0.125
 
 EffectTimescale = 1
+WindowFocused = true
 
 NoteRatings = {
     {
@@ -263,6 +264,7 @@ SystemSettings = {
     audio_offset = 0,
     enable_chart_effects = true,
     enable_screen_effects = true,
+    pause_on_lost_focus = true,
     screen_effects = {
         screen_curvature = 0.5,
         scanlines = 0.5,
@@ -550,6 +552,7 @@ function love.draw()
 end
 
 function love.focus(f)
+    WindowFocused = f
     SceneManager.Focus(f)
 end
 

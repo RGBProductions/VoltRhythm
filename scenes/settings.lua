@@ -51,6 +51,16 @@ local root = {
             type = "menu",
             options = {
                 {
+                    label = "PAUSE ON LOST FOCUS",
+                    type = "toggle",
+                    read = function()
+                        return SystemSettings.pause_on_lost_focus
+                    end,
+                    write = function(value)
+                        SystemSettings.pause_on_lost_focus = value
+                    end
+                },
+                {
                     label = "CHART FX",
                     type = "toggle",
                     read = function()

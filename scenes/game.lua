@@ -203,12 +203,6 @@ function Exit()
     end
 end
 
-function scene.focus(f)
-    if not f and PauseTimer <= 0 then
-        PauseGame()
-    end
-end
-
 function scene.keypressed(k)
     if k == "escape" then
         if Paused then
@@ -395,6 +389,9 @@ function HandleChartEffects()
 end
 
 function scene.update(dt)
+    if not WindowFocused and PauseTimer <= 0 and SystemSettings.pause_on_lost_focus then
+        PauseGame()
+    end
     if Paused or SceneManager.TransitioningIn() or SceneManager.TransitioningOut() then return end
     if PauseTimer > 0 then
         PauseTimer = PauseTimer - dt
