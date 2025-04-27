@@ -98,8 +98,6 @@ function Assets.GetAnimatedCover(path,animSpeed)
         img:paste(data, 0, 0, (i-1)*s, 0, s, s)
         animatedCovers[path][i] = love.graphics.newImage(img)
     end
-    print(math.floor(love.timer.getTime() * animSpeed) % #animatedCovers[path] + 1)
-    print(animatedCovers[path][math.floor(love.timer.getTime() * animSpeed) % #animatedCovers[path] + 1])
     return animatedCovers[path][math.floor(love.timer.getTime() * animSpeed) % #animatedCovers[path] + 1]
 end
 

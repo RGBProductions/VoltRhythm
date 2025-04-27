@@ -34,8 +34,9 @@ function GetRating(accValue)
     return #NoteRatings
 end
 
----@param args {songData: SongData, scorePrefix: string?, difficulty: string, modifiers: table, isEditor?: boolean, forced?: boolean, masquerade?: string, chargeGate?: number}
+---@param args {songData: SongData, scorePrefix: string?, difficulty: string, modifiers: table, isEditor?: boolean, forced?: boolean, masquerade?: string, chargeGate?: number, next?: {path: string, args?: table}}
 function scene.load(args)
+    scene.next = args.next
     ResetEffects()
     for _,hitSound in ipairs(hitSounds) do
         hitSound:setVolume(SystemSettings.sound_volume)
@@ -92,6 +93,7 @@ function scene.load(args)
     Hits = 0
     Accuracy = 0
     Combo = 0
+    MaxCombo = 0
     ComboBreaks = 0
     FullOvercharge = true
     HideTitlebar = false
@@ -298,6 +300,7 @@ function scene.keypressed(k)
                         end
                         HitAmounts[note.lane+1] = 1
                         Combo = Combo + 1
+                        MaxCombo = math.max(Combo, MaxCombo)
                         if LastRating >= #NoteRatings-1 then
                             Combo = 0
                             ComboBreaks = ComboBreaks + 1
@@ -508,6 +511,7 @@ function scene.update(dt)
                                 if (note.heldFor or 0) <= 0 then
                                     Charge = Charge + 1
                                     Combo = Combo + 1
+                                    MaxCombo = math.max(Combo, MaxCombo)
                                     LastRating = 1
                                     RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                                     local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
@@ -528,8 +532,10 @@ function scene.update(dt)
                                     end
                                 end
                                 if note.length <= 0 then
-                                    note.destroyed = true
-                                    i = i - 1
+                                    if not note.destroyed then
+                                        note.destroyed = true
+                                        i = i - 1
+                                    end
                                 else
                                     note.holding = true
                                 end
@@ -553,8 +559,10 @@ function scene.update(dt)
                             end
                             HitAmounts[note.lane+1] = 1
                             if note.heldFor >= note.length then
-                                note.destroyed = true
-                                i = i - 1
+                                if not note.destroyed then
+                                    note.destroyed = true
+                                    i = i - 1
+                                end
                             end
                         end
                         if Autoplay then
@@ -570,8 +578,10 @@ function scene.update(dt)
                     end
                     if not permitted then
                         if note.length <= 0 then
-                            note.destroyed = true
-                            i = i - 1
+                            if not note.destroyed then
+                                note.destroyed = true
+                                i = i - 1
+                            end
                             Hits = Hits + 1
                             MissTime = 1
                             Combo = 0
@@ -589,8 +599,10 @@ function scene.update(dt)
                                     RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                                     FullOvercharge = false
                                 end
-                                note.destroyed = true
-                                i = i - 1
+                                if not note.destroyed then
+                                    note.destroyed = true
+                                    i = i - 1
+                                end
                             else
                                 if not love.keyboard.isDown((Keybinds[scene.chart.lanes] or Keybinds[8])[note.lane+1]) and not Autoplay then
                                     if pos <= -0.25-(note.length-0.4) then
@@ -602,8 +614,10 @@ function scene.update(dt)
                                             RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                                             FullOvercharge = false
                                         end
-                                        note.destroyed = true
-                                        i = i - 1
+                                        if not note.destroyed then
+                                            note.destroyed = true
+                                            i = i - 1
+                                        end
                                     else
                                         MissTime = 1
                                         Combo = 0
@@ -639,7 +653,7 @@ function scene.update(dt)
                     Charge = 0
                     SceneManager.Transition("scenes/neditor", {songData = scene.songData, scorePrefix = scene.scorePrefix, difficulty = scene.difficulty})
                 else
-                    SceneManager.Transition("scenes/rating", {chart = scene.chart, songData = scene.songData, scorePrefix = scene.scorePrefix, difficulty = scene.difficulty, offset = HitOffset/RealHits, ratings = RatingCounts, accuracy = Accuracy/math.max(Hits,1), charge = (Charge*100)/scene.chart.totalCharge, chargeGate = scene.chargeGate, fullCombo = ComboBreaks == 0, fullOvercharge = FullOvercharge})
+                    SceneManager.Transition("scenes/rating", {chart = scene.chart, songData = scene.songData, scorePrefix = scene.scorePrefix, difficulty = scene.difficulty, offset = HitOffset/RealHits, ratings = RatingCounts, accuracy = Accuracy/math.max(Hits,1), charge = (Charge*100)/scene.chart.totalCharge, chargeGate = scene.chargeGate, fullCombo = ComboBreaks == 0, fullOvercharge = FullOvercharge, next = scene.next})
                 end
             end
         end

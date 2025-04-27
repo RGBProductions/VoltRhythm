@@ -487,6 +487,9 @@ EffectTypes = {
         apply = function(self)
             ViewOffsetTarget = self.data.offset
             ViewOffsetSmoothing = self.data.smoothing or 0
+            if (self.data.smoothing or 0) == 0 then
+                ViewOffset = ViewOffsetTarget
+            end
             ViewOffsetMoveLine = not self.data.keep_line
         end,
         editor = function(self,container)
