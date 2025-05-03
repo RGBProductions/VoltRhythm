@@ -5,11 +5,14 @@ local scene = {}
 ---@type love.Source|nil
 local preview = nil
 local previewTimes = {0,math.huge}
+local hiddenAmbience = love.audio.newSource("sounds/ominous_ambience.ogg", "stream")
+hiddenAmbience:setLooping(true)
 
 local function playSong(songInfo)
     local nextPreview
-    if songInfo.preview then
-        nextPreview = songInfo.preview
+    local p = songInfo.hide and hiddenAmbience or songInfo.preview
+    if p then
+        nextPreview = p
     end
     if preview == nextPreview then return end
     if preview then preview:stop() end
@@ -37,6 +40,7 @@ local difficulties = {
 }
 
 local lockImage = love.graphics.newImage("images/lock.png")
+local hiddenCover = love.graphics.newImage("images/hidden.png")
 
 local function testLock(lock)
     local global = lock.global or {}
@@ -74,7 +78,7 @@ local function testLock(lock)
             break
         end
     end
-    return requirements,meets
+    return requirements,meets,lock.hide and not meets
 end
 
 local function finishSelection()
@@ -181,7 +185,7 @@ function scene.load(args)
     SongSelectHasOvervolt = false
     for s,section in ipairs(scene.campaign.sections) do
         for S,song in ipairs(section.songs) do
-            song.unlockConditions, song.isUnlocked = testLock(song.lock or {})
+            song.unlockConditions, song.isUnlocked, song.hide = testLock(song.lock or {})
             if song.isUnlocked and (table.index(song.difficulties, "overvolt") or table.index(song.difficulties, "hidden")) then
                 SongSelectHasOvervolt = true
             end
@@ -351,32 +355,7 @@ function scene.draw()
                     love.graphics.setColor(color)
                     love.graphics.print("██", x-48*s+X*16*s, 280-48*s+Y*16*s, 0, s, s)
                 end
-                -- do
-                --     local color = TerminalColors[OverchargeColors[(math.floor(love.timer.getTime()*6 + Y)%#OverchargeColors)+1]]
-                --     love.graphics.setColor(color)
-                --     love.graphics.print("██", x-48*s+-0.5*16*s, 280-48*s+Y*16*s, 0, s, s)
-                -- end
-                -- do
-                --     local color = TerminalColors[OverchargeColors[(math.floor(love.timer.getTime()*6 - Y)%#OverchargeColors)+1]]
-                --     love.graphics.setColor(color)
-                --     love.graphics.print("██", x-48*s+5.5*16*s, 280-48*s+Y*16*s, 0, s, s)
-                -- end
-                -- end
             end
-            -- for X = 0.5, 4.5 do
-            --     -- for X = -0.5, 5.5 do
-            --     do
-            --         local color = TerminalColors[OverchargeColors[(math.floor(love.timer.getTime()*6 - X)%#OverchargeColors)+1]]
-            --         love.graphics.setColor(color)
-            --         love.graphics.print("██", x-48*s+X*16*s, 280-48*s+-0.5*16*s, 0, s, s)
-            --     end
-            --     do
-            --         local color = TerminalColors[OverchargeColors[(math.floor(love.timer.getTime()*6 + X)%#OverchargeColors)+1]]
-            --         love.graphics.setColor(color)
-            --         love.graphics.print("██", x-48*s+X*16*s, 280-48*s+5.5*16*s, 0, s, s)
-            --     end
-            --     -- end
-            -- end
         end
 
         local b = song.isUnlocked and 1 or 0.25
@@ -384,10 +363,10 @@ function scene.draw()
         if song == selected then
             love.graphics.setColor(1*b,1*b,1*b)
         end
-        if song.songData.coverAnimSpeed then
+        if (song.songData or {}).coverAnimSpeed then
             song.cover = Assets.GetAnimatedCover(song.songData.path, song.songData.coverAnimSpeed)
         end
-        love.graphics.draw(song.cover, x, 280, 0, s*96/song.cover:getWidth(), s*96/song.cover:getHeight(), song.cover:getWidth()/2, song.cover:getHeight()/2)
+        love.graphics.draw(song.hide and hiddenCover or song.cover, x, 280, 0, s*96/song.cover:getWidth(), s*96/song.cover:getHeight(), song.cover:getWidth()/2, song.cover:getHeight()/2)
         love.graphics.setColor(1,1,1)
 
         if not song.isUnlocked then
@@ -502,10 +481,10 @@ function scene.draw()
 
     DrawBoxHalfWidth(2, 21, 74, 2)
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    local songName = (selected.songData or {}).name or "Unrecognized Song"
-    love.graphics.print(songName, (640-utf8.len(songName)*8)/2, 352)
+    local songName = selected.hide and "- NO DATA -" or ((selected.songData or {}).name or "Unrecognized Song")
+    love.graphics.print(songName, (640-utf8.len(songName)*8)/2, 352 + (selected.hide and 8 or 0))
     love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
-    love.graphics.printf((selected.songData or {}).author or "???", 0, 368, 640, "center")
+    if not selected.hide then love.graphics.printf((selected.songData or {}).author or "???", 0, 368, 640, "center") end
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     local charter = "???"
     if selected.songData then
@@ -545,7 +524,12 @@ function scene.draw()
     -- love.graphics.printf("Press F8 to create a new song in the editor", 32, 400, 576, "left")
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     love.graphics.printf("ESC - Exit", 32, 400, 576, "left")
+    local canPlay = selected.isUnlocked and (selected.songData and selected.songData:loadChart(difficulties[difficulty]) ~= nil)
+    if not canPlay then
+        love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
+    end
     love.graphics.printf("ENTER - Play", 32, 400, 576, "right")
+    love.graphics.setColor(TerminalColors[ColorID.WHITE])
     if SongSelectHasOvervolt then
         if SongSelectOvervoltMode then
             love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
