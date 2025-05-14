@@ -8,6 +8,20 @@
                 "text": "Welcome to VoltRhythm!\n\nThis tutorial song will cover\nall of the features of the\nVOLTRPPGS and prepare you for\neffective use of the machine.",
                 "x": 0,
                 "y": 0
+            },
+            {
+                "type": "text",
+                "color": 15,
+                "text": "VoltRhythm",
+                "x": 116,
+                "y": 0
+            },
+            {
+                "type": "text",
+                "color": 15,
+                "text": "VOLTRPPGS",
+                "x": 0,
+                "y": 64
             }
         ]
     },
@@ -80,18 +94,33 @@
         }
     },
     {
-        "startTime": 24,
-        "endTime": 32.538,
+        "startTime": 8.768,
+        "endTime": 21.692312925170068,
         "components": [
             {
                 "type": "text",
-                "text": "You get CHARGE for\nevery note you hit!",
+                "text": "Notes will fall from the\ntop of this board.",
                 "x": 0,
                 "y": 0
             }
         ],
         "transformation": {
-            "shift": [-192, 64]
+            "shift": [-188, -96]
+        }
+    },
+    {
+        "startTime": 8.768,
+        "endTime": 21.692312925170068,
+        "components": [
+            {
+                "type": "text",
+                "text": "Press the correct key\nwhen a note hits the\nline!",
+                "x": 0,
+                "y": 0
+            }
+        ],
+        "transformation": {
+            "shift": [180, 56]
         }
     },
     {
@@ -100,13 +129,181 @@
         "components": [
             {
                 "type": "text",
-                "text": "something about combo here",
+                "text": "You earn CHARGE for\nevery note you hit!",
+                "x": 0,
+                "y": 0
+            },
+            {
+                "type": "text",
+                "color": 15,
+                "text": "CHARGE",
+                "x": 72,
+                "y": 0
+            }
+        ],
+        "transformation": {
+            "shift": [-176, 64]
+        }
+    },
+    {
+        "startTime": 30,
+        "endTime": 43.84614512471655,
+        "components": [
+            {
+                "type": "text",
+                "text": "Some notes have a trail.\nWhen these notes reach\nthe line, continue\nholding the key until\nthe end of the trail.",
+                "x": 0,
+                "y": 0
+            },
+            {
+                "type": "text",
+                "text": "continue",
+                "color": 15,
+                "x": 104,
+                "y": 32
+            },
+            {
+                "type": "text",
+                "text": "holding the key",
+                "color": 15,
+                "x": 12,
+                "y": 48
+            }
+        ],
+        "transformation": {
+            "shift": [-188, 0]
+        }
+    },
+    {
+        "startTime": 30,
+        "endTime": 43.84614512471655,
+        "components": [
+            {
+                "type": "text",
+                "text": "There's no release\ntiming, so release it\nany time after the end\nof the trail!",
+                "x": 0,
+                "y": 0
+            },
+            {
+                "type": "text",
+                "text": "after the end",
+                "color": 13,
+                "x": 72,
+                "y": 32
+            }
+        ],
+        "transformation": {
+            "shift": [180, 0]
+        }
+    },
+    {
+        "startTime": 52.154,
+        "endTime": 66,
+        "components": [
+            {
+                "type": "text",
+                "text": "Some notes look like an\narrow. These will swap\nlanes part-way down the\nboard.",
+                "x": 0,
+                "y": 0
+            },
+            {
+                "type": "text",
+                "text": "swap",
+                "color": 15,
+                "x": 148,
+                "y": 16
+            },
+            {
+                "type": "text",
+                "text": "lanes",
+                "color": 15,
+                "x": 0,
+                "y": 32
+            }
+        ],
+        "transformation": {
+            "shift": [-188, 0]
+        }
+    },
+    {
+        "startTime": 52.154,
+        "endTime": 66,
+        "components": [
+            {
+                "type": "text",
+                "text": "Simply press the key\nwhen they reach the\nline, just like the\nregular notes!",
                 "x": 0,
                 "y": 0
             }
         ],
         "transformation": {
-            "shift": [192, -112]
+            "shift": [172, 0]
+        }
+    },
+    {
+        "startTime": 74.308,
+        "endTime": 88.154,
+        "components": [
+            {
+                "type": "text",
+                "text": "Some notes cover more\nthan one lane. These\nnotes require all lanes\nthey cover to be hit\nsimultaneously.",
+                "x": 0,
+                "y": 0
+            },
+            {
+                "type": "text",
+                "text": "all lanes",
+                "color": 15,
+                "x": 112,
+                "y": 32
+            },
+            {
+                "type": "text",
+                "text": "they cover",
+                "color": 15,
+                "x": 12,
+                "y": 48
+            }
+        ],
+        "transformation": {
+            "shift": [-188, 0]
+        }
+    },
+    {
+        "startTime": 74.308,
+        "endTime": 88.154,
+        "components": [
+            {
+                "type": "text",
+                "text": "If you do not hit some\nof the lanes, you will\nmiss the entire note!!",
+                "x": 0,
+                "y": 0
+            },
+            {
+                "type": "text",
+                "text": "miss the entire note!!",
+                "color": 13,
+                "x": 0,
+                "y": 32
+            }
+        ],
+        "transformation": {
+            "shift": [184, 0]
+        }
+    },
+    {
+        "startTime": 96,
+        "endTime": 108.923,
+        "components": [
+            {
+                "type": "text",
+                "text": "You should now have a basic\nunderstanding of the system.\n\nTo conclude the tutorial, we'll\ngive you one final section\nwith all note types combined!",
+                "x": 0,
+                "y": 0
+            }
+        ],
+        "transformation": {
+            "shift": [0, 0]
         }
     }
 ]

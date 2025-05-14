@@ -1,1 +1,1 @@
-{"name":"Tutorial","charts":{"easy":{"charter":"RGB","level":1,"path":"easy.json"},"overvolt":{"charter":"nicholas","level":30,"path":"overvolt.json"}},"song":"tutorial.ogg","author":"RGB","coverArtist":"RGB","songPreview":[7.385,14.769],"bpm":130}
+{"charts":{"easy":{"level":1,"path":"easy.json","charter":"RGB"},"overvolt":{"level":30,"path":"overvolt.json","charter":"nicholas"}},"author":"RGB","bpm":130,"coverArtist":"RGB","songPreview":[7.385,14.769],"song":"tutorial.ogg","name":"Tutorial"}
