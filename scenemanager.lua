@@ -120,6 +120,12 @@ function SceneManager.KeyPressed(k)
     end
 end
 
+function SceneManager.KeyReleased(k)
+    if SceneManager.ActiveScene.keyreleased ~= nil then
+        SceneManager.ActiveScene.keyreleased(k)
+    end
+end
+
 function SceneManager.TextInput(t)
     if SceneManager.ActiveScene.textinput ~= nil then
         SceneManager.ActiveScene.textinput(t)

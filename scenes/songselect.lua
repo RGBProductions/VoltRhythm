@@ -8,6 +8,8 @@ local previewTimes = {0,math.huge}
 local hiddenAmbience = love.audio.newSource("sounds/ominous_ambience.ogg", "stream")
 hiddenAmbience:setLooping(true)
 
+local askToDelete = nil
+
 local function playSong(songInfo)
     local nextPreview
     local p = songInfo.hide and hiddenAmbience or songInfo.preview
@@ -198,9 +200,27 @@ end
 
 function scene.keypressed(k)
     if SceneManager.TransitioningIn() or SceneManager.TransitioningOut() then return end
+    if askToDelete then
+        if k == "return" then
+            Save.Write("songs." .. askToDelete, nil)
+            askToDelete = nil
+        end
+        if k == "escape" then
+            askToDelete = nil
+        end
+        return
+    end
+    if k == "backspace" then
+        local selected = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
+        local difficulty = SongSelectOvervoltMode and (table.index(difficulties, selected.difficulties[1]) or 5) or SongSelectDifficulty
+        local savedRating = Save.Read("songs."..(selected.scorePrefix or "")..selected.name.."."..difficulties[difficulty])
+        if savedRating and selected.isUnlocked then
+            askToDelete = (selected.scorePrefix or "")..selected.name
+        end
+    end
     if k == "tab" then
         local selected = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
-        local difficulty = SongSelectOvervoltMode and (table.index(difficulties, scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].difficulties[1]) or 5) or SongSelectDifficulty
+        local difficulty = SongSelectOvervoltMode and (table.index(difficulties, selected.difficulties[1]) or 5) or SongSelectDifficulty
         local savedRating = Save.Read("songs."..(selected.scorePrefix or "")..selected.name.."."..difficulties[difficulty])
         if savedRating and selected.isUnlocked then
             scene.showMore = not scene.showMore
@@ -550,6 +570,19 @@ function scene.draw()
         for i,song in ipairs(section.songs) do
             drawSong(song)
         end
+    end
+
+    if askToDelete then
+        local w = math.max(32, utf8.len(songName)+2)
+        local x = 40-w/2-1
+        love.graphics.setColor(0,0,0,0.75)
+        love.graphics.rectangle("fill", 0, 0, 640, 480)
+        love.graphics.setColor(1,1,1)
+        DrawBoxHalfWidth(x, 10, w, 8)
+        love.graphics.printf("DELETING SCORE FOR SONG:\n" .. songName, 0, 176, 640, "center")
+        love.graphics.printf("ARE YOU SURE?", 0, 240, 640, "center")
+        love.graphics.printf("ESC - No", x*8+16, 288, w*8-16, "left")
+        love.graphics.printf("ENTER - Yes", x*8+16, 288, w*8-16, "right")
     end
 end
 

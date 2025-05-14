@@ -10,11 +10,12 @@ local placementModes = {
     swap = 2,
     merge = 3,
     mine = 4,
-    bpm = 5,
-    effect = 6
+    warning = 5,
+    bpm = 6,
+    effect = 7
 }
 
-local notes = {"normal", "swap", "merge", "mine"}
+local notes = {"normal", "swap", "merge", "mine", "warning"}
 
 local function getDirectorySeparator()
 	if love.system.getOS() == "Windows" then
@@ -713,6 +714,16 @@ local editorMenu = {
                 end
             },
             {
+                id = "note.warning",
+                type = "action",
+                label = "WARNING",
+                onclick = function()
+                    SetCursor("⚠", 4, 8)
+                    scene.placementMode = placementModes.warning
+                    return true
+                end
+            },
+            {
                 id = "note.bpm",
                 type = "action",
                 label = "BPM CHANGE",
@@ -981,6 +992,10 @@ function scene.update(dt)
                 local a,b = math.min(scene.placement.start[2],scene.placement.stop[2]),math.max(scene.placement.start[2],scene.placement.stop[2])
                 note.length = math.max(0,b-a)
                 note.time = a
+                if noteType == "warning" then
+                    note.length = math.max(0,-(a-b))
+                    note.time = b
+                end
             end
         end
 
@@ -1368,7 +1383,7 @@ function scene.draw()
         end
 
         if scene.lastNoteLane >= 0 and scene.lastNoteLane < 4 then
-            local t = (scene.placementMode == placementModes.normal and NoteTypes.normal) or (scene.placementMode == placementModes.swap and NoteTypes.swap) or (scene.placementMode == placementModes.merge and NoteTypes.merge) or (scene.placementMode == placementModes.mine and NoteTypes.mine)
+            local t = (scene.placementMode == placementModes.normal and NoteTypes.normal) or (scene.placementMode == placementModes.swap and NoteTypes.swap) or (scene.placementMode == placementModes.merge and NoteTypes.merge) or (scene.placementMode == placementModes.mine and NoteTypes.mine) or (scene.placementMode == placementModes.warning and NoteTypes.warning)
             if t then
                 love.graphics.setFont(NoteFont)
                 love.graphics.setColor(1,1,1)
@@ -1700,7 +1715,12 @@ function scene.mousepressed(x,y,b)
                 A,B = math.min(note.lane, note.lane-(note.extra.dir or 0)),math.max(note.lane, note.lane-(note.extra.dir or 0))
             end
 
-            local C,D = note.time-0.05,note.time+note.length+0.05
+            local length = (note.length or 0)
+            if note.type == "warning" then
+                length = -length
+            end
+
+            local C,D = math.min(note.time, note.time+length)-0.05, math.max(note.time, note.time+length)+0.05
             if (scene.lastNoteLane >= A and scene.lastNoteLane <= B) and (scene.lastNoteTime >= C and scene.lastNoteTime <= D) then
                 table.remove(scene.chart.notes, i)
                 for _=1,8 do

@@ -6,6 +6,8 @@ function utf8.sub(txt, i, j)
     return txt:sub(o1,o2)
 end
 
+---@alias Note {time: number, lane: number, length: number, type: string, extra: table, heldFor: number?, visualLane?: number, holding: boolean?, holdTicks: integer, destroyed: boolean}
+
 local useSteps = false
 
 Waviness = 0
@@ -14,7 +16,7 @@ WavinessSmoothing = 0
 
 NoteTypes = {
     normal = {
-        ---@param self {time: number, lane: number, length: number, type: string, extra: table, heldFor: number?, visualLane?: number}
+        ---@param self Note
         draw = function (self,time,speed,chartPos,chartHeight,chartX,isEditor)
             chartX = chartX + AnaglyphSide/8*0.5
             local mainpos = self.time-time
@@ -65,14 +67,14 @@ NoteTypes = {
             return false
         end,
         getDifficulty = function(self)
-            return 1 + (self.length or 0) * 0.25
+            return 1 + (self.length or 0) * 0.125
         end,
         calculateCharge = function(self)
             return 1 + (self.length or 0)
         end
     },
     swap = {
-        ---@param self {time: number, lane: number, length: number, type: string, extra: table, heldFor: number?, visualLane?: number}
+        ---@param self Note
         draw = function (self,time,speed,chartPos,chartHeight,chartX,isEditor)
             local mainpos = self.time-time
             local pos = mainpos
@@ -123,14 +125,14 @@ NoteTypes = {
             return false
         end,
         getDifficulty = function(self)
-            return 1.5 + (self.length or 0) * 0.25
+            return 1.5 + (self.length or 0) * 0.125
         end,
         calculateCharge = function(self)
             return 1 + (self.length or 0)
         end
     },
     merge = {
-        ---@param self {time: number, lane: number, length: number, type: string, extra: table, heldFor: number?, visualLane?: number}
+        ---@param self Note
         draw = function (self,time,speed,chartPos,chartHeight,chartX,isEditor)
             -- ▧▥▨ ◐◑
             local mainpos = self.time-time
@@ -213,7 +215,7 @@ NoteTypes = {
         end
     },
     mine = {
-        ---@param self {time: number, lane: number, length: number, type: string, extra: table, heldFor: number?, visualLane?: number}
+        ---@param self Note
         draw = function (self,time,speed,chartPos,chartHeight,chartX,isEditor)
             chartX = chartX + AnaglyphSide/8*0.5
             local mainpos = self.time-time
@@ -280,6 +282,71 @@ NoteTypes = {
         end,
         calculateCharge = function(self)
             return 1
+        end,
+        missImmediately = true,
+        autoplayIgnores = true
+    },
+    warning = {
+        ---@param self Note
+        draw = function (self,time,speed,chartPos,chartHeight,chartX,isEditor)
+            chartX = chartX + AnaglyphSide/8*0.5
+            local mainpos = self.time-time
+            local pos = mainpos
+            chartHeight = chartHeight or 15
+            chartPos = chartPos or 5
+            if not isEditor then pos = pos+math.sin(pos*8)*Waviness/speed end
+            local len = ((self.length or 0) == 0 and 1 or self.length)
+            local drawPos = chartPos+chartHeight-pos*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local drawPos2 = chartPos+chartHeight-(pos-len)*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local visualLane = self.visualLane or self.lane
+            if useSteps then drawPos = math.floor(drawPos) end
+
+            local r,g,b,a = love.graphics.getColor()
+
+            local t = self.time-time
+            if isEditor then
+                love.graphics.setColor(TerminalColors[ColorID.LIGHT_RED])
+                local R,G,B,A = love.graphics.getColor()
+                love.graphics.setColor(r*R,g*G,b*B,a*A)
+
+                local cells = self.length * math.abs(speed)
+                local f = love.graphics.getFont()
+                for i = 0.5, cells do
+                    local barPos = mainpos-i/speed
+                    local extPos = chartPos+chartHeight-barPos*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+                    if extPos >= chartPos and extPos-((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1) < chartPos+(chartHeight-1) then
+                        love.graphics.print("┊", (chartX+visualLane*4)*8+4, math.floor(extPos*16-8-0), 0, 1, 1, NoteFont:getWidth("║")/2)
+                    end
+                end
+
+                if drawPos >= chartPos and drawPos < chartPos+(chartHeight+1) and (self.heldFor or 0) <= 0 then
+                    love.graphics.print("⚠", (chartX+visualLane*4)*8+4, math.floor(drawPos*16-8), 0, 1, 1, NoteFont:getWidth("○")/2)
+                end
+
+                if drawPos2 >= chartPos and drawPos2 < chartPos+(chartHeight+1) and (self.heldFor or 0) <= 0 then
+                    love.graphics.print("⚠", (chartX+visualLane*4)*8+4, math.floor(drawPos2*16-8), 0, 1, 1, NoteFont:getWidth("○")/2)
+                end
+            elseif t < len then
+                love.graphics.setColor(TerminalColors[t % 0.25 <= 0.125 and ColorID.RED or ColorID.LIGHT_RED])
+                local R,G,B,A = love.graphics.getColor()
+                love.graphics.setColor(r*R,g*G,b*B,a*A)
+                love.graphics.print("⚠", (chartX+visualLane*4)*8+4, math.floor((chartPos+chartHeight-1)*16-8-(isEditor and 0 or 4)), 0, 1, 1, NoteFont:getWidth("○")/2)
+            end
+            
+            love.graphics.setColor(r,g,b,a)
+        end,
+        hit = function(self,time,lane)
+            return false
+        end,
+        miss = function(self)
+            self.destroyed = true
+            return true
+        end,
+        getDifficulty = function(self)
+            return 0
+        end,
+        calculateCharge = function(self)
+            return 0
         end,
         missImmediately = true,
         autoplayIgnores = true
@@ -699,6 +766,7 @@ function Note:new(time,lane,length,noteType,extra)
     note.length = length
     note.type = noteType
     note.extra = extra
+    note.holding = false
 
     return note
 end
@@ -1027,8 +1095,8 @@ function Chart:resetAllNotes()
     for _,note in ipairs(self.notes) do
         note.destroyed = false
         note.heldFor = nil
-        note.holding = nil
-        if NoteTypes[note.type].reset then
+        note.holding = false
+        if (NoteTypes[note.type] or {}).reset then
             NoteTypes[note.type].reset(note)
         end
     end

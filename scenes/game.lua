@@ -259,56 +259,58 @@ function scene.keypressed(k)
                     break
                 end
                 local t = NoteTypes[note.type]
-                if t.hit then
-                    local hit,accuracy,marked = t.hit(note, scene.chart.time, laneIndex-1)
-                    if hit then
-                        local hitSound = hitSounds[lastHitSound+1]
-                        lastHitSound = (lastHitSound + 1) % #hitSounds
-                        if hitSound and Save.Read("enable_hit_sounds") then
-                            hitSound:stop()
-                            hitSound:play()
-                        end
-                        local accValue = (1-accuracy)
-                        LastRating = GetRating(accValue)
-                        RatingCounts[LastRating] = RatingCounts[LastRating] + 1
-                        if LastRating ~= 1 then FullOvercharge = false end
-                        if LastRating == 1 then
-                            accuracy = 0 -- 100%
-                            local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
-                            for _=1, 4 do
-                                local drawPos = (5)+(15)+(ViewOffset+ViewOffsetFreeze)*(ScrollSpeed*ScrollSpeedMod)
-                                table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
+                if t then
+                    if t.hit then
+                        local hit,accuracy,marked = t.hit(note, scene.chart.time, laneIndex-1)
+                        if hit then
+                            local hitSound = hitSounds[lastHitSound+1]
+                            lastHitSound = (lastHitSound + 1) % #hitSounds
+                            if hitSound and Save.Read("enable_hit_sounds") then
+                                hitSound:stop()
+                                hitSound:play()
                             end
+                            local accValue = (1-accuracy)
+                            LastRating = GetRating(accValue)
+                            RatingCounts[LastRating] = RatingCounts[LastRating] + 1
+                            if LastRating ~= 1 then FullOvercharge = false end
+                            if LastRating == 1 then
+                                accuracy = 0 -- 100%
+                                local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
+                                for _=1, 4 do
+                                    local drawPos = (5)+(15)+(ViewOffset+ViewOffsetFreeze)*(ScrollSpeed*ScrollSpeedMod)
+                                    table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
+                                end
+                            end
+                            Charge = Charge + (1-accuracy)
+                            Hits = Hits + 1
+                            LastOffset = (note.time-scene.chart.time)
+                            HitOffset = HitOffset + LastOffset
+                            RealHits = RealHits + 1
+                            Accuracy = Accuracy + (1-accuracy)
+                            local c = math.floor(Charge/scene.chart.totalCharge*100/2-1)
+                            local x = (16+c)*8
+                            RemoveParticlesByID("chargeup")
+                            for _=1,8 do
+                                table.insert(Particles, {id = "chargeup", x = x, y = 24*16+8, vx = love.math.random()*32, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = (c < 80 and ColorID.YELLOW) or (OverchargeColors[love.math.random(1,#OverchargeColors)]), char = "¤"})
+                            end
+                            if note.length <= 0 then
+                                note.destroyed = true
+                            else
+                                note.holding = true
+                                note.heldFor = 0
+                            end
+                            HitAmounts[note.lane+1] = 1
+                            Combo = Combo + 1
+                            MaxCombo = math.max(Combo, MaxCombo)
+                            if LastRating >= #NoteRatings-1 then
+                                Combo = 0
+                                ComboBreaks = ComboBreaks + 1
+                            end
+                            break
                         end
-                        Charge = Charge + (1-accuracy)
-                        Hits = Hits + 1
-                        LastOffset = (note.time-scene.chart.time)
-                        HitOffset = HitOffset + LastOffset
-                        RealHits = RealHits + 1
-                        Accuracy = Accuracy + (1-accuracy)
-                        local c = math.floor(Charge/scene.chart.totalCharge*100/2-1)
-                        local x = (16+c)*8
-                        RemoveParticlesByID("chargeup")
-                        for _=1,8 do
-                            table.insert(Particles, {id = "chargeup", x = x, y = 24*16+8, vx = love.math.random()*32, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = (c < 80 and ColorID.YELLOW) or (OverchargeColors[love.math.random(1,#OverchargeColors)]), char = "¤"})
+                        if marked then
+                            break
                         end
-                        if note.length <= 0 then
-                            note.destroyed = true
-                        else
-                            note.holding = true
-                            note.heldFor = 0
-                        end
-                        HitAmounts[note.lane+1] = 1
-                        Combo = Combo + 1
-                        MaxCombo = math.max(Combo, MaxCombo)
-                        if LastRating >= #NoteRatings-1 then
-                            Combo = 0
-                            ComboBreaks = ComboBreaks + 1
-                        end
-                        break
-                    end
-                    if marked then
-                        break
                     end
                 end
                 -- local pos = note.time-scene.chart.time
@@ -571,6 +573,7 @@ function scene.update(dt)
                     end
                 end
                 local t = NoteTypes[note.type]
+                if not t then goto continue end
                 if pos <= (t.missImmediately and 0 or -0.25) then
                     local permitted = false
                     if t.miss then
