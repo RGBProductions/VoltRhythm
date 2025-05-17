@@ -876,7 +876,7 @@ function scene.draw()
     end
 
     -- Bar fill
-    c = math.floor((Charge*100)/scene.chart.totalCharge)
+    local c = math.floor((Charge*100)/scene.chart.totalCharge)
     love.graphics.setColor(TerminalColors[(c < (scene.chargeGate/2*100) and 5) or (c < (scene.chargeGate*100) and 15) or 11])
     love.graphics.print(("█"):rep(math.min(41,c/2)), 15*8, 24*16)
     -- OVERCHARGE

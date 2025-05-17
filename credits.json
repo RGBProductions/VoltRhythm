@@ -1,37 +1,58 @@
-{
-    "RGB Productions": [
-        "Game Lead",
-        "Programming",
-        "Graphics",
-        "Charting",
-        "Cover Art",
-        "Music - Tutorial",
-        "Music - Fracturing Circuit"
-    ],
-    "MichaelEpicA": [
-        "Programming"
-    ],
-    "TotallyNotFrisk": [
-        "UI Design"
-    ],
-    "lunasquidd": [
-        "Cover Art"
-    ],
-    "nicholas": [
-        "Charting"
-    ],
-    "AZALI": [
-        "Music - unable to rea� save fiĦe",
-        "Music - DIVINITY DISSONANT",
-        "Music - tiny aether rat (battle)",
-        "Cover Art"
-    ],
-    "Return to Nothing": [
-        "Music - I'm a rhythm gamers worst nightmare"
-    ],
-    "Playtesting": [
-        "nicholas",
-        "TotallyNotFrisk",
-        "MichaelEpicA"
-    ]
-}
+[
+    {
+        "name": "RGB Productions",
+        "url": "https://rgbproductions.dev",
+        "items": [
+            "Game Lead",
+            "Programming",
+            "Graphics",
+            "Charting",
+            "Cover Art",
+            "Music - Tutorial",
+            "Music - Fracturing Circuit"
+        ]
+    },
+    {
+        "name": "MichaelEpicA",
+        "items": [
+            "Programming"
+        ]
+    },
+    {
+        "name": "TotallyNotFrisk",
+        "items": [
+            "UI Design"
+        ]
+    },
+    {
+        "name": "lunasquidd",
+        "items": [
+            "Cover Art"
+        ]
+    },
+    {
+        "name": "AZALI",
+        "url": "https://www.youtube.com/@AZALI00013",
+        "items": [
+            "Music - unable to rea� save fiĦe",
+            "Music - DIVINITY DISSONANT",
+            "Music - tiny aether rat (battle)",
+            "Cover Art"
+        ]
+    },
+    {
+        "name": "Return to Nothing",
+        "url": "https://www.youtube.com/@return2nothing",
+        "items": [
+            "Music - I'm a rhythm gamers worst nightmare"
+        ]
+    },
+    {
+        "name": "Playtesting",
+        "items": [
+            "nicholas",
+            "TotallyNotFrisk",
+            "MichaelEpicA"
+        ]
+    }
+]

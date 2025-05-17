@@ -30,7 +30,7 @@ local buildRecentMenu
 local function hoistHistory(path,name)
     local found = false
     for i,item in ipairs(scene.history) do
-        if item.path == path or item.name == name then
+        if item.path == path and item.name == name then
             table.insert(scene.history, 1, table.remove(scene.history, i))
             found = true
             break
@@ -521,6 +521,15 @@ local editorMenu = {
                 label = "SAVE AS",
                 onclick = function()
                     fileDialog("w")
+                    return true
+                end
+            },
+            {
+                id = "file.opensavefolder",
+                type = "action",
+                label = "OPEN SAVE FOLDER",
+                onclick = function()
+                    love.system.openURL("file://"..love.filesystem.getSaveDirectory() .. getDirectorySeparator() .. "editor_save")
                     return true
                 end
             },
@@ -1230,7 +1239,10 @@ local function drawTab(tab,x,y)
             drawTab(elem, X + 8*(width+4), Y)
             love.graphics.setColor(TerminalColors[ColorID.LIGHT_BLUE])
         end
-        love.graphics.print(elem.label .. (elem.type == "menu" and " ▷" or ""), X+16, Y+16)
+        love.graphics.print(elem.label, X+16, Y+16)
+        if elem.type == "menu" then
+            love.graphics.print("▷", X+8+width*8, Y+16)
+        end
         if i ~= #tab.contents then
             love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
             love.graphics.print(("┈"):rep(width+2), X+8, Y+32)

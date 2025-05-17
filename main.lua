@@ -208,7 +208,7 @@ function SetCursor(cursor,x,y)
     CursorY = y or 0
 end
 
-Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%()[].,'\"!?/:+-_=┌─┐│└┘├┤┴┬┼█▓▒░┊┈╬○◇▷◁║¤👑▧▥▨◐◑◻☓⚠🡙ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω🮰✨�Ħ")
+Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%()[].,'\"!?/:+-_=┌─┐│└┘├┤┴┬┼█▓▒░┊┈╬○◇▷◁║¤👑▧▥▨◐◑◻☓⚠🡙ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω🮰✨�Ħ🔗")
 NoteFont = love.graphics.newImageFont("images/notes/default.png", "○◇▷◁║▧▥▨◐◑◻◼☓⚠┊")
 
 function DrawBox(x,y,w,h)
@@ -265,6 +265,7 @@ SystemSettings = {
     enable_chart_effects = true,
     enable_screen_effects = true,
     pause_on_lost_focus = true,
+    show_fps = false,
     screen_effects = {
         screen_curvature = 0.5,
         scanlines = 0.5,
@@ -503,7 +504,7 @@ function love.draw()
     local border = Borders[Save.Read("border")]
     if border and not SuppressBorder then border.draw() end
     love.graphics.setColor(1,1,1)
-    love.graphics.print(Version.name .. " v" .. Version.version, 16, 480-16-16)
+    love.graphics.print(Version.name .. " v" .. Version.version .. (SystemSettings.show_fps and (" - " .. love.timer.getFPS() .. " FPS") or ""), 16, 480-16-16)
     if Cursor then
         love.graphics.print(Cursor, MouseX-CursorX, MouseY-CursorY)
     end

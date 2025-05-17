@@ -23,3 +23,5 @@ while run do
         end
     end
 end
+
+return 0

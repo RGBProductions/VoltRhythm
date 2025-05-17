@@ -61,6 +61,16 @@ local root = {
                     end
                 },
                 {
+                    label = "SHOW FRAMERATE",
+                    type = "toggle",
+                    read = function()
+                        return SystemSettings.show_fps
+                    end,
+                    write = function(value)
+                        SystemSettings.show_fps = value
+                    end
+                },
+                {
                     label = "CHART FX",
                     type = "toggle",
                     read = function()

@@ -15,6 +15,9 @@ local options = {
     {"SETTINGS", "CONFIGURE SYSTEM", love.graphics.newImage("images/menu/cfg.png"), function()
         SceneManager.Transition("scenes/settings")
     end},
+    {"CREDITS", "CREDITS", love.graphics.newImage("images/menu/mp.png"), function()
+        SceneManager.Transition("scenes/credits")
+    end},
     {"EXIT", "SHUTDOWN SYSTEM", love.graphics.newImage("images/menu/exit.png"), function()
         love.event.push("quit")
     end}
