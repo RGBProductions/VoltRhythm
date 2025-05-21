@@ -9,6 +9,7 @@ local hiddenAmbience = love.audio.newSource("sounds/ominous_ambience.ogg", "stre
 hiddenAmbience:setLooping(true)
 
 local askToDelete = nil
+local askToDeleteDiff = nil
 
 local function playSong(songInfo)
     local nextPreview
@@ -202,11 +203,13 @@ function scene.keypressed(k)
     if SceneManager.TransitioningIn() or SceneManager.TransitioningOut() then return end
     if askToDelete then
         if k == "return" then
-            Save.Write("songs." .. askToDelete, nil)
+            Save.Write("songs." .. askToDelete .. "." .. askToDeleteDiff, nil)
             askToDelete = nil
+            askToDeleteDiff = nil
         end
         if k == "escape" then
             askToDelete = nil
+            askToDeleteDiff = nil
         end
         return
     end
@@ -216,6 +219,7 @@ function scene.keypressed(k)
         local savedRating = Save.Read("songs."..(selected.scorePrefix or "")..selected.name.."."..difficulties[difficulty])
         if savedRating and selected.isUnlocked then
             askToDelete = (selected.scorePrefix or "")..selected.name
+            askToDeleteDiff = difficulties[difficulty]
         end
     end
     if k == "tab" then

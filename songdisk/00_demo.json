@@ -5,13 +5,28 @@
             {
                 "name": "demo",
                 "songs": [
-                    {"song": "tutorial", "difficulties": ["easy","overvolt"]},
+                    {"song": "tutorial", "difficulties": ["easy"]},
 
-                    {"song": "aetherat", "difficulties": ["extreme"]},
+                    {"song": "fracturingcircuit", "difficulties": ["easy", "medium", "hard"]},
+                    {"song": "divinitydissonant", "difficulties": ["easy", "medium", "hard"]},
+                    {"song": "savefile", "difficulties": ["easy", "medium", "hard"]},
+                    
+                    {"song": "aetherat", "difficulties": ["extreme"], "lock": {
+                        "hide": true,
+                        "songs": {
+                            "fracturingcircuit": {"completed": true},
+                            "divinitydissonant": {"completed": true},
+                            "savefile": {"completed": true}
+                        },
+                        "global": {"overcharge": 100}
+                    }},
                     
                     {"song": "worstnightmare", "difficulties": ["overvolt"], "lock": {
+                        "songs": {
+                            "tutorial": {"completed": true}
+                        },
                         "global": {
-                            "xcharge": 8
+                            "xcharge": 50
                         }
                     }}
                 ]

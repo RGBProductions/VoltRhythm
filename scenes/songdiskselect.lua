@@ -65,34 +65,47 @@ function scene.draw()
     love.graphics.draw(songdiskselectText, 320, 32, 0, 2, 2, songdiskselectText:getWidth()/2, 0)
 
     if not scene.campaign.unscored then
-        love.graphics.print("┌─────────────────────────────────────────────┬────┐", 14*8,  8*16)
-        love.graphics.print("│                                             │    │", 14*8,  9*16)
-        love.graphics.print("├─────────────────────────────────────────────┼────┤", 14*8, 10*16)
-        love.graphics.print("│                                             │    │", 14*8, 11*16)
-        love.graphics.print("├─────────────────────────────────────────────┼────┤", 14*8, 12*16)
-        love.graphics.print("│                                             │    │", 14*8, 13*16)
-        love.graphics.print("└─────────────────────────────────────────────┴────┘", 14*8, 14*16)
+        local charge = scene.scores.totalCharge
+        local ocharge = scene.scores.totalOvercharge
+        local xcharge = scene.scores.totalXCharge
+        local chargep = scene.scores.totalCharge / math.max(1,scene.scores.potentialCharge)
+        local ochargep = scene.scores.totalOvercharge / math.max(1,scene.scores.potentialOvercharge)
+        local xchargep = scene.scores.totalXCharge / math.max(1,scene.scores.potentialXCharge)
+
+        local chargeTxt = math.floor(charge) .. "¤"
+        local ochargeTxt = math.floor(ocharge) .. "¤"
+        local xchargeTxt = math.floor(xcharge) .. "¤"
+        local chargepTxt = math.floor(chargep*100) .. "%"
+        local ochargepTxt = math.floor(ochargep*100) .. "%"
+        local xchargepTxt = math.floor(xchargep*100) .. "%"
+
+        local mx = math.max(utf8.len(chargeTxt),utf8.len(ochargeTxt),utf8.len(xchargeTxt))
+
+        love.graphics.print("┌─────────────────────────────────────────────┬──────┬──────┐", 9.5*8,  8*16)
+        love.graphics.print("│                                             │      │      │", 9.5*8,  9*16)
+        love.graphics.print("├─────────────────────────────────────────────┼──────┼──────┤", 9.5*8, 10*16)
+        love.graphics.print("│                                             │      │      │", 9.5*8, 11*16)
+        love.graphics.print("├─────────────────────────────────────────────┼──────┼──────┤", 9.5*8, 12*16)
+        love.graphics.print("│                                             │      │      │", 9.5*8, 13*16)
+        love.graphics.print("└─────────────────────────────────────────────┴──────┴──────┘", 9.5*8, 14*16)
         
-        local charge = scene.scores.totalCharge / math.max(1,scene.scores.potentialCharge)
-        local ocharge = scene.scores.totalOvercharge / math.max(1,scene.scores.potentialOvercharge)
-        local xcharge = scene.scores.totalXCharge / math.max(1,scene.scores.potentialXCharge)
         love.graphics.setColor(TerminalColors[ColorID.LIGHT_GREEN])
-        love.graphics.print(("█"):rep(45*charge), 15*8, 9*16)
-        local ocChunks = math.floor(45*ocharge)
+        love.graphics.print(("█"):rep(45*chargep), 10.5*8, 9*16)
+        local ocChunks = math.floor(45*ochargep)
         for i = 1, ocChunks do
             local chunkColor = (math.floor(-love.timer.getTime()*#OverchargeColors)+i-1)%#OverchargeColors
             love.graphics.setColor(TerminalColors[OverchargeColors[chunkColor+1]])
-            love.graphics.print("█", (14+i)*8, 11*16)
+            love.graphics.print("█", (9.5+i)*8, 11*16)
         end
         love.graphics.setColor(TerminalColors[ColorID.MAGENTA])
-        love.graphics.print(("█"):rep(45*xcharge), 15*8, 13*16)
+        love.graphics.print(("█"):rep(45*xchargep), 10.5*8, 13*16)
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        local chargeTxt = math.floor(charge*100) .. "%"
-        local ochargeTxt = math.floor(ocharge*100) .. "%"
-        local xchargeTxt = math.floor(xcharge*100) .. "%"
-        love.graphics.printf(chargeTxt, (65-utf8.len(chargeTxt))*8, 9*16, utf8.len(chargeTxt)*8, "right")
-        love.graphics.printf(ochargeTxt, (65-utf8.len(ochargeTxt))*8, 11*16, utf8.len(ochargeTxt)*8, "right")
-        love.graphics.printf(xchargeTxt, (65-utf8.len(xchargeTxt))*8, 13*16, utf8.len(xchargeTxt)*8, "right")
+        love.graphics.printf(chargeTxt, (68.5-utf8.len(chargeTxt))*8, 9*16, utf8.len(chargeTxt)*8, "right")
+        love.graphics.printf(ochargeTxt, (68.5-utf8.len(ochargeTxt))*8, 11*16, utf8.len(ochargeTxt)*8, "right")
+        love.graphics.printf(xchargeTxt, (68.5-utf8.len(xchargeTxt))*8, 13*16, utf8.len(xchargeTxt)*8, "right")
+        love.graphics.printf(chargepTxt, (61.5-utf8.len(chargepTxt))*8, 9*16, utf8.len(chargepTxt)*8, "right")
+        love.graphics.printf(ochargepTxt, (61.5-utf8.len(ochargepTxt))*8, 11*16, utf8.len(ochargepTxt)*8, "right")
+        love.graphics.printf(xchargepTxt, (61.5-utf8.len(xchargepTxt))*8, 13*16, utf8.len(xchargepTxt)*8, "right")
     end
 
     for i = CampaignViewTarget-2, CampaignViewTarget+2 do
