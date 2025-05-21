@@ -820,7 +820,7 @@ SongDifficulty = {
             TerminalColors[OverchargeColors[5]],
             TerminalColors[OverchargeColors[6]]
         },
-        range = {21,30},
+        range = {21,math.huge},
         animate = true
     }
 }
