@@ -1,7 +1,7 @@
 ---
 name: Feature Request
 about: Suggest an idea for a feature for the game
-title: "[FEATURE] New Feature"
+title: "[FEAT] New Feature"
 labels: feature
 assignees: ''
 

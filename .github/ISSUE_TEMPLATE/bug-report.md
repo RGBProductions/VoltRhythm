@@ -8,7 +8,7 @@ assignees: ''
 ---
 
 **Version**
-Game Version: 0.0.0
+Game Version: 0.1.0
 OS: ...
 
 **Short description of the issue**
