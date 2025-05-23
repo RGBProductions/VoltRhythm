@@ -662,7 +662,7 @@ function scene.update(dt)
     end
 end
 
-local settingsText = love.graphics.newImage("images/settings.png")
+local settingsText = love.graphics.newImage("images/title/settings.png")
 
 function scene.draw()
     local menuX = SettingsCurrent.x or 0

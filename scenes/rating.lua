@@ -8,7 +8,7 @@ end
 
 local scene = {}
 
-local resultsText = love.graphics.newImage("images/results.png")
+local resultsText = love.graphics.newImage("images/title/results.png")
 
 function scene.load(args)
     scene.showMore = false

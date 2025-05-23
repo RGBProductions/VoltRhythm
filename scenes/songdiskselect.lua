@@ -58,7 +58,7 @@ local function lerp(a,b,t)
     return t*(b-a)+a
 end
 
-local songdiskselectText = love.graphics.newImage("images/songdiskselect.png")
+local songdiskselectText = love.graphics.newImage("images/title/songdiskselect.png")
 
 function scene.draw()
     DrawBoxHalfWidth(2, 1, 74, 3)

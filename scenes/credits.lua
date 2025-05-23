@@ -39,7 +39,7 @@ function scene.update(dt)
     end
 end
 
-local creditsText = love.graphics.newImage("images/credits.png")
+local creditsText = love.graphics.newImage("images/title/credits.png")
 
 function scene.draw()
     local y = CreditsView

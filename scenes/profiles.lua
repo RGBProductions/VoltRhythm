@@ -8,7 +8,7 @@ function utf8.sub(txt, i, j)
     return txt:sub(o1,o2)
 end
 
-local profilesText = love.graphics.newImage("images/profiles.png")
+local profilesText = love.graphics.newImage("images/title/profiles.png")
 
 local addIcon = Assets.ProfileIcon("add")
 

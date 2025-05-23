@@ -94,7 +94,7 @@ return function (msg)
     TearingModifierTarget = 0
     TearingModifierSmoothing = 0
 
-    ScreenShader = love.graphics.newShader("screen.frag")
+    ScreenShader = love.graphics.newShader("shaders/screen.frag")
     ScreenShader:send("curveStrength", SystemSettings.screen_effects.screen_curvature*CurveModifier)
     ScreenShader:send("scanlineStrength", 0.5)
     ScreenShader:send("texSize", {Display:getDimensions()})
@@ -103,7 +103,7 @@ return function (msg)
     ScreenShader:send("horizBlurStrength", 0.5)
     ScreenShader:send("tearTime", love.timer.getTime())
 
-    BloomShader = love.graphics.newShader("bloom.frag")
+    BloomShader = love.graphics.newShader("shaders/bloom.frag")
     BloomShader:send("strength", 1)
 
     Display = love.graphics.newCanvas(640,480)

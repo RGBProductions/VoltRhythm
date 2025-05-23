@@ -11,12 +11,12 @@ end
 
 require "assets"
 defaultCovers = {
-    love.graphics.newImage("images/default0.png"),
-    love.graphics.newImage("images/default1.png"),
-    love.graphics.newImage("images/default2.png"),
-    love.graphics.newImage("images/default3.png"),
-    love.graphics.newImage("images/default4.png"),
-    love.graphics.newImage("images/default5.png")
+    love.graphics.newImage("images/cover/default0.png"),
+    love.graphics.newImage("images/cover/default1.png"),
+    love.graphics.newImage("images/cover/default2.png"),
+    love.graphics.newImage("images/cover/default3.png"),
+    love.graphics.newImage("images/cover/default4.png"),
+    love.graphics.newImage("images/cover/default5.png")
 }
 require "util"
 require "colors"
@@ -208,7 +208,7 @@ function SetCursor(cursor,x,y)
     CursorY = y or 0
 end
 
-Font = love.graphics.newImageFont("font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%()[].,'\"!?/:+-_=┌─┐│└┘├┤┴┬┼█▓▒░┊┈╬○◇▷◁║¤👑▧▥▨◐◑◻☓⚠🡙ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω🮰✨�Ħ🔗")
+Font = love.graphics.newImageFont("images/font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%()[].,'\"!?/:+-_=┌─┐│└┘├┤┴┬┼█▓▒░┊┈╬○◇▷◁║¤👑▧▥▨◐◑◻☓⚠🡙ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω🮰✨�Ħ🔗")
 NoteFont = love.graphics.newImageFont("images/notes/default.png", "○◇▷◁║▧▥▨◐◑◻◼☓⚠┊")
 
 function DrawBox(x,y,w,h)
@@ -322,7 +322,7 @@ BloomStrengthModifier = 1
 BloomStrengthModifierTarget = 1
 BloomStrengthModifierSmoothing = 0
 
-ScreenShader = love.graphics.newShader("screen.frag")
+ScreenShader = love.graphics.newShader("shaders/screen.frag")
 ScreenShader:send("curveStrength", SystemSettings.screen_effects.screen_curvature*CurveModifier)
 ScreenShader:send("scanlineStrength", 1-SystemSettings.screen_effects.scanlines)
 ScreenShader:send("texSize", {Display:getDimensions()})
@@ -332,10 +332,10 @@ ScreenShader:send("horizBlurStrength", 0.5)
 ScreenShader:send("tearTime", love.timer.getTime())
 ScreenShader:send("saturation", SystemSettings.screen_effects.saturation)
 
-BloomShader = love.graphics.newShader("bloom.frag")
+BloomShader = love.graphics.newShader("shaders/bloom.frag")
 BloomShader:send("strength", 2)
 
-ProfileIconShader = love.graphics.newShader("profile_icon.frag")
+ProfileIconShader = love.graphics.newShader("shaders/profile_icon.frag")
 
 function love.resize(w,h)
     Bloom = love.graphics.newCanvas(w,h)
@@ -379,17 +379,29 @@ function love.directorydropped(file)
 end
 
 function love.keypressed(k)
-    if k == "f11" then
-        love.window.setFullscreen(not love.window.getFullscreen())
-    end
     if k == "f1" then
         SystemSettings.enable_screen_effects = not SystemSettings.enable_screen_effects
+    end
+    if k == "f2" then
+        local date = os.date("*t")
+        local yr = date.year
+        local mo = ("0"):rep(2-#tostring(date.month))..date.month
+        local dy = ("0"):rep(2-#tostring(date.day))..date.day
+        local hr = ("0"):rep(2-#tostring(date.hour))..date.hour
+        local mn = ("0"):rep(2-#tostring(date.min))..date.min
+        local sc = ("0"):rep(2-#tostring(date.sec))..date.sec
+        local name = "screenshot-" .. yr..mo..dy.."-"..hr..mn..sc
+        local num
+        while love.filesystem.getInfo(name..(num or "")..".png") do
+            num = (num or 0) + 1
+        end
+        love.graphics.captureScreenshot(name..(num or "")..".png")
     end
     if k == "f5" then
         love.mouse.setRelativeMode(not love.mouse.getRelativeMode())
     end
-    if k == "f2" then
-        love.graphics.captureScreenshot("screenshot" .. love.math.random(0,999999999) .. ".png")
+    if k == "f11" then
+        love.window.setFullscreen(not love.window.getFullscreen())
     end
 
     SceneManager.KeyPressed(k)
@@ -428,7 +440,7 @@ end
 
 AnaglyphL = -4
 AnaglyphR = 4
-Anaglyph = love.graphics.newShader("anaglyph.frag")
+Anaglyph = love.graphics.newShader("shaders/anaglyph.frag")
 Anaglyph:send("left", Display2)
 AnaglyphSide = 0
 AnaglyphOn = false

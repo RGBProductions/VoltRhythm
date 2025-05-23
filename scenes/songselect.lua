@@ -43,7 +43,7 @@ local difficulties = {
 }
 
 local lockImage = love.graphics.newImage("images/lock.png")
-local hiddenCover = love.graphics.newImage("images/hidden.png")
+local hiddenCover = love.graphics.newImage("images/cover/hidden.png")
 
 local function testLock(lock)
     local global = lock.global or {}
@@ -341,7 +341,7 @@ function scene.keypressed(k)
     end
 end
 
-local songselectText = love.graphics.newImage("images/songselect.png")
+local songselectText = love.graphics.newImage("images/title/songselect.png")
 
 function scene.draw()
     local selected = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
