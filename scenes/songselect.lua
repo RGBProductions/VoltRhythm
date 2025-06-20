@@ -505,8 +505,11 @@ function scene.draw()
 
     DrawBoxHalfWidth(2, 21, 74, 2)
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    local emblem = Assets.Emblem(selected.songData.emblem)
+    local emblemSize = selected.hide and 0 or (emblem and (emblem:getWidth() + 8) or 0)
     local songName = selected.hide and "- NO DATA -" or ((selected.songData or {}).name or "Unrecognized Song")
-    love.graphics.print(songName, (640-utf8.len(songName)*8)/2, 352 + (selected.hide and 8 or 0))
+    love.graphics.print(songName, (640-(utf8.len(songName)*8 + emblemSize))/2 + emblemSize, 352 + (selected.hide and 8 or 0))
+    if emblem and not selected.hide then love.graphics.draw(emblem, (640-(utf8.len(songName)*8 + emblemSize))/2, 360, 0, 1, 1, 0, emblem:getHeight()/2) end
     love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
     if not selected.hide then love.graphics.printf((selected.songData or {}).author or "???", 0, 368, 640, "center") end
     love.graphics.setColor(TerminalColors[ColorID.WHITE])

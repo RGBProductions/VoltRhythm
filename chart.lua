@@ -233,7 +233,7 @@ NoteTypes = {
                 love.graphics.setColor(TerminalColors[Save.Read("mine_color")])
                 local R,G,B,A = love.graphics.getColor()
                 love.graphics.setColor(r*R,g*G,b*B,a*A)
-                love.graphics.print("☓", (chartX+visualLane*4)*8+4, math.floor(drawPos*16-8-(isEditor and 0 or 4)), 0, 1, 1, NoteFont:getWidth("○")/2)
+                love.graphics.print("☓", (chartX+visualLane*4)*8+4, math.floor(drawPos*16-8-(isEditor and 0 or 4)), 0, 1, 1, NoteFont:getWidth("☓")/2)
             end
             
             love.graphics.setColor(r,g,b,a)
@@ -320,17 +320,17 @@ NoteTypes = {
                 end
 
                 if drawPos >= chartPos and drawPos < chartPos+(chartHeight+1) and (self.heldFor or 0) <= 0 then
-                    love.graphics.print("⚠", (chartX+visualLane*4)*8+4, math.floor(drawPos*16-8), 0, 1, 1, NoteFont:getWidth("○")/2)
+                    love.graphics.print("⚠", (chartX+visualLane*4)*8+4, math.floor(drawPos*16-8), 0, 1, 1, NoteFont:getWidth("⚠")/2)
                 end
 
                 if drawPos2 >= chartPos and drawPos2 < chartPos+(chartHeight+1) and (self.heldFor or 0) <= 0 then
-                    love.graphics.print("⚠", (chartX+visualLane*4)*8+4, math.floor(drawPos2*16-8), 0, 1, 1, NoteFont:getWidth("○")/2)
+                    love.graphics.print("⚠", (chartX+visualLane*4)*8+4, math.floor(drawPos2*16-8), 0, 1, 1, NoteFont:getWidth("⚠")/2)
                 end
             elseif t < len then
                 love.graphics.setColor(TerminalColors[t % 0.25 <= 0.125 and ColorID.RED or ColorID.LIGHT_RED])
                 local R,G,B,A = love.graphics.getColor()
                 love.graphics.setColor(r*R,g*G,b*B,a*A)
-                love.graphics.print("⚠", (chartX+visualLane*4)*8+4, math.floor((chartPos+chartHeight-1)*16-8-(isEditor and 0 or 4)), 0, 1, 1, NoteFont:getWidth("○")/2)
+                love.graphics.print("⚠", (chartX+visualLane*4)*8+4, math.floor((chartPos+chartHeight-1)*16-8-(isEditor and 0 or 4)), 0, 1, 1, NoteFont:getWidth("⚠")/2)
             end
             
             love.graphics.setColor(r,g,b,a)
@@ -875,6 +875,7 @@ end
 ---@field charts {easy: chartdata|Chart?, medium: chartdata|Chart?, hard: chartdata|Chart?, extreme: chartdata|Chart?, overvolt: chartdata|Chart?}
 ---@field levels {easy: number, medium: number, hard: number, extreme: number, overvolt: number}
 ---@field lyrics {easy: Lyrics?, medium: Lyrics?, hard: Lyrics?, extreme: Lyrics?, overvolt: Lyrics?, main: Lyrics?}
+---@field emblem string?
 ---@field songPreview {[1]: number, [2]: number}
 ---@field coverAnimSpeed number?
 SongData = {}
@@ -885,7 +886,7 @@ SongData.__index = SongData
 function LoadSongData(path)
     local infoPath = path.."/info.json"
     if not love.filesystem.getInfo(infoPath) then return nil end
-    ---@type boolean, {name: string, author: string, bpm: number, song: string, songPreview: {[1]: number, [2]: number}, charts: {easy: chartdata?, medium: chartdata?, hard: chartdata?, extreme: chartdata?, overvolt: chartdata?}, coverArtist: string, coverAnimSpeed: number?}
+    ---@type boolean, {name: string, author: string, bpm: number, song: string, songPreview: {[1]: number, [2]: number}, charts: {easy: chartdata?, medium: chartdata?, hard: chartdata?, extreme: chartdata?, overvolt: chartdata?}, coverArtist: string, coverAnimSpeed: number?, emblem: string?}
     local loadedInfo,songInfo = pcall(json.decode, love.filesystem.read(infoPath))
     if not loadedInfo then return nil end
 
@@ -906,6 +907,7 @@ function LoadSongData(path)
     songData.charts = songInfo.charts
     songData.levels = {}
     songData.lyrics = {}
+    songData.emblem = songInfo.emblem
     local S,mainlyrics = pcall(json.decode, love.filesystem.read(path.."/lyrics.json"))
     if S then
         songData.lyrics.main = Lyrics:new(mainlyrics)
@@ -921,7 +923,7 @@ function LoadSongData(path)
     return songData
 end
 
-function SongData:new(name,author,bpm,song,songPreview,charts,levels,lyrics)
+function SongData:new(name,author,bpm,song,songPreview,charts,levels,lyrics,emblem)
     local songData = setmetatable({}, self)
     songData.name = name or "Song"
     songData.author = author or "Composer"
@@ -931,6 +933,7 @@ function SongData:new(name,author,bpm,song,songPreview,charts,levels,lyrics)
     songData.charts = charts or {}
     songData.levels = levels or {}
     songData.lyrics = lyrics or {}
+    songData.emblem = emblem
     for chartname,chart in pairs(charts or {}) do
         songData.levels[chartname] = songData.levels[chartname] or chart.level
     end
@@ -993,7 +996,8 @@ function SongData:save(path)
         song = self.song,
         songPreview = self.songPreview,
         charts = charts,
-        coverAnimSpeed = self.coverAnimSpeed
+        coverAnimSpeed = self.coverAnimSpeed,
+        emblem = self.emblem
     }))
     self.path = path
 end

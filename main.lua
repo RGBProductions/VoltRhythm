@@ -209,7 +209,14 @@ function SetCursor(cursor,x,y)
 end
 
 Font = love.graphics.newImageFont("images/font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%()[].,'\"!?/:+-_=┌─┐│└┘├┤┴┬┼█▓▒░┊┈╬○◇▷◁║¤👑▧▥▨◐◑◻☓⚠🡙ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω🮰✨�Ħ🔗")
-NoteFont = love.graphics.newImageFont("images/notes/default.png", "○◇▷◁║▧▥▨◐◑◻◼☓⚠┊")
+
+NoteFontOptions = {"dots"}
+
+NoteFonts = {
+    dots = love.graphics.newImageFont("images/notes/default.png", "○◇▷◁║▧▥▨◐◑◻◼☓⚠┊")
+}
+
+NoteFont = NoteFonts.dots
 
 function DrawBox(x,y,w,h)
     love.graphics.print("┌"..("──"):rep(w).."┐\n"..("│"..("  "):rep(w).."│\n"):rep(h).."└"..("──"):rep(w).."┘", x*8, y*16)
@@ -536,7 +543,7 @@ function love.draw()
         love.graphics.setColor(1,1,1)
         if border and not SuppressBorder then border.draw() end
         love.graphics.setColor(1,1,1)
-        love.graphics.print(Version.name .. " v" .. Version.version, 16, 480-16-16)
+        love.graphics.print(Version.name .. " v" .. Version.version .. (SystemSettings.show_fps and (" - " .. love.timer.getFPS() .. " FPS") or ""), 16, 480-16-16)
     
         love.graphics.setColor(TerminalColors[16])
         love.graphics.setCanvas(AnaglyphMerge)

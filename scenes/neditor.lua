@@ -886,6 +886,11 @@ function scene.load(args)
         scene.chart = scene.songData:loadChart(scene.difficulty)
     end
 
+    local source = Assets.Source((scene.songData or {}).songPath)
+    if source then
+        source:setPitch(1)
+    end
+
     scene.lastRating = 1
     if scene.chart then
         scene.lastRating = scene.chart:getDifficulty()

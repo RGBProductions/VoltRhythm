@@ -85,6 +85,7 @@ function scene.load(args)
         ColorTransitionTable[colorIndexes[3]],
         ColorTransitionTable[colorIndexes[4]]
     }
+    NoteFont = NoteFonts[Save.Read("note_skin")] or NoteFonts.dots
     Keybinds[4] = Save.Read("keybinds")
     HitOffset = 0
     RealHits = 0

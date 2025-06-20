@@ -129,3 +129,17 @@ function Assets.ProfileIcon(name)
     icons[name] = love.graphics.newImage("images/profile/"..name..".png")
     return icons[name]
 end
+
+local emblems = {}
+
+function Assets.Emblem(name)
+    if emblems[name] then return emblems[name] end
+    if not name then
+        return nil
+    end
+    if not love.filesystem.getInfo("images/emblem/"..name..".png") then
+        return nil
+    end
+    emblems[name] = love.graphics.newImage("images/emblem/"..name..".png")
+    return emblems[name]
+end

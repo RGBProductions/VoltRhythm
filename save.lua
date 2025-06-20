@@ -14,6 +14,7 @@ local defaultSave = {
     note_colors = {ColorID.LIGHT_RED, ColorID.YELLOW, ColorID.LIGHT_GREEN, ColorID.LIGHT_BLUE},
     mine_color = ColorID.RED,
     border = "none",
+    note_skin = "dots",
     scroll_speed = 25,
     enable_hit_sounds = false
 }
