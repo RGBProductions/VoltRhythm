@@ -334,7 +334,8 @@ local function metadataDialog()
         scene.songData.author = self.content
     end)
     local bpmInput = DialogInput:new(160, 96, 120, 16, "BPM", 15, nil, function(self)
-        self.content = tostring(tonumber(self.content) or 0)
+        scene.songData.bpm = tonumber(self.content) or 0
+        self.content = tostring(scene.songData.bpm)
     end)
     local artistInput = DialogInput:new(0, 144, 368, 16, "COVER ARTIST", 20, nil, function(self)
         scene.songData.coverArtist = self.content
