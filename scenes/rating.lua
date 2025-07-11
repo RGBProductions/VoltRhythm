@@ -136,7 +136,7 @@ function scene.draw()
         local chargeString = scene.charge.."¤"
         local overchargeString = "+"..scene.overcharge.."¤"
         local totalChargeString = (scene.charge+scene.overcharge).."¤"
-        local accuracyString = math.floor(Accuracy/math.max(Hits,1)*100).."%"
+        local accuracyString = math.floor(Accuracy/math.max(Hits,1)*100*100)/100 .. "%"
 
         love.graphics.print("CHARGE", 48, 160 + 16*0)
         love.graphics.print("OVERCHARGE", 48, 160 + 16*1)

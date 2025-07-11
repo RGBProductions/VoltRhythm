@@ -461,7 +461,7 @@ function scene.draw()
             love.graphics.print(c .. "¤", 64+8*(19-#tostring(c)), 128-16)
             love.graphics.print("+" .. o .. "¤", 64+8*(19-#("+" .. tostring(o))), 144-16)
             love.graphics.print(x .. "¤", 64+8*(19-#tostring(x)), 160-16)
-            love.graphics.print(math.floor((savedRating.accuracy or 0)*100)  .. "%", 64+8*(19-#tostring(math.floor((savedRating.accuracy or 0)*100))), 176-16)
+            love.graphics.print(math.floor((savedRating.accuracy or 0)*100*100)/100 .. "%", 64+8*(19-#tostring(math.floor((savedRating.accuracy or 0)*100*100)/100)), 176-16)
 
             love.graphics.printf("TAB - OVERALL", 64, 192, 160, "center")
         else
@@ -497,7 +497,7 @@ function scene.draw()
             love.graphics.print(pc .. "¤", 64+8*(20-#tostring(pc)), 128-16)
             love.graphics.print("+" .. po .. "¤", 64+8*(20-#("+" .. tostring(po))), 144-16)
             love.graphics.print(px .. "¤", 64+8*(20-#tostring(px)), 160-16)
-            love.graphics.print(math.floor((savedRating.accuracy or 0)*100)  .. "%", 64+8*(20-#tostring(math.floor((savedRating.accuracy or 0)*100))), 176-16)
+            love.graphics.print(math.floor((savedRating.accuracy or 0)*100*100)/100 .. "%", 64+8*(20-#tostring(math.floor((savedRating.accuracy or 0)*100*100)/100)), 176-16)
 
             love.graphics.printf("TAB - CHART", 64, 192, 160, "center")
         end
@@ -545,7 +545,7 @@ function scene.draw()
         end
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
         -- love.graphics.print(tostring(difficultyLevel), 608 - (#tostring(difficultyLevel) + 2) * 8, 360)
-        if not SongSelectOvervoltMode then love.graphics.print("🡙", 600, 360) end
+        if not SongSelectOvervoltMode and (#selected.difficulties - (selected.hasOvervolt and 1 or 0) > 1) then love.graphics.print("🡙", 600, 360) end
     end
 
     -- love.graphics.printf("Press F8 to create a new song in the editor", 32, 400, 576, "left")
