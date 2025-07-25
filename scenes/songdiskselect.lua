@@ -32,24 +32,23 @@ function scene.update(dt)
     end
 end
 
-function scene.keypressed(k)
-    if SceneManager.TransitioningIn() then return end
-    if k == "left" then
+function scene.action(a)
+    if a == "left" then
         SongDiskSelectIndex = ((SongDiskSelectIndex-2) % SongDisk.NumDisks) + 1
         scene.campaign = SongDisk.GetByIndex(SongDiskSelectIndex)
         scene.scores = SongDisk.GetScores(scene.campaign)
         CampaignViewTarget = CampaignViewTarget - 1
     end
-    if k == "right" then
+    if a == "right" then
         SongDiskSelectIndex = ((SongDiskSelectIndex) % SongDisk.NumDisks) + 1
         scene.campaign = SongDisk.GetByIndex(SongDiskSelectIndex)
         scene.scores = SongDisk.GetScores(scene.campaign)
         CampaignViewTarget = CampaignViewTarget + 1
     end
-    if k == "return" then
+    if a == "confirm" then
         SceneManager.Transition("scenes/songselect", {campaign = options[SongDiskSelectIndex][1], source = "songdiskselect", destination = "game"})
     end
-    if k == "escape" then
+    if a == "back" then
         SceneManager.Transition("scenes/menu")
     end
 end

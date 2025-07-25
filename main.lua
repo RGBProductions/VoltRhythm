@@ -22,6 +22,7 @@ require "util"
 require "colors"
 require "chart"
 require "songdisk"
+require "input"
 require "save"
 json = require "json"
 texture = require "texture"
@@ -208,7 +209,7 @@ function SetCursor(cursor,x,y)
     CursorY = y or 0
 end
 
-Font = love.graphics.newImageFont("images/font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%()[].,'\"!?/:+-_=┌─┐│└┘├┤┴┬┼█▓▒░┊┈╬○◇▷◁║¤👑▧▥▨◐◑◻☓⚠🡙ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω🮰✨�Ħ🔗")
+Font = love.graphics.newImageFont("images/font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%()[].,'\"!?/:+-_=┌─┐│└┘├┤┴┬┼█▓▒░┊┈╬○◇▷◁║¤👑▧▥▨◐◑◻☓⚠🡙ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω🮰✨�Ħ🔗ⒶⒷⓍⓎⓛⓡⓁⓇⓑⓢ⮜⮞⮝⮟⒧⒭ⓧⓄⓈⓉⓞⓗⓥⓕⓜⓟ➀➁")
 
 NoteFontOptions = {"dots"}
 
@@ -377,6 +378,160 @@ MissTime = 0
 Autoplay = false
 Showcase = false
 
+GamepadLastAxes = {}
+GamepadAxes = {}
+
+local gamepads = 0
+HasGamepad = false
+
+KeyMap = {
+    key = {
+        escape = "ESC",
+        ["return"] = "ENTER",
+        ralt = "R.ALT",
+        lalt = "L.ALT",
+        rshift = "R.SHIFT",
+        lshift = "L.SHIFT",
+        rctrl = "R.CONTROL",
+        lctrl = "L.CONTROL"
+    },
+    gbutton = {
+        a = {[0x054CFFFF] = "ⓧ", [0xFFFFFFFF] = "Ⓐ"},
+        b = {[0x054CFFFF] = "Ⓞ", [0xFFFFFFFF] = "Ⓑ"},
+        x = {[0x057E0306] = "➀", [0x054CFFFF] = "Ⓢ", [0xFFFFFFFF] = "Ⓧ"},
+        y = {[0x057E0306] = "➁", [0x054CFFFF] = "Ⓣ", [0xFFFFFFFF] = "Ⓨ"},
+        leftshoulder = "ⓛ",
+        rightshoulder = "ⓡ",
+        leftstick = "Ⓛ",
+        rightstick = "Ⓡ",
+        back  = {[0x057EFFFF] = "ⓜ", [0x054CFFFF] = "ⓗ", [0x045E028E] = "ⓑ", [0x045E0291] = "ⓑ", [0x045E02A0] = "ⓑ", [0x045E02A1] = "ⓑ", [0x045E0719] = "ⓑ", [0x045EFFFF] = "ⓥ", [0xFFFFFFFF] = "ⓑ"},
+        start = {[0x057EFFFF] = "ⓟ", [0x054CFFFF] = "ⓞ", [0x045E028E] = "ⓕ", [0x045E0291] = "ⓕ", [0x045E02A0] = "ⓕ", [0x045E02A1] = "ⓕ", [0x045E0719] = "ⓕ", [0xFFFFFFFF] = "ⓢ"},
+        dpleft = "⮜",
+        dpright = "⮞",
+        dpup = "⮝",
+        dpdown = "⮟"
+    },
+    gtrigger = {
+        triggerleft = "⒧",
+        triggerright = "⒭",
+        leftx = "LEFT STICK HORIZ.",
+        lefty = "LEFT STICK VERT"
+    }
+}
+
+function KeyLabel(v)
+    ---@type love.Joystick
+    local stick = love.joystick.getJoysticks()[1]
+    local vid,pid = 0xFFFF,0xFFFF
+    if stick then
+        vid,pid = stick:getDeviceInfo()
+    end
+    local mapped = KeyMap[v[1]][v[2]] or v[2]
+    if type(mapped) == "table" then
+        mapped = mapped[vid*65536+pid] or mapped[vid*65536+0xFFFF] or mapped[0xFFFFFFFF] or v[2]
+    end
+    return mapped:upper()
+end
+
+function love.gamepadaxis(stick,axis,value)
+    GamepadAxes[axis] = value
+    Input.GamepadAxis(stick,axis,value)
+    if not SceneManager.GamepadAxis(stick,axis,value) then
+        if math.abs(GamepadLastAxes[axis] or 0) < 0.5 and math.abs(value) >= 0.5 then
+            if BindContains(Save.Read("keybinds.pause"), "gtrigger", axis) then
+                SceneManager.Action("pause")
+            end
+            if BindContains(Save.Read("keybinds.back"), "gtrigger", axis) then
+                SceneManager.Action("back")
+            end
+            if BindContains(Save.Read("keybinds.confirm"), "gtrigger", axis) then
+                SceneManager.Action("confirm")
+            end
+            if BindContains(Save.Read("keybinds.restart"), "gtrigger", axis) then
+                SceneManager.Action("restart")
+            end
+            if BindContains(Save.Read("keybinds.overvolt"), "gtrigger", axis) then
+                SceneManager.Action("overvolt")
+            end
+            if BindContains(Save.Read("keybinds.show_more"), "gtrigger", axis) then
+                SceneManager.Action("show_more")
+            end
+            if BindContains(Save.Read("keybinds.menu_left"), "gtrigger", axis) then
+                SceneManager.Action("left")
+            end
+            if BindContains(Save.Read("keybinds.menu_right"), "gtrigger", axis) then
+                SceneManager.Action("right")
+            end
+            if BindContains(Save.Read("keybinds.menu_up"), "gtrigger", axis) then
+                SceneManager.Action("up")
+            end
+            if BindContains(Save.Read("keybinds.menu_down"), "gtrigger", axis) then
+                SceneManager.Action("down")
+            end
+            SceneManager.Action("*")
+            
+            if axis == "leftx" then
+                if value > 0 then
+                    SceneManager.Action("right")
+                else
+                    SceneManager.Action("left")
+                end
+            end
+            if axis == "lefty" then
+                if value > 0 then
+                    SceneManager.Action("down")
+                else
+                    SceneManager.Action("up")
+                end
+            end
+        end
+    end
+
+    GamepadLastAxes[axis] = value
+end
+
+function love.gamepadpressed(stick,button)
+    Input.GamepadPressed(stick,button)
+    if SceneManager.GamepadPressed(stick,button) then return end
+
+    if BindContains(Save.Read("keybinds.pause"), "gbutton", button) then
+        SceneManager.Action("pause")
+    end
+    if BindContains(Save.Read("keybinds.back"), "gbutton", button) then
+        SceneManager.Action("back")
+    end
+    if BindContains(Save.Read("keybinds.confirm"), "gbutton", button) then
+        SceneManager.Action("confirm")
+    end
+    if BindContains(Save.Read("keybinds.restart"), "gbutton", button) then
+        SceneManager.Action("restart")
+    end
+    if BindContains(Save.Read("keybinds.overvolt"), "gbutton", button) then
+        SceneManager.Action("overvolt")
+    end
+    if BindContains(Save.Read("keybinds.show_more"), "gbutton", button) then
+        SceneManager.Action("show_more")
+    end
+    if BindContains(Save.Read("keybinds.menu_left"), "gbutton", button) then
+        SceneManager.Action("left")
+    end
+    if BindContains(Save.Read("keybinds.menu_right"), "gbutton", button) then
+        SceneManager.Action("right")
+    end
+    if BindContains(Save.Read("keybinds.menu_up"), "gbutton", button) then
+        SceneManager.Action("up")
+    end
+    if BindContains(Save.Read("keybinds.menu_down"), "gbutton", button) then
+        SceneManager.Action("down")
+    end
+    SceneManager.Action("*")
+end
+
+function love.gamepadreleased(stick,button)
+    Input.GamepadReleased(stick,button)
+    SceneManager.GamepadReleased(stick,button)
+end
+
 function love.filedropped(file)
     SceneManager.FileDropped(file)
 end
@@ -411,10 +566,44 @@ function love.keypressed(k)
         love.window.setFullscreen(not love.window.getFullscreen())
     end
 
-    SceneManager.KeyPressed(k)
+    Input.KeyPressed(k)
+    if SceneManager.KeyPressed(k) then return end
+
+    if BindContains(Save.Read("keybinds.pause"), "key", k) then
+        SceneManager.Action("pause")
+    end
+    if BindContains(Save.Read("keybinds.back"), "key", k) then
+        SceneManager.Action("back")
+    end
+    if BindContains(Save.Read("keybinds.confirm"), "key", k) then
+        SceneManager.Action("confirm")
+    end
+    if BindContains(Save.Read("keybinds.restart"), "key", k) then
+        SceneManager.Action("restart")
+    end
+    if BindContains(Save.Read("keybinds.overvolt"), "key", k) then
+        SceneManager.Action("overvolt")
+    end
+    if BindContains(Save.Read("keybinds.show_more"), "key", k) then
+        SceneManager.Action("show_more")
+    end
+    if BindContains(Save.Read("keybinds.menu_left"), "key", k) then
+        SceneManager.Action("left")
+    end
+    if BindContains(Save.Read("keybinds.menu_right"), "key", k) then
+        SceneManager.Action("right")
+    end
+    if BindContains(Save.Read("keybinds.menu_up"), "key", k) then
+        SceneManager.Action("up")
+    end
+    if BindContains(Save.Read("keybinds.menu_down"), "key", k) then
+        SceneManager.Action("down")
+    end
+    SceneManager.Action("*")
 end
 
 function love.keyreleased(k)
+    Input.KeyReleased(k)
     SceneManager.KeyReleased(k)
 end
 
@@ -453,6 +642,12 @@ AnaglyphSide = 0
 AnaglyphOn = false
 
 function love.update(dt)
+    HasGamepad = false
+    for _,joystick in ipairs(love.joystick.getJoysticks()) do
+        if joystick:isGamepad() then
+            HasGamepad = true
+        end
+    end
     love.audio.setVolume(SystemSettings.master_volume)
     
     local border = Borders[Save.Read("border")]
@@ -505,6 +700,10 @@ function love.update(dt)
 
     SceneManager.Update(dt)
     SceneManager.UpdateTransition(dt)
+
+    for axis,value in pairs(GamepadAxes) do
+        GamepadLastAxes[axis] = value
+    end
 end
 
 function love.draw()

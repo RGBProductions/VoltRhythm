@@ -86,7 +86,8 @@ function scene.load(args)
         ColorTransitionTable[colorIndexes[4]]
     }
     NoteFont = NoteFonts[Save.Read("note_skin")] or NoteFonts.dots
-    Keybinds[4] = Save.Read("keybinds")
+    -- Keybinds[4] = Save.Read("keybinds")
+    Input.ReadBinds()
     HitOffset = 0
     RealHits = 0
     Charge = 0
@@ -206,8 +207,72 @@ function Exit()
     end
 end
 
-function scene.keypressed(k)
-    if k == "escape" then
+local function notePress(laneIndex)
+    for i,note in ipairs(scene.chart.notes) do
+        local pos = note.time-scene.chart.time
+        if pos > TimingWindow then -- too far for us to care
+            break
+        end
+        local t = NoteTypes[note.type]
+        if t then
+            if t.hit then
+                local hit,accuracy,marked = t.hit(note, scene.chart.time, laneIndex-1)
+                if hit then
+                    local hitSound = hitSounds[lastHitSound+1]
+                    lastHitSound = (lastHitSound + 1) % #hitSounds
+                    if hitSound and Save.Read("enable_hit_sounds") then
+                        hitSound:stop()
+                        hitSound:play()
+                    end
+                    local accValue = (1-accuracy)
+                    LastRating = GetRating(accValue)
+                    RatingCounts[LastRating] = RatingCounts[LastRating] + 1
+                    if LastRating ~= 1 then FullOvercharge = false end
+                    if LastRating == 1 then
+                        accuracy = 0 -- 100%
+                        local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
+                        for _=1, 4 do
+                            local drawPos = (5)+(15)+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed*ScrollSpeedMod)
+                            table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
+                        end
+                    end
+                    Charge = Charge + (1-accuracy)
+                    Hits = Hits + 1
+                    LastOffset = (note.time-scene.chart.time)
+                    HitOffset = HitOffset + LastOffset
+                    RealHits = RealHits + 1
+                    Accuracy = Accuracy + (1-accuracy)
+                    local c = math.floor(Charge/scene.chart.totalCharge*100/2-1)
+                    local x = (16+c)*8
+                    RemoveParticlesByID("chargeup")
+                    for _=1,8 do
+                        table.insert(Particles, {id = "chargeup", x = x, y = 24*16+8, vx = love.math.random()*32, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = (c < 80 and ColorID.YELLOW) or (OverchargeColors[love.math.random(1,#OverchargeColors)]), char = "¤"})
+                    end
+                    if note.length <= 0 then
+                        note.destroyed = true
+                    else
+                        note.holding = true
+                        note.heldFor = 0
+                    end
+                    HitAmounts[note.lane+1] = 1
+                    Combo = Combo + 1
+                    MaxCombo = math.max(Combo, MaxCombo)
+                    if LastRating >= #NoteRatings-1 then
+                        Combo = 0
+                        ComboBreaks = ComboBreaks + 1
+                    end
+                    break
+                end
+                if marked then
+                    break
+                end
+            end
+        end
+    end
+end
+
+function scene.action(a)
+    if a == "pause" then
         if Paused then
             Paused = false
         elseif PauseTimer <= 0 then
@@ -215,10 +280,10 @@ function scene.keypressed(k)
         end
     end
     if Paused then
-        if k == "backspace" and Paused and not scene.forced then
+        if a == "quit" and Paused and not scene.forced then
             Exit()
         end
-        if k == "return" then
+        if a == "confirm" then
             if PauseSelection == 0 then
                 Paused = false
             end
@@ -229,17 +294,17 @@ function scene.keypressed(k)
                 Exit()
             end
         end
-        if k == "left" then
+        if a == "left" then
             PauseSelection = (PauseSelection-1)%(scene.forced and 2 or 3)
         end
-        if k == "right" then
+        if a == "right" then
             PauseSelection = (PauseSelection+1)%(scene.forced and 2 or 3)
         end
     end
-    if k == "r" then
+    if a == "restart" then
         Restart()
     end
-    if k == "f8" then
+    if a == "editor" then
         if scene.forced then return end
         if scene.song then scene.song:stop() end
         scene.chart.time = 0
@@ -248,121 +313,20 @@ function scene.keypressed(k)
         SceneManager.Transition("scenes/neditor", {songData = scene.songData, scorePrefix = scene.scorePrefix, difficulty = scene.difficulty})
     end
     if PauseTimer > 0 then return end
-    if k == "]" then
+    if a == "skip" then
         scene.chart.time = math.huge
     end
-    if not Autoplay then
-        local laneIndex = table.index(Keybinds[scene.chart.lanes] or Keybinds[8], k)
-        if laneIndex then
-            for i,note in ipairs(scene.chart.notes) do
-                local pos = note.time-scene.chart.time
-                if pos > TimingWindow then -- too far for us to care
-                    break
-                end
-                local t = NoteTypes[note.type]
-                if t then
-                    if t.hit then
-                        local hit,accuracy,marked = t.hit(note, scene.chart.time, laneIndex-1)
-                        if hit then
-                            local hitSound = hitSounds[lastHitSound+1]
-                            lastHitSound = (lastHitSound + 1) % #hitSounds
-                            if hitSound and Save.Read("enable_hit_sounds") then
-                                hitSound:stop()
-                                hitSound:play()
-                            end
-                            local accValue = (1-accuracy)
-                            LastRating = GetRating(accValue)
-                            RatingCounts[LastRating] = RatingCounts[LastRating] + 1
-                            if LastRating ~= 1 then FullOvercharge = false end
-                            if LastRating == 1 then
-                                accuracy = 0 -- 100%
-                                local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
-                                for _=1, 4 do
-                                    local drawPos = (5)+(15)+(ViewOffset+ViewOffsetFreeze)*(ScrollSpeed*ScrollSpeedMod)
-                                    table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
-                                end
-                            end
-                            Charge = Charge + (1-accuracy)
-                            Hits = Hits + 1
-                            LastOffset = (note.time-scene.chart.time)
-                            HitOffset = HitOffset + LastOffset
-                            RealHits = RealHits + 1
-                            Accuracy = Accuracy + (1-accuracy)
-                            local c = math.floor(Charge/scene.chart.totalCharge*100/2-1)
-                            local x = (16+c)*8
-                            RemoveParticlesByID("chargeup")
-                            for _=1,8 do
-                                table.insert(Particles, {id = "chargeup", x = x, y = 24*16+8, vx = love.math.random()*32, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = (c < 80 and ColorID.YELLOW) or (OverchargeColors[love.math.random(1,#OverchargeColors)]), char = "¤"})
-                            end
-                            if note.length <= 0 then
-                                note.destroyed = true
-                            else
-                                note.holding = true
-                                note.heldFor = 0
-                            end
-                            HitAmounts[note.lane+1] = 1
-                            Combo = Combo + 1
-                            MaxCombo = math.max(Combo, MaxCombo)
-                            if LastRating >= #NoteRatings-1 then
-                                Combo = 0
-                                ComboBreaks = ComboBreaks + 1
-                            end
-                            break
-                        end
-                        if marked then
-                            break
-                        end
-                    end
-                end
-                -- local pos = note.time-scene.chart.time
-                -- if math.abs(pos) <= TimingWindow and k == (Keybinds[scene.chart.lanes] or Keybinds[8])[note.lane+1] and not note.destroyed and not note.holding then
-                --     local t = 0.125
-                --     local accuracy = (math.abs(pos)/TimingWindow)
-                --     accuracy = math.max(0,math.min(1,(1/(1-t))*accuracy - ((1/(1-t))-1)))
-                --     local accValue = (1-accuracy)
-                --     for R,rating in ipairs(NoteRatings) do
-                --         if accValue >= rating.min and accValue < rating.max then
-                --             LastRating = R
-                --             break
-                --         end
-                --     end
-                --     RatingCounts[LastRating] = RatingCounts[LastRating] + 1
-                --     if LastRating ~= 1 then FullOvercharge = false end
-                --     if LastRating == 1 then
-                --         accuracy = 0 -- 100%
-                --         local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
-                --         for _=1, 4 do
-                --             local drawPos = (5)+(15)+(ViewOffset+ViewOffsetFreeze)*(ScrollSpeed*ScrollSpeedMod)
-                --             table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
-                --         end
-                --     end
-                --     Charge = Charge + (1-accuracy)
-                --     Hits = Hits + 1
-                --     HitOffset = HitOffset + pos
-                --     RealHits = RealHits + 1
-                --     Accuracy = Accuracy + (1-accuracy)
-                --     local c = math.floor(Charge/scene.chart.totalCharge*100/2-1)
-                --     local x = (16+c)*8
-                --     RemoveParticlesByID("chargeup")
-                --     for _=1,8 do
-                --         table.insert(Particles, {id = "chargeup", x = x, y = 24*16+8, vx = love.math.random()*32, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = (c < 80 and ColorID.YELLOW) or (OverchargeColors[love.math.random(1,#OverchargeColors)]), char = "¤"})
-                --     end
-                --     if note.length <= 0 then
-                --         note.destroyed = true
-                --     else
-                --         note.holding = true
-                --         note.heldFor = 0
-                --     end
-                --     HitAmounts[note.lane+1] = 1
-                --     Combo = Combo + 1
-                --     if LastRating >= #NoteRatings-1 then
-                --         Combo = 0
-                --         ComboBreaks = ComboBreaks + 1
-                --     end
-                --     break
-                -- end
-            end
-        end
+end
+
+function scene.keypressed(k)
+    if k == "f8" then
+        SceneManager.Action("editor")
+    end
+    if k == "backspace" and Paused and not scene.forced then
+        SceneManager.Action("quit")
+    end
+    if k == "]" then
+        SceneManager.Action("skip")
     end
 end
 
@@ -393,6 +357,8 @@ function HandleChartEffects()
         num = #scene.chart.effects
     end
 end
+
+local lastHeld = {false,false,false,false}
 
 function scene.update(dt)
     if not WindowFocused and PauseTimer <= 0 and SystemSettings.pause_on_lost_focus then
@@ -474,6 +440,15 @@ function scene.update(dt)
         end
     end
 
+    if not Autoplay then
+        for i = 1, 4 do
+            if not lastHeld[i] and Input.Held[i] then
+                notePress(i)
+            end
+            lastHeld[i] = Input.Held[i]
+        end
+    end
+
     do
         local i = 1
         local num = #scene.chart.notes
@@ -519,7 +494,7 @@ function scene.update(dt)
                                     RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                                     local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
                                     for _=1, 4 do
-                                        local drawPos = (5)+(15)+(ViewOffset+ViewOffsetFreeze)*(ScrollSpeed*ScrollSpeedMod)
+                                        local drawPos = (5)+(15)+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed*ScrollSpeedMod)
                                         table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
                                     end
                                     Accuracy = Accuracy + 1
@@ -549,14 +524,15 @@ function scene.update(dt)
                 end
                 if note.holding and pos <= 0 then
                     if note.length > 0 then
-                        if love.keyboard.isDown((Keybinds[scene.chart.lanes] or Keybinds[8])[note.lane+1]) or Autoplay then
+                        -- if love.keyboard.isDown((Keybinds[scene.chart.lanes] or Keybinds[8])[note.lane+1]) or Autoplay then
+                        if Input.Held[note.lane+1] or Autoplay then
                             local lastHeldFor = note.heldFor or 0
                             note.heldFor = math.min(note.length, lastHeldFor + dt)
                             Charge = Charge + (note.heldFor-lastHeldFor)
                             if (lastBeatCount % 0.5) > (scene.beatCount % 0.5) then
                                 local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
                                 for _=1, 4 do
-                                    local drawPos = (5)+(15)+(ViewOffset+ViewOffsetFreeze)*(ScrollSpeed*ScrollSpeedMod)
+                                    local drawPos = (5)+(15)+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed*ScrollSpeedMod)
                                     table.insert(Particles, {id = "holdgrind", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*32, vy = -(love.math.random()*2)*64, life = (love.math.random()*0.5+0.5)*0.25, color = NoteColors[note.lane+1][3], char = "¤"})
                                 end
                             end
@@ -608,7 +584,8 @@ function scene.update(dt)
                                     i = i - 1
                                 end
                             else
-                                if not love.keyboard.isDown((Keybinds[scene.chart.lanes] or Keybinds[8])[note.lane+1]) and not Autoplay then
+                                -- if not love.keyboard.isDown((Keybinds[scene.chart.lanes] or Keybinds[8])[note.lane+1]) and not Autoplay then
+                                if not Input.Held[note.lane+1] and not Autoplay then
                                     if pos <= -0.25-(note.length-0.4) then
                                         if note.heldFor == 0 or not note.heldFor then
                                             MissTime = 1
@@ -779,7 +756,7 @@ function scene.update(dt)
     end
 
     for i = 1, scene.chart.lanes do
-        PressAmounts[i] = math.max(0, math.min(Autoplay and math.huge or 1, (PressAmounts[i] or 0) + dt*8*((love.keyboard.isDown((Keybinds[scene.chart.lanes] or Keybinds[8])[i]) and not Autoplay) and 1/dt or -1/dt)))
+        PressAmounts[i] = math.max(0, math.min(Autoplay and math.huge or 1, (PressAmounts[i] or 0) + dt*8*((Input.Held[i] and not Autoplay) and 1/dt or -1/dt)))
         HitAmounts[i] = math.max(0, math.min(1, (HitAmounts[i] or 0) - dt*8))
     end
     if scene.background and scene.background.update then
@@ -901,7 +878,7 @@ function scene.draw()
     local jlBrightness = math.max(BoardBrightness,NoteBrightness)
     love.graphics.setColor(r3*jlBrightness,g3*jlBrightness,b3*jlBrightness,a3)
     do
-        local drawPos = (5)+(15)+(ViewOffsetMoveLine and (ViewOffset+ViewOffsetFreeze) or 0)*(ScrollSpeed*ScrollSpeedMod)
+        local drawPos = (5)+(15)+(ViewOffsetMoveLine and ((ViewOffset or 0)+(ViewOffsetFreeze or 0)) or 0)*(ScrollSpeed*ScrollSpeedMod)
         if drawPos >= 5 and drawPos <= 20 then
             love.graphics.print("┈┈┈"..("╬┈┈┈"):rep(scene.chart.lanes-1), ((80-(scene.chart.lanes*4-1))/2 - 1+(1-1)*4 + 1)*8, drawPos*16-16)
         end
@@ -912,7 +889,7 @@ function scene.draw()
         local x = (80-(scene.chart.lanes*4-1))/2 - 1+(i-1)*4 + 1
         local v = math.ceil(math.min(1,PressAmounts[i])+HitAmounts[i]*2)
         if v > 0 then
-            local drawPos = (5)+(15)+(ViewOffsetMoveLine and (ViewOffset+ViewOffsetFreeze) or 0)*(ScrollSpeed*ScrollSpeedMod)
+            local drawPos = (5)+(15)+(ViewOffsetMoveLine and ((ViewOffset or 0)+(ViewOffsetFreeze or 0)) or 0)*(ScrollSpeed*ScrollSpeedMod)
             love.graphics.setColor(TerminalColors[NoteColors[((i-1)%(#NoteColors))+1][v+1]])
             love.graphics.print("███", x*8 + AnaglyphSide*0.75, drawPos*16-16)
             -- if HitAmounts[i] > 0 then

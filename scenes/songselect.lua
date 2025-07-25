@@ -32,18 +32,174 @@ local function playSong(songInfo)
     end
 end
 
-function scene.update(dt)
-    local blendAmt = 1/((5/4) ^ 60)
-    local blend = blendAmt^dt
-    SongSelectOffsetView = blend*(SongSelectOffsetView - SongSelectOffsetViewTarget) + SongSelectOffsetViewTarget
-end
-
 local difficulties = {
     "easy", "medium", "hard", "extreme", "overvolt", "hidden"
 }
 
 local lockImage = love.graphics.newImage("images/lock.png")
 local hiddenCover = love.graphics.newImage("images/cover/hidden.png")
+
+local function finishSelection()
+    local selected = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
+    if selected.songData then
+        if not table.index(selected.difficulties, difficulties[SongSelectDifficulty]) then
+            for i = 1, 5 do
+                if table.index(selected.difficulties, difficulties[SongSelectDifficulty-i]) then
+                    if (not SongSelectOvervoltMode) and difficulties[SongSelectDifficulty-i] ~= "overvolt" and difficulties[SongSelectDifficulty-i] ~= "hidden" then
+                        SongSelectDifficulty = SongSelectDifficulty-i
+                        break
+                    end
+                end
+                if table.index(selected.difficulties, difficulties[SongSelectDifficulty+i]) then
+                    if (not SongSelectOvervoltMode) and difficulties[SongSelectDifficulty+i] ~= "overvolt" and difficulties[SongSelectDifficulty+i] ~= "hidden" then
+                        SongSelectDifficulty = SongSelectDifficulty+i
+                        break
+                    end
+                end
+            end
+        end
+    end
+    playSong(selected)
+end
+
+function scene.action(a)
+    if SceneManager.TransitioningIn() or SceneManager.TransitioningOut() then return end
+    if askToDelete then
+        if a == "confirm" then
+            Save.Write("songs." .. askToDelete .. "." .. askToDeleteDiff, nil)
+            askToDelete = nil
+            askToDeleteDiff = nil
+        end
+        if a == "back" then
+            askToDelete = nil
+            askToDeleteDiff = nil
+        end
+        return
+    end
+    if a == "show_more" then
+        local selected = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
+        local difficulty = SongSelectOvervoltMode and (table.index(difficulties, selected.difficulties[1]) or 5) or SongSelectDifficulty
+        local savedRating = Save.Read("songs."..(selected.scorePrefix or "")..selected.name.."."..difficulties[difficulty])
+        if savedRating and selected.isUnlocked then
+            scene.showMore = not scene.showMore
+        end
+    end
+    if a == "overvolt" and scene.campaign.hasOvervolt then
+        MissTime = 2
+        SongSelectOvervoltMode = not SongSelectOvervoltMode
+        local prev = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
+        local foundSame = nil
+        for i,song in ipairs(scene.campaign.sections[SongSelectSelectedSection].songs) do
+            if (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[song] and song.name == prev.name then
+                foundSame = i
+            end
+        end
+        if foundSame then
+            SongSelectSelectedSong = foundSame
+        else
+            SongSelectSelectedSong = 1
+            while not (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] do
+                SongSelectSelectedSong = SongSelectSelectedSong + 1
+                if SongSelectSelectedSong > #scene.campaign.sections[SongSelectSelectedSection].songs then
+                    SongSelectSelectedSection = (SongSelectSelectedSection % #scene.campaign.sections) + 1
+                    SongSelectSelectedSong = 1
+                end
+            end
+        end
+        SongSelectOffsetViewTarget = (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] * 128
+        finishSelection()
+    end
+    if a == "editor" then
+        if preview then
+            preview:stop()
+            preview:setLooping(false)
+        end
+        SceneManager.Transition("scenes/neditor")
+    end
+    if a == "right" then
+        local found = false
+        while not found do
+            SongSelectSelectedSong = SongSelectSelectedSong + 1
+            if SongSelectSelectedSong > #scene.campaign.sections[SongSelectSelectedSection].songs then
+                SongSelectSelectedSection = (SongSelectSelectedSection % #scene.campaign.sections) + 1
+                SongSelectSelectedSong = 1
+            end
+            if (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] then
+                found = true
+            end
+        end
+        SongSelectOffsetViewTarget = (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] * 128
+        finishSelection()
+    end
+    if a == "left" then
+        local found = false
+        while not found do
+            SongSelectSelectedSong = SongSelectSelectedSong - 1
+            if SongSelectSelectedSong <= 0 then
+                SongSelectSelectedSection = ((SongSelectSelectedSection - 2) % #scene.campaign.sections) + 1
+                SongSelectSelectedSong = #scene.campaign.sections[1].songs
+            end
+            if (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] then
+                found = true
+            end
+        end
+        SongSelectOffsetViewTarget = (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] * 128
+        finishSelection()
+    end
+    if not SongSelectOvervoltMode then
+        if a == "up" then
+            local selected = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
+            if selected.songData and selected.isUnlocked then
+                -- SongSelectDifficulty = (SongSelectDifficulty % 4) + 1
+                repeat
+                    SongSelectDifficulty = (SongSelectDifficulty % 4) + 1
+                until table.index(selected.difficulties, difficulties[SongSelectDifficulty])
+            end
+        end
+        if a == "down" then
+            local selected = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
+            if selected.songData and selected.isUnlocked then
+                -- SongSelectDifficulty = ((SongSelectDifficulty - 2) % 4) + 1
+                repeat
+                    SongSelectDifficulty = ((SongSelectDifficulty - 2) % 4) + 1
+                until table.index(selected.difficulties, difficulties[SongSelectDifficulty])
+            end
+        end
+    end
+
+    if a == "confirm" then
+        if scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].isUnlocked then
+            local diffs = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].difficulties
+            local difficulty = SongSelectOvervoltMode and (table.index(difficulties, diffs[#diffs]) or 5) or SongSelectDifficulty
+            ---@type SongData?
+            local songData = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].songData
+            local scorePrefix = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].scorePrefix
+            if songData and songData:loadChart(difficulties[difficulty]) ~= nil then
+                if preview then
+                    preview:stop()
+                    preview:setLooping(false)
+                end
+                Autoplay = love.keyboard.isDown("lshift")
+                Showcase = love.keyboard.isDown("lctrl") and Autoplay
+                SceneManager.Transition("scenes/" .. scene.destination, {songData = songData, scorePrefix = scorePrefix, difficulty = difficulties[difficulty]})
+            end
+        end
+    end
+
+    if a == "back" then
+        if preview then
+            preview:stop()
+            preview:setLooping(false)
+        end
+        SceneManager.Transition("scenes/" .. scene.source)
+    end
+end
+
+function scene.update(dt)
+    local blendAmt = 1/((5/4) ^ 60)
+    local blend = blendAmt^dt
+    SongSelectOffsetView = blend*(SongSelectOffsetView - SongSelectOffsetViewTarget) + SongSelectOffsetViewTarget
+end
 
 local function testLock(lock)
     local global = lock.global or {}
@@ -82,29 +238,6 @@ local function testLock(lock)
         end
     end
     return requirements,meets,lock.hide and not meets
-end
-
-local function finishSelection()
-    local selected = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
-    if selected.songData then
-        if not table.index(selected.difficulties, difficulties[SongSelectDifficulty]) then
-            for i = 1, 5 do
-                if table.index(selected.difficulties, difficulties[SongSelectDifficulty-i]) then
-                    if (not SongSelectOvervoltMode) and difficulties[SongSelectDifficulty-i] ~= "overvolt" and difficulties[SongSelectDifficulty-i] ~= "hidden" then
-                        SongSelectDifficulty = SongSelectDifficulty-i
-                        break
-                    end
-                end
-                if table.index(selected.difficulties, difficulties[SongSelectDifficulty+i]) then
-                    if (not SongSelectOvervoltMode) and difficulties[SongSelectDifficulty+i] ~= "overvolt" and difficulties[SongSelectDifficulty+i] ~= "hidden" then
-                        SongSelectDifficulty = SongSelectDifficulty+i
-                        break
-                    end
-                end
-            end
-        end
-    end
-    playSong(selected)
 end
 
 function scene.load(args)
@@ -201,18 +334,6 @@ end
 
 function scene.keypressed(k)
     if SceneManager.TransitioningIn() or SceneManager.TransitioningOut() then return end
-    if askToDelete then
-        if k == "return" then
-            Save.Write("songs." .. askToDelete .. "." .. askToDeleteDiff, nil)
-            askToDelete = nil
-            askToDeleteDiff = nil
-        end
-        if k == "escape" then
-            askToDelete = nil
-            askToDeleteDiff = nil
-        end
-        return
-    end
     if k == "backspace" then
         local selected = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
         local difficulty = SongSelectOvervoltMode and (table.index(difficulties, selected.difficulties[1]) or 5) or SongSelectDifficulty
@@ -222,39 +343,6 @@ function scene.keypressed(k)
             askToDeleteDiff = difficulties[difficulty]
         end
     end
-    if k == "tab" then
-        local selected = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
-        local difficulty = SongSelectOvervoltMode and (table.index(difficulties, selected.difficulties[1]) or 5) or SongSelectDifficulty
-        local savedRating = Save.Read("songs."..(selected.scorePrefix or "")..selected.name.."."..difficulties[difficulty])
-        if savedRating and selected.isUnlocked then
-            scene.showMore = not scene.showMore
-        end
-    end
-    if k == "o" and scene.campaign.hasOvervolt then
-        MissTime = 2
-        SongSelectOvervoltMode = not SongSelectOvervoltMode
-        local prev = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
-        local foundSame = nil
-        for i,song in ipairs(scene.campaign.sections[SongSelectSelectedSection].songs) do
-            if (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[song] and song.name == prev.name then
-                foundSame = i
-            end
-        end
-        if foundSame then
-            SongSelectSelectedSong = foundSame
-        else
-            SongSelectSelectedSong = 1
-            while not (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] do
-                SongSelectSelectedSong = SongSelectSelectedSong + 1
-                if SongSelectSelectedSong > #scene.campaign.sections[SongSelectSelectedSection].songs then
-                    SongSelectSelectedSection = (SongSelectSelectedSection % #scene.campaign.sections) + 1
-                    SongSelectSelectedSong = 1
-                end
-            end
-        end
-        SongSelectOffsetViewTarget = (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] * 128
-        finishSelection()
-    end
     if k == "f8" then
         if preview then
             preview:stop()
@@ -262,88 +350,18 @@ function scene.keypressed(k)
         end
         SceneManager.Transition("scenes/neditor")
     end
-    if k == "right" then
-        local found = false
-        while not found do
-            SongSelectSelectedSong = SongSelectSelectedSong + 1
-            if SongSelectSelectedSong > #scene.campaign.sections[SongSelectSelectedSection].songs then
-                SongSelectSelectedSection = (SongSelectSelectedSection % #scene.campaign.sections) + 1
-                SongSelectSelectedSong = 1
-            end
-            if (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] then
-                found = true
-            end
-        end
-        SongSelectOffsetViewTarget = (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] * 128
-        finishSelection()
-    end
-    if k == "left" then
-        local found = false
-        while not found do
-            SongSelectSelectedSong = SongSelectSelectedSong - 1
-            if SongSelectSelectedSong <= 0 then
-                SongSelectSelectedSection = ((SongSelectSelectedSection - 2) % #scene.campaign.sections) + 1
-                SongSelectSelectedSong = #scene.campaign.sections[1].songs
-            end
-            if (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] then
-                found = true
-            end
-        end
-        SongSelectOffsetViewTarget = (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] * 128
-        finishSelection()
-    end
-    if not SongSelectOvervoltMode then
-        if k == "up" then
-            local selected = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
-            if selected.songData and selected.isUnlocked then
-                -- SongSelectDifficulty = (SongSelectDifficulty % 4) + 1
-                repeat
-                    SongSelectDifficulty = (SongSelectDifficulty % 4) + 1
-                until table.index(selected.difficulties, difficulties[SongSelectDifficulty])
-            end
-        end
-        if k == "down" then
-            local selected = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
-            if selected.songData and selected.isUnlocked then
-                -- SongSelectDifficulty = ((SongSelectDifficulty - 2) % 4) + 1
-                repeat
-                    SongSelectDifficulty = ((SongSelectDifficulty - 2) % 4) + 1
-                until table.index(selected.difficulties, difficulties[SongSelectDifficulty])
-            end
-        end
-    end
-
-    if k == "return" then
-        if scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].isUnlocked then
-            local diffs = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].difficulties
-            local difficulty = SongSelectOvervoltMode and (table.index(difficulties, diffs[#diffs]) or 5) or SongSelectDifficulty
-            ---@type SongData?
-            local songData = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].songData
-            local scorePrefix = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].scorePrefix
-            if songData and songData:loadChart(difficulties[difficulty]) ~= nil then
-                if preview then
-                    preview:stop()
-                    preview:setLooping(false)
-                end
-                Autoplay = love.keyboard.isDown("lshift")
-                Showcase = love.keyboard.isDown("lctrl") and Autoplay
-                SceneManager.Transition("scenes/" .. scene.destination, {songData = songData, scorePrefix = scorePrefix, difficulty = difficulties[difficulty]})
-            end
-        end
-    end
-
-    if k == "escape" then
-        if preview then
-            preview:stop()
-            preview:setLooping(false)
-        end
-        SceneManager.Transition("scenes/" .. scene.source)
-    end
 end
 
 local songselectText = love.graphics.newImage("images/title/songselect.png")
 
 function scene.draw()
+    local binds = {
+        back = HasGamepad and Save.Read("keybinds.back")[2] or Save.Read("keybinds.back")[1],
+        confirm = HasGamepad and Save.Read("keybinds.confirm")[2] or Save.Read("keybinds.confirm")[1],
+        show_more = HasGamepad and Save.Read("keybinds.show_more")[2] or Save.Read("keybinds.show_more")[1],
+        overvolt = HasGamepad and Save.Read("keybinds.overvolt")[2] or Save.Read("keybinds.overvolt")[1]
+    }
+
     local selected = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
 
     local function drawSong(song)
@@ -463,7 +481,7 @@ function scene.draw()
             love.graphics.print(x .. "¤", 64+8*(19-#tostring(x)), 160-16)
             love.graphics.print(math.floor((savedRating.accuracy or 0)*100*100)/100 .. "%", 64+8*(19-#tostring(math.floor((savedRating.accuracy or 0)*100*100)/100)), 176-16)
 
-            love.graphics.printf("TAB - OVERALL", 64, 192, 160, "center")
+            love.graphics.printf(KeyLabel(binds.show_more) .. " - OVERALL", 64, 192, 160, "center")
         else
             local ratings = {}
             for _,diff in ipairs(selected.difficulties) do
@@ -497,9 +515,9 @@ function scene.draw()
             love.graphics.print(pc .. "¤", 64+8*(20-#tostring(pc)), 128-16)
             love.graphics.print("+" .. po .. "¤", 64+8*(20-#("+" .. tostring(po))), 144-16)
             love.graphics.print(px .. "¤", 64+8*(20-#tostring(px)), 160-16)
-            love.graphics.print(math.floor((savedRating.accuracy or 0)*100*100)/100 .. "%", 64+8*(20-#tostring(math.floor((savedRating.accuracy or 0)*100*100)/100)), 176-16)
+            love.graphics.print(math.floor((savedRating.accuracy or 0)*100*100)/100 .. "%", 64+8*(19-#tostring(math.floor((savedRating.accuracy or 0)*100*100)/100)), 176-16)
 
-            love.graphics.printf("TAB - CHART", 64, 192, 160, "center")
+            love.graphics.printf(KeyLabel(binds.show_more) .. " - CHART", 64, 192, 160, "center")
         end
     end
 
@@ -550,23 +568,23 @@ function scene.draw()
 
     -- love.graphics.printf("Press F8 to create a new song in the editor", 32, 400, 576, "left")
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    love.graphics.printf("ESC - Exit", 32, 400, 576, "left")
+    love.graphics.printf(KeyLabel(binds.back) .. " - Exit", 32, 400, 576, "left")
     local canPlay = selected.isUnlocked and (selected.songData and selected.songData:loadChart(difficulties[difficulty]) ~= nil)
     if not canPlay then
         love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
     end
-    love.graphics.printf("ENTER - Play", 32, 400, 576, "right")
+    love.graphics.printf(KeyLabel(binds.confirm) .. " - Play", 32, 400, 576, "right")
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     if SongSelectHasOvervolt then
         if SongSelectOvervoltMode then
             love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
             love.graphics.printf("GO BACK", 32, 400, 576, "center")
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
-            love.graphics.printf("PRESS O", 32, 416, 576, "center")
+            love.graphics.printf("PRESS " .. KeyLabel(binds.overvolt), 32, 416, 576, "center")
         else
             PrintDifficulty(320, 400, "overvolt", nil, "center")
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
-            love.graphics.printf("PRESS O", 32, 416, 576, "center")
+            love.graphics.printf("PRESS " .. KeyLabel(binds.overvolt), 32, 416, 576, "center")
         end
     end
     -- love.graphics.printf("Total Charge: " .. math.floor(scene.totalCharge) .. "¤ (" .. math.floor(scene.totalCharge / scene.potentialCharge * 100) .. "%)", 32, 400, 576, "left")

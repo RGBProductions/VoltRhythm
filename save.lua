@@ -10,7 +10,24 @@ local defaultSave = {
     main_color = ColorID.LIGHT_RED,
     accent_color = ColorID.BLUE,
     songs = {},
-    keybinds = {"a","s","k","l"},
+    keybinds = {
+        lanes = {
+            {{"key","a"},{"gtrigger","triggerleft"}},
+            {{"key","s"},{"gbutton","leftshoulder"}},
+            {{"key","k"},{"gbutton","rightshoulder"}},
+            {{"key","l"},{"gtrigger","triggerright"}}
+        },
+        pause = {{"key","escape"},{"gbutton","start"}},
+        back = {{"key","escape"},{"gbutton","b"}},
+        confirm = {{"key","return"},{"gbutton","a"}},
+        restart = {{"key","r"},{"gbutton","y"}},
+        overvolt = {{"key","o"},{"gbutton","y"}},
+        show_more = {{"key","tab"},{"gbutton","x"}},
+        menu_left = {{"key","left"},{"gbutton","dpleft"}}, -- implicit: left stick left
+        menu_right = {{"key","right"},{"gbutton","dpright"}}, -- implicit: left stick right
+        menu_up = {{"key","up"},{"gbutton","dpup"}}, -- implicit: left stick up
+        menu_down = {{"key","down"},{"gbutton","dpdown"}} -- implicit: left stick down
+    },
     note_colors = {ColorID.LIGHT_RED, ColorID.YELLOW, ColorID.LIGHT_GREEN, ColorID.LIGHT_BLUE},
     mine_color = ColorID.RED,
     border = "none",
@@ -36,6 +53,29 @@ function Save.Load()
         else
             profiles[file:sub(1,-6)] = table.merge({}, defaultSave)
         end
+        
+        -- Keybinds upgrade
+        local binds = profiles[file:sub(1,-6)].keybinds
+        if type(binds[1]) == "table" then
+            -- Broken format; needs to be fixed
+            local old = profiles[file:sub(1,-6)].keybinds
+            binds = table.merge({}, defaultSave.keybinds)
+            binds.lanes = old
+        end
+        if type(binds[1]) == "string" then
+            -- Old format; needs to upgrade
+            binds.lanes = {
+                {{"key",binds[1]},{"gtrigger","triggerleft"}},
+                {{"key",binds[2]},{"gbutton","leftshoulder"}},
+                {{"key",binds[3]},{"gbutton","rightshoulder"}},
+                {{"key",binds[4]},{"gtrigger","triggerright"}}
+            }
+            binds[1] = nil
+            binds[2] = nil
+            binds[3] = nil
+            binds[4] = nil
+        end
+        profiles[file:sub(1,-6)].keybinds = binds
     end
     local lastProfile = love.filesystem.read("lastprofile")
     if lastProfile and profiles[lastProfile] then

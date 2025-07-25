@@ -579,7 +579,17 @@ EffectTypes = {
     freeze_view = {
         readable = "FREEZE VIEW",
         apply = function(self)
-            ViewOffsetFreeze = not ViewOffsetFreeze
+            ChartFrozen = not ChartFrozen
+            ViewOffsetFreeze = 0
+            ViewOffsetMoveLine = not self.data.keep_line
+        end,
+        editor = function(self,container)
+            local keepIn = DialogToggle:new(0,80,container.width,16,"KEEP LINE")
+            keepIn.active = self.data.keep_line
+            table.insert(container.contents, keepIn)
+            return function(effect)
+                effect.data.keep_line = keepIn.active or effect.data.keep_line
+            end
         end
     },
     hide_titlebar = {
@@ -1261,7 +1271,8 @@ function Lyrics:new(script)
                 boundingBox[4] = math.max(boundingBox[4], y1, y2)
             end
             if component.type == "key" then
-                local text = Keybinds[4][component.key+1] or "?"
+                local bind = Input.Binds[component.key+1] or {{"key","?"},{"gbutton","?"}}
+                local text = (KeyLabel(HasGamepad and bind[2] or bind[1])):upper()
                 local w,wrap = Font:getWrap(text, Font:getWidth(text))
                 local x1,y1,x2,y2 = component.x, component.y, component.x+w, component.y+(#wrap * Font:getHeight())
                 boundingBox[1] = math.min(boundingBox[1], x1, x2)
@@ -1321,7 +1332,8 @@ function Lyrics:draw(time)
                 love.graphics.printf(component.text, 16+component.x, 16+component.y, w, "center")
             end
             if component.type == "key" then
-                local text = (Keybinds[4][component.key+1] or "?"):upper()
+                local bind = Input.Binds[component.key+1] or {{"key","?"},{"gbutton","?"}}
+                local text = (KeyLabel(HasGamepad and bind[2] or bind[1])):upper()
                 local w = Font:getWidth(text)
                 love.graphics.printf(text, 16+component.x, 16+component.y, w, "center")
             end

@@ -41,6 +41,7 @@ function scene.load(args)
     scene.colorSelectionY = 0
 
     love.keyboard.setKeyRepeat(true)
+    love.keyboard.setTextInput(scene.state == 0)
 end
 
 function scene.keypressed(k)
@@ -53,9 +54,11 @@ function scene.keypressed(k)
         end
         if k == "return" then
             scene.state = scene.state + 1
+            love.keyboard.setTextInput(scene.state == 0)
         end
         if k == "escape" then
             scene.state = scene.state - 1
+            love.keyboard.setTextInput(scene.state == 0)
         end
         if scene.state < scene.minState then
             SceneManager[scene.transition and "Transition" or "LoadScene"]("scenes/"..scene.destination, {profileSetupFailed = true})
@@ -102,6 +105,7 @@ function scene.keypressed(k)
             end
             if k == "escape" then
                 scene.state = scene.state - 1
+                love.keyboard.setTextInput(scene.state == 0)
             end
             if scene.state < scene.minState then
                 SceneManager[scene.transition and "Transition" or "LoadScene"]("scenes/"..scene.destination, {profileSetupFailed = true})

@@ -8,17 +8,13 @@ function scene.load()
     scene.source = Assets.Source("sounds/calibration.ogg")
 end
 
----@param k love.KeyConstant
-function scene.keypressed(k)
-    if k == "lalt" or k == "ralt" or k == "tab" then
-        return
-    end
-    if k == "escape" then
+function scene.action(a)
+    if a == "back" then
         scene.source:stop()
         SceneManager.Transition("scenes/settings", {stay=true})
         return
     end
-    if k == "return" then
+    if a == "confirm" then
         if not scene.going and not scene.complete then
             scene.going = true
             scene.source:play()
@@ -35,9 +31,15 @@ function scene.keypressed(k)
         local t = scene.source:tell("seconds")/len*4
         local off = ((t-1) % 4) - 2
         local hitOffset = off*len/4
-        print(hitOffset)
         scene.offset = scene.offset + hitOffset
         scene.hits = scene.hits + 1
+    end
+end
+
+---@param k love.KeyConstant
+function scene.keypressed(k)
+    if k == "lalt" or k == "ralt" or k == "tab" then
+        return true
     end
 end
 
@@ -50,13 +52,13 @@ end
 
 function scene.draw()
     if not scene.going and not scene.complete then
-        love.graphics.printf("Press enter to begin calibration.", 0, 240-8, 640, "center")
+        love.graphics.printf("Press " .. (HasGamepad and "(A)" or "enter") .. " to begin calibration.", 0, 240-8, 640, "center")
     end
     if scene.going then
-        love.graphics.printf("Press any key on the fourth beat.\nPress enter to stop.\n\nOffset is " .. math.floor((scene.offset/scene.hits)*1000) .. "ms", 0, 240-16-16, 640, "center")
+        love.graphics.printf("Press any " .. (HasGamepad and "button" or "key") .. " on the fourth beat.\nPress " .. (HasGamepad and "(A)" or "enter") .. " to stop.\n\nOffset is " .. math.floor((scene.offset/scene.hits)*1000) .. "ms", 0, 240-16-16, 640, "center")
     end
     if scene.complete then
-        love.graphics.printf("Your new offset is " .. math.floor((scene.offset/scene.hits)*1000) .. "ms.\n\nPress enter to exit", 0, 240-8-16, 640, "center")
+        love.graphics.printf("Your new offset is " .. math.floor((scene.offset/scene.hits)*1000) .. "ms.\n\nPress " .. (HasGamepad and "(A)" or "enter") .. " to exit", 0, 240-8-16, 640, "center")
     end
 end
 

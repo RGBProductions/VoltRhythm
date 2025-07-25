@@ -16,17 +16,17 @@ end
 CreditsSelection = 0
 CreditsView = 0
 
-function scene.keypressed(k)
-    if k == "escape" then
+function scene.action(a)
+    if a == "back" then
         SceneManager.Transition("scenes/menu")
     end
-    if k == "up" then
+    if a == "up" then
         CreditsSelection = (CreditsSelection - 1) % #credits
     end
-    if k == "down" then
+    if a == "down" then
         CreditsSelection = (CreditsSelection + 1) % #credits
     end
-    if k == "return" and credits[CreditsSelection+1].url then
+    if a == "confirm" and credits[CreditsSelection+1].url then
         love.system.openURL(credits[CreditsSelection+1].url)
     end
 end

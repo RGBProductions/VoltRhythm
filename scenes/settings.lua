@@ -1,6 +1,7 @@
 local scene = {}
 
 local rebinding = nil
+local rebindTime = 0
 
 SettingsChart = SettingsChart or {
     Note:new(TimeBPM(0, 60), 0, 0, "normal", {}),
@@ -281,41 +282,141 @@ local root = {
                 {
                     label = "LANE 1",
                     type = "key",
-                    read = function()
-                        return Save.Read("keybinds.1")
+                    read = function(i)
+                        return Save.Read("keybinds.lanes.1")[i]
                     end,
-                    write = function(value)
-                        Save.Write("keybinds.1", value)
+                    write = function(value,t,i)
+                        Save.Write("keybinds.lanes.1."..i, {t, value})
                     end
                 },
                 {
                     label = "LANE 2",
                     type = "key",
-                    read = function()
-                        return Save.Read("keybinds.2")
+                    read = function(i)
+                        return Save.Read("keybinds.lanes.2")[i]
                     end,
-                    write = function(value)
-                        Save.Write("keybinds.2", value)
+                    write = function(value,t,i)
+                        Save.Write("keybinds.lanes.2."..i, {t, value})
                     end
                 },
                 {
                     label = "LANE 3",
                     type = "key",
-                    read = function()
-                        return Save.Read("keybinds.3")
+                    read = function(i)
+                        return Save.Read("keybinds.lanes.3")[i]
                     end,
-                    write = function(value)
-                        Save.Write("keybinds.3", value)
+                    write = function(value,t,i)
+                        Save.Write("keybinds.lanes.3."..i, {t, value})
                     end
                 },
                 {
                     label = "LANE 4",
                     type = "key",
-                    read = function()
-                        return Save.Read("keybinds.4")
+                    read = function(i)
+                        return Save.Read("keybinds.lanes.4")[i]
                     end,
-                    write = function(value)
-                        Save.Write("keybinds.4", value)
+                    write = function(value,t,i)
+                        Save.Write("keybinds.lanes.4."..i, {t, value})
+                    end
+                },
+                {
+                    label = "PAUSE",
+                    type = "key",
+                    read = function(i)
+                        return Save.Read("keybinds.pause")[i]
+                    end,
+                    write = function(value,t,i)
+                        Save.Write("keybinds.pause."..i, {t, value})
+                    end
+                },
+                {
+                    label = "CONFIRM",
+                    type = "key",
+                    read = function(i)
+                        return Save.Read("keybinds.confirm")[i]
+                    end,
+                    write = function(value,t,i)
+                        Save.Write("keybinds.confirm."..i, {t, value})
+                    end
+                },
+                {
+                    label = "BACK",
+                    type = "key",
+                    read = function(i)
+                        return Save.Read("keybinds.back")[i]
+                    end,
+                    write = function(value,t,i)
+                        Save.Write("keybinds.back."..i, {t, value})
+                    end
+                },
+                {
+                    label = "QUICK RESTART",
+                    type = "key",
+                    read = function(i)
+                        return Save.Read("keybinds.restart")[i]
+                    end,
+                    write = function(value,t,i)
+                        Save.Write("keybinds.restart."..i, {t, value})
+                    end
+                },
+                {
+                    label = "OVERVOLT MENU",
+                    type = "key",
+                    read = function(i)
+                        return Save.Read("keybinds.overvolt")[i]
+                    end,
+                    write = function(value,t,i)
+                        Save.Write("keybinds.overvolt."..i, {t, value})
+                    end
+                },
+                {
+                    label = "SHOW MORE",
+                    type = "key",
+                    read = function(i)
+                        return Save.Read("keybinds.show_more")[i]
+                    end,
+                    write = function(value,t,i)
+                        Save.Write("keybinds.show_more."..i, {t, value})
+                    end
+                },
+                {
+                    label = "MENU LEFT",
+                    type = "key",
+                    read = function(i)
+                        return Save.Read("keybinds.menu_left")[i]
+                    end,
+                    write = function(value,t,i)
+                        Save.Write("keybinds.menu_left."..i, {t, value})
+                    end
+                },
+                {
+                    label = "MENU RIGHT",
+                    type = "key",
+                    read = function(i)
+                        return Save.Read("keybinds.menu_right")[i]
+                    end,
+                    write = function(value,t,i)
+                        Save.Write("keybinds.menu_right."..i, {t, value})
+                    end
+                },
+                {
+                    label = "MENU UP",
+                    type = "key",
+                    read = function(i)
+                        return Save.Read("keybinds.menu_up")[i]
+                    end,
+                    write = function(value,t,i)
+                        Save.Write("keybinds.menu_up."..i, {t, value})
+                    end
+                },
+                {
+                    label = "MENU DOWN",
+                    type = "key",
+                    read = function(i)
+                        return Save.Read("keybinds.menu_down")[i]
+                    end,
+                    write = function(value,t,i)
+                        Save.Write("keybinds.menu_down."..i, {t, value})
                     end
                 }
             }
@@ -413,13 +514,8 @@ local root = {
     }
 }
 
-function scene.keypressed(k)
-    if rebinding then
-        rebinding.write(k)
-        rebinding = nil
-        return
-    end
-    if k == "escape" then
+function scene.action(a)
+    if a == "back" then
         if #SettingsStack > 0 then
             local pop = table.remove(SettingsStack, #SettingsStack)
             SettingsCurrent = pop[1]
@@ -429,65 +525,76 @@ function scene.keypressed(k)
             SceneManager.Transition("scenes/menu")
         end
     end
-    if k == "up" then
+    if a == "up" then
         SettingsSelection = (SettingsSelection - 1) % #SettingsCurrent.options
     end
-    if k == "down" then
+    if a == "down" then
         SettingsSelection = (SettingsSelection + 1) % #SettingsCurrent.options
     end
     if SettingsCurrent.options[SettingsSelection+1] then
-        local t = SettingsCurrent.options[SettingsSelection+1].type
-        local write = SettingsCurrent.options[SettingsSelection+1].write
-        local read = SettingsCurrent.options[SettingsSelection+1].read
+        local cur = SettingsCurrent.options[SettingsSelection+1]
+        local t = cur.type
+        local write = cur.write
+        local read = cur.read
 
         local enabled = true
-        if type(SettingsCurrent.options[SettingsSelection+1].enable) == "function" then
-            enabled = SettingsCurrent.options[SettingsSelection+1].enable()
+        if type(cur.enable) == "function" then
+            enabled = cur.enable()
         end
         if not enabled then
             return
         end
 
-        if k == "return" then
+        if t == "key" then
+            if a == "right" then
+                SettingsSelection2 = (SettingsSelection2 + 1) % 2
+            end
+            if a == "left" then
+                SettingsSelection2 = (SettingsSelection2 - 1) % 2
+            end
+        end
+
+        if a == "confirm" then
             -- menus, toggles, and keys use this
             if t == "menu" then
                 table.insert(SettingsStack, {SettingsCurrent,SettingsSelection})
-                SettingsCurrent = SettingsCurrent.options[SettingsSelection+1]
+                SettingsCurrent = cur
                 SettingsSelection = 0
                 SettingsView = SettingsSelection
             end
             if t == "key" then
-                rebinding = SettingsCurrent.options[SettingsSelection+1]
+                rebinding = {cur,SettingsSelection2}
+                rebindTime = 5
             end
             if t == "action" then
-                SettingsCurrent.options[SettingsSelection+1].run()
+                cur.run()
             end
         end
-        if k == "return" or k == "right" or k == "left" then
+        if a == "confirm" or a == "right" or a == "left" then
             if t == "toggle" then
                 write(not read())
             end
         end
         if t == "number" then
-            local m,M,s = SettingsCurrent.options[SettingsSelection+1].min or 0, SettingsCurrent.options[SettingsSelection+1].max or 1, SettingsCurrent.options[SettingsSelection+1].step or 0.1
+            local m,M,s = cur.min or 0, cur.max or 1, cur.step or 0.1
             if love.keyboard.isDown("lshift") then
                 s = s * 2
             end
             if love.keyboard.isDown("lctrl") then
                 s = s / 5
             end
-            if k == "right" then
+            if a == "right" then
                 write(math.max(m,math.min(M, read() + s)))
             end
-            if k == "left" then
+            if a == "left" then
                 write(math.max(m,math.min(M, read() - s)))
             end
         end
         if t == "color" then
-            if k == "right" then
+            if a == "right" then
                 write((read()%16)+1)
             end
-            if k == "left" then
+            if a == "left" then
                 write(((read()-2)%16)+1)
             end
             local colorIndexes = Save.Read("note_colors") or {ColorID.LIGHT_RED, ColorID.YELLOW, ColorID.LIGHT_GREEN, ColorID.LIGHT_BLUE}
@@ -501,14 +608,43 @@ function scene.keypressed(k)
     end
 end
 
+function scene.gamepadpressed(stick,button)
+    if rebinding then
+        rebinding[1].write(button,"gbutton",SettingsSelection2+1)
+        rebinding = nil
+        return true
+    end
+end
+
+---@param stick love.Joystick
+---@param axis love.GamepadAxis
+---@param value number
+function scene.gamepadaxis(stick,axis,value)
+    if math.abs(value) >= 0.5 and rebinding then
+        rebinding[1].write(axis,"gtrigger",SettingsSelection2+1)
+        rebinding = nil
+        return true
+    end
+end
+
+function scene.keypressed(k)
+    if rebinding then
+        rebinding[1].write(k,"key",SettingsSelection2+1)
+        rebinding = nil
+        return true
+    end
+end
+
 function scene.load(args)
     if not args.stay then
         SettingsSelection = 0
+        SettingsSelection2 = 0
         SettingsView = 0
         SettingsStack = {}
         SettingsCurrent = root
     else
         SettingsSelection = SettingsSelection or 0
+        SettingsSelection2 = SettingsSelection2 or 0
         SettingsView = SettingsView or 0
         SettingsStack = SettingsStack or {}
         SettingsCurrent = SettingsCurrent or root
@@ -536,6 +672,13 @@ end
 local beatCount = 0
 
 function scene.update(dt)
+    if rebinding and rebindTime > 0 then
+        rebindTime = rebindTime - dt
+        if rebindTime <= 0 then
+            rebinding = nil
+        end
+    end
+
     chartTime = chartTime + dt
     if chartTime >= TimeBPM(32,60) then
         chartTime = chartTime - TimeBPM(32,60)
@@ -668,48 +811,59 @@ function scene.draw()
     local menuX = SettingsCurrent.x or 0
     local y = SettingsView-2
     for i,option in ipairs(SettingsCurrent.options) do
-        local enabled = true
-        if type(option.enable) == "function" then
-            enabled = option.enable()
-        end
-        love.graphics.setColor(TerminalColors[SettingsSelection == i-1 and ColorID.WHITE or ColorID.DARK_GRAY])
-        local text = ""
-        local value
-        if option.type ~= "menu" and option.type ~= "label" and option.type ~= "action" then
-            text = option.read()
-            value = option.read()
-            if option.type == "toggle" then
-                text = (text and "ON" or "OFF")
-            end
-            if option.type == "key" then
-                if rebinding == option then
+        if option.type == "key" then
+            -- special behavior...
+            local values = {option.read(1),option.read(2)}
+            local itmY = (i-y)*80
+            local itmX = (640-128)/2+menuX
+            love.graphics.setColor(TerminalColors[SettingsSelection == i-1 and ColorID.WHITE or ColorID.DARK_GRAY])
+            love.graphics.printf(option.label or "", itmX-144, itmY+16, 128, "center")
+            for j = 1, 2 do
+                local text = KeyLabel(values[j])
+                if rebinding and (rebinding[1] == option and rebinding[2] == j-1) then
                     text = "[...]"
-                else
-                    text = tostring(text):upper()
+                end
+                love.graphics.setColor(TerminalColors[(SettingsSelection == i-1 and SettingsSelection2 == j-1) and ColorID.WHITE or ColorID.DARK_GRAY])
+                DrawBoxHalfWidth(itmX/8-1 + (j-1)*18, itmY/16-1, 128/8, 3)
+                love.graphics.printf(text:upper(), itmX + (j-1)*144, itmY+16, 128, "center")
+            end
+        else
+            local enabled = true
+            if type(option.enable) == "function" then
+                enabled = option.enable()
+            end
+            love.graphics.setColor(TerminalColors[SettingsSelection == i-1 and ColorID.WHITE or ColorID.DARK_GRAY])
+            local text = ""
+            local value
+            if option.type ~= "menu" and option.type ~= "label" and option.type ~= "action" then
+                text = option.read()
+                value = option.read()
+                if option.type == "toggle" then
+                    text = (text and "ON" or "OFF")
+                end
+                if type(option.text) == "function" then
+                    text = option.text(text)
                 end
             end
-            if type(option.text) == "function" then
-                text = option.text(text)
+            if not enabled then
+                text = "- DISABLED -"
             end
-        end
-        if not enabled then
-            text = "- DISABLED -"
-        end
-        local itmY = (i-y)*80
-        local itmX = (640-256)/2+menuX
-        DrawBoxHalfWidth(itmX/8-1, itmY/16-1, 256/8, 3)
-        love.graphics.printf(option.label or "", itmX, itmY+((option.type == "menu" or option.type == "action") and 16 or 0), 256, "center")
-        if option.type == "color" then
-            love.graphics.setColor(TerminalColors[tonumber(text) or 1])
-            love.graphics.rectangle("fill", itmX+(256-16)/2, itmY+32, 16, 16)
-        else
-            love.graphics.setColor(TerminalColors[SettingsSelection == i-1 and ColorID.LIGHT_GRAY or ColorID.DARK_GRAY])
-            love.graphics.printf(tostring(text), itmX, itmY+32, 256, "center")
-        end
-        if option.type == "number" or option.type == "color" then
-            love.graphics.setColor(TerminalColors[SettingsSelection == i-1 and ColorID.WHITE or ColorID.DARK_GRAY])
-            if value > (option.min or -math.huge) then love.graphics.print("◁", itmX+28, itmY+16) end
-            if value < (option.max or math.huge) then love.graphics.print("▷", itmX+220, itmY+16) end
+            local itmY = (i-y)*80
+            local itmX = (640-256)/2+menuX
+            DrawBoxHalfWidth(itmX/8-1, itmY/16-1, 256/8, 3)
+            love.graphics.printf(option.label or "", itmX, itmY+((option.type == "menu" or option.type == "action") and 16 or 0), 256, "center")
+            if option.type == "color" then
+                love.graphics.setColor(TerminalColors[tonumber(text) or 1])
+                love.graphics.rectangle("fill", itmX+(256-16)/2, itmY+32, 16, 16)
+            else
+                love.graphics.setColor(TerminalColors[SettingsSelection == i-1 and ColorID.LIGHT_GRAY or ColorID.DARK_GRAY])
+                love.graphics.printf(tostring(text), itmX, itmY+32, 256, "center")
+            end
+            if option.type == "number" or option.type == "color" then
+                love.graphics.setColor(TerminalColors[SettingsSelection == i-1 and ColorID.WHITE or ColorID.DARK_GRAY])
+                if value > (option.min or -math.huge) then love.graphics.print("◁", itmX+28, itmY+16) end
+                if value < (option.max or math.huge) then love.graphics.print("▷", itmX+220, itmY+16) end
+            end
         end
     end
 

@@ -23,15 +23,51 @@ local options = {
     end}
 }
 
-function scene.keypressed(k)
-    if k == "up" then
+local function action(a)
+    if a == "up" then
         selected = (selected - 1) % #options
     end
-    if k == "down" then
+    if a == "down" then
         selected = (selected + 1) % #options
     end
-    if k == "return" then
+    if a == "confirm" then
         options[selected+1][2]()
+    end
+end
+
+function scene.keypressed(k)
+    if k == "up" then
+        action("up")
+    end
+    if k == "down" then
+        action("down")
+    end
+    if k == "return" then
+        action("confirm")
+    end
+end
+
+function scene.gamepadaxis(stick,axis,value)
+    if math.abs(GamepadLastAxes[axis] or 0) < 0.5 and math.abs(value) >= 0.5 then
+        if axis == "lefty" then
+            if value > 0 then
+                action("down")
+            else
+                action("up")
+            end
+        end
+    end
+end
+
+function scene.gamepadpressed(stick,button)
+    if button == "dpup" then
+        action("up")
+    end
+    if button == "dpdown" then
+        action("down")
+    end
+    if button == "a" or button == "start" then
+        action("confirm")
     end
 end
 

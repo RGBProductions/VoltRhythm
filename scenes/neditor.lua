@@ -939,6 +939,20 @@ function scene.load(args)
     SetCursor("🮰", 0, 0)
 
     love.keyboard.setKeyRepeat(true)
+
+    if HasGamepad then
+        table.insert(scene.dialogs, 1, {
+            title = "GAMEPAD NOT SUPPORTED",
+            width = 16,
+            height = 14,
+            contents = {
+                DialogLabel:new(0, 0, 240, "Hey, you!\nIt appears you are using a gamepad. Currently, the editor does not support gamepad input.\n\nYou may press " .. KeyLabel(Save.Read("keybinds.back")[2]) .. " to exit the editor and continue playing.", "center"),
+                DialogButton:new(88, 160, 64, 16, "OK", function ()
+                    table.remove(scene.dialogs, 1)
+                end)
+            }
+        })
+    end
 end
 
 function scene.update(dt)
@@ -1102,6 +1116,16 @@ function scene.wheelmoved(x,y)
         scene.zoom = math.max(1,math.min(16,scene.zoom + y))
     else
         scene.chartTimeTemp = scene.chartTimeTemp + y/10/scene.zoom
+    end
+end
+
+function scene.action(a)
+    if a == "back" then
+        shutoffMusic()
+        SavedEditorTime = nil
+        SavedEditorZoom = nil
+        SceneManager.Transition("scenes/menu")
+        SetCursor()
     end
 end
 

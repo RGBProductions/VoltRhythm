@@ -80,96 +80,114 @@ end
 
 function SceneManager.Update(dt)
     if SceneManager.ActiveScene.update ~= nil then
-        SceneManager.ActiveScene.update(dt)
+        return SceneManager.ActiveScene.update(dt)
     end
 end
 
 function SceneManager.Draw()
     if SceneManager.ActiveScene.draw ~= nil then
-        SceneManager.ActiveScene.draw()
+        return SceneManager.ActiveScene.draw()
     end
 end
 
 function SceneManager.MousePressed(x, y, b, t, p)
     if SceneManager.ActiveScene.mousepressed ~= nil then
-        SceneManager.ActiveScene.mousepressed(x, y, b, t, p)
+        return SceneManager.ActiveScene.mousepressed(x, y, b, t, p)
     end
 end
 
 function SceneManager.MouseReleased(x, y, b)
     if SceneManager.ActiveScene.mousereleased ~= nil then
-        SceneManager.ActiveScene.mousereleased(x, y, b)
+        return SceneManager.ActiveScene.mousereleased(x, y, b)
     end
 end
 
 function SceneManager.MouseMoved(x, y, dx, dy)
     if SceneManager.ActiveScene.mousemoved ~= nil then
-        SceneManager.ActiveScene.mousemoved(x, y, dx, dy)
+        return SceneManager.ActiveScene.mousemoved(x, y, dx, dy)
     end
 end
 
 function SceneManager.WheelMoved(x, y)
     if SceneManager.ActiveScene.wheelmoved ~= nil then
-        SceneManager.ActiveScene.wheelmoved(x, y)
+        return SceneManager.ActiveScene.wheelmoved(x, y)
     end
 end
 
 function SceneManager.KeyPressed(k)
     if SceneManager.ActiveScene.keypressed ~= nil then
-        SceneManager.ActiveScene.keypressed(k)
+        return SceneManager.ActiveScene.keypressed(k)
     end
 end
 
 function SceneManager.KeyReleased(k)
     if SceneManager.ActiveScene.keyreleased ~= nil then
-        SceneManager.ActiveScene.keyreleased(k)
+        return SceneManager.ActiveScene.keyreleased(k)
     end
 end
 
 function SceneManager.TextInput(t)
     if SceneManager.ActiveScene.textinput ~= nil then
-        SceneManager.ActiveScene.textinput(t)
+        return SceneManager.ActiveScene.textinput(t)
     end
 end
 
 function SceneManager.Focus(f)
     if SceneManager.ActiveScene.focus ~= nil then
-        SceneManager.ActiveScene.focus(f)
+        return SceneManager.ActiveScene.focus(f)
     end
 end
 
 function SceneManager.TouchPressed(...)
     if SceneManager.ActiveScene.touchpressed ~= nil then
-        SceneManager.ActiveScene.touchpressed(...)
+        return SceneManager.ActiveScene.touchpressed(...)
     end
 end
 
 function SceneManager.TouchMoved(...)
     if SceneManager.ActiveScene.touchmoved ~= nil then
-        SceneManager.ActiveScene.touchmoved(...)
+        return SceneManager.ActiveScene.touchmoved(...)
     end
 end
 
 function SceneManager.TouchReleased(...)
     if SceneManager.ActiveScene.touchreleased ~= nil then
-        SceneManager.ActiveScene.touchreleased(...)
+        return SceneManager.ActiveScene.touchreleased(...)
     end
 end
 
 function SceneManager.GamepadPressed(stick,button)
     if SceneManager.ActiveScene.gamepadpressed ~= nil then
-        SceneManager.ActiveScene.gamepadpressed(stick,button)
+        return SceneManager.ActiveScene.gamepadpressed(stick,button)
+    end
+end
+
+function SceneManager.GamepadReleased(stick,button)
+    if SceneManager.ActiveScene.gamepadreleased ~= nil then
+        return SceneManager.ActiveScene.gamepadreleased(stick,button)
+    end
+end
+
+function SceneManager.GamepadAxis(stick,axis,value)
+    if SceneManager.ActiveScene.gamepadaxis ~= nil then
+        return SceneManager.ActiveScene.gamepadaxis(stick,axis,value)
     end
 end
 
 function SceneManager.FileDropped(file)
     if SceneManager.ActiveScene.filedropped ~= nil then
-        SceneManager.ActiveScene.filedropped(file)
+        return SceneManager.ActiveScene.filedropped(file)
     end
 end
 
 function SceneManager.DirectoryDropped(path)
     if SceneManager.ActiveScene.directorydropped ~= nil then
-        SceneManager.ActiveScene.directorydropped(path)
+        return SceneManager.ActiveScene.directorydropped(path)
+    end
+end
+
+function SceneManager.Action(action)
+    if SceneManager.ActiveScene.action ~= nil then
+        return SceneManager.ActiveScene.action(action)
     end
 end

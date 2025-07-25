@@ -12,14 +12,14 @@ local profilesText = love.graphics.newImage("images/title/profiles.png")
 
 local addIcon = Assets.ProfileIcon("add")
 
-function scene.keypressed(k)
+function scene.action(a)
     if SceneManager.TransitioningIn() then
         return
     end
-    if k == "escape" then
+    if a == "back" then
         SceneManager.Transition("scenes/menu")
     end
-    if k == "return" then
+    if a == "confirm" then
         if ProfilesSelection < #scene.profiles then
             Save.SetProfile(scene.profiles[ProfilesSelection+1].name)
             SceneManager.Transition("scenes/menu")
@@ -27,19 +27,22 @@ function scene.keypressed(k)
             SceneManager.LoadScene("scenes/setup", {destination = "profiles", set = false, transition = false})
         end
     end
+    if a == "up" then
+        ProfilesSelection = (ProfilesSelection - 1) % (#scene.profiles + 1)
+        ProfilesViewTarget = (ProfilesViewTarget - 1) % (#scene.profiles + 1)
+    end
+    if a == "down" then
+        ProfilesSelection = (ProfilesSelection + 1) % (#scene.profiles + 1)
+        ProfilesViewTarget = (ProfilesViewTarget + 1) % (#scene.profiles + 1)
+    end
+end
+
+function scene.keypressed(k)
     if k == "e" then
         if ProfilesSelection < #scene.profiles then
             local profile = scene.profiles[ProfilesSelection+1]
             SceneManager.LoadScene("scenes/setup", {destination = "profiles", set = false, minState = 1, name = profile.name, icon = profile.icon, mainColor = profile.main_color, accentColor = profile.accent_color, transition = false})
         end
-    end
-    if k == "up" then
-        ProfilesSelection = (ProfilesSelection - 1) % (#scene.profiles + 1)
-        ProfilesViewTarget = (ProfilesViewTarget - 1) % (#scene.profiles + 1)
-    end
-    if k == "down" then
-        ProfilesSelection = (ProfilesSelection + 1) % (#scene.profiles + 1)
-        ProfilesViewTarget = (ProfilesViewTarget + 1) % (#scene.profiles + 1)
     end
 end
 
@@ -63,10 +66,14 @@ function scene.load(args)
 end
 
 function scene.draw()
+    local binds = {
+        confirm = HasGamepad and Save.Read("keybinds.confirm")[2] or Save.Read("keybinds.confirm")[1]
+    }
+
     local pos = 14-ProfilesView*6
 
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    love.graphics.printf("ENTER - Select", 0, (16)*16, 176, "right")
+    love.graphics.printf(KeyLabel(binds.confirm) .. " - Select", 0, (16)*16, 176, "right")
     if ProfilesSelection >= #scene.profiles then
         love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
     end

@@ -82,26 +82,33 @@ function scene.update(dt)
     end
 end
 
-function scene.keypressed(k)
-    if k == "r" then
+function scene.action(a)
+    if a == "restart" then
         scene.chart:resetAllNotes()
         scene.chart:sort()
         scene.chart:recalculateCharge()
         scene.chart.time = TimeBPM(-16,scene.chart.bpm)
         SceneManager.Transition("scenes/game", {songData = scene.songData, difficulty = scene.difficulty, next = scene.next})
     end
-    if k == "escape" then
+    if a == "back" then
         SceneManager.Transition("scenes/songselect")
     end
-    if k == "return" then
+    if a == "confirm" then
         SceneManager.Transition("scenes/" .. (scene.next.path or "songselect"), scene.next.args)
     end
-    if k == "tab" then
+    if a == "show_more" then
         scene.showMore = not scene.showMore
     end
 end
 
 function scene.draw()
+    local binds = {
+        back = HasGamepad and Save.Read("keybinds.back")[2] or Save.Read("keybinds.back")[1],
+        confirm = HasGamepad and Save.Read("keybinds.confirm")[2] or Save.Read("keybinds.confirm")[1],
+        show_more = HasGamepad and Save.Read("keybinds.show_more")[2] or Save.Read("keybinds.show_more")[1],
+        restart = HasGamepad and Save.Read("keybinds.restart")[2] or Save.Read("keybinds.restart")[1]
+    }
+
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     DrawBox(4,9,11,11)
     DrawBox(28,9,11,11)
@@ -155,7 +162,7 @@ function scene.draw()
             love.graphics.print(countString, 48+8*(20-utf8.len(countString)), y)
         end
     end
-    love.graphics.printf("TAB - " .. (scene.showMore and "Back" or "More"), 48, 352, 160, "center")
+    love.graphics.printf(KeyLabel(binds.show_more) .. " - " .. (scene.showMore and "Back" or "More"), 48, 352, 160, "center")
 
     local songName = scene.songData.name
     local artistName = scene.songData.author
@@ -241,9 +248,9 @@ function scene.draw()
         end
     end
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    love.graphics.printf("ESC - Exit", 32, 400, 576, "left")
-    love.graphics.printf("R - Retry", 32, 400, 576, "center")
-    love.graphics.printf("ENTER - Continue", 32, 400, 576, "right")
+    love.graphics.printf(KeyLabel(binds.back) .. " - Exit", 32, 400, 576, "left")
+    love.graphics.printf(KeyLabel(binds.restart) .. " - Retry", 32, 400, 576, "center")
+    love.graphics.printf(KeyLabel(binds.confirm) .. " - Continue", 32, 400, 576, "right")
 
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     DrawBoxHalfWidth(2, 1, 74, 3)

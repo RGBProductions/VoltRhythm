@@ -100,6 +100,7 @@ local opening = {
         else
             SceneManager.Transition("scenes/menu")
             NoteFont = NoteFonts[Save.Read("note_skin")] or NoteFonts.dots
+            Input.ReadBinds()
         end
     end}
 }
