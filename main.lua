@@ -304,6 +304,8 @@ love.graphics.setLineWidth(1)
 love.graphics.setLineStyle("rough")
 love.graphics.setFont(Font)
 
+GameDisplay = love.graphics.newCanvas(640,480)
+
 AnaglyphMerge = love.graphics.newCanvas(640,480)
 Bloom = love.graphics.newCanvas()
 Final = love.graphics.newCanvas()

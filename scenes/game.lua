@@ -765,6 +765,9 @@ function scene.update(dt)
 end
 
 function scene.draw()
+    love.graphics.push("all")
+    love.graphics.setCanvas(GameDisplay)
+    love.graphics.clear(0,0,0)
     -- Backgrounds
     if scene.background and scene.background.draw then
         scene.background.draw()
@@ -947,6 +950,11 @@ function scene.draw()
     if lyrics then
         lyrics:draw(scene.chart.time)
     end
+
+    love.graphics.pop()
+    -- a shader can be added here
+    love.graphics.setColor(1,1,1)
+    love.graphics.draw(GameDisplay)
 
     if Paused or PauseTimer > 0 then
         love.graphics.setColor(0,0,0,0.75)

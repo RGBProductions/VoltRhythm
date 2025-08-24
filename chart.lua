@@ -835,6 +835,10 @@ SongDifficulty = {
     }
 }
 
+SongDifficultyOrder = {
+    "easy", "medium", "hard", "extreme", "overvolt", "hidden"
+}
+
 function PrintDifficulty(x,y,difficulty,level,align)
     local currentX = x
     local length = utf8.len(SongDifficulty[difficulty].name .. (level ~= nil and (" " .. level) or ""))
