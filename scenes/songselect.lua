@@ -539,8 +539,8 @@ function scene.draw()
         end
     end
     if selected.isUnlocked then
-        love.graphics.printf("CHARTER: " .. charter, 32, 352, 640, "left")
-        love.graphics.printf("COVER ARTIST: " .. ((selected.songData or {}).coverArtist or "???"), 32, 368, 640, "left")
+        love.graphics.printf("CHART: " .. charter, 32, 352, 640, "left")
+        love.graphics.printf("COVER: " .. ((selected.songData or {}).coverArtist or "???"), 32, 368, 640, "left")
         -- local difficultyName = SongDifficulty[difficulties[SongSelectDifficulty] or "easy"].name or scene.difficulty:upper()
         -- local difficultyColor = SongDifficulty[difficulties[SongSelectDifficulty] or "easy"].color or TerminalColors[ColorID.WHITE]
         -- local diffs = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].difficulties

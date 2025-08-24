@@ -115,34 +115,35 @@ function scene.draw()
     DrawBox(52,9,11,11)
 
     if scene.showMore then
-        local chargeString = math.floor(scene.charge*ChargeValues[scene.difficulty].charge).."¤"
-        local overchargeString = "+"..math.floor(scene.overcharge*ChargeValues[scene.difficulty].charge).."¤"
-        local totalChargeString = math.floor((scene.charge+scene.overcharge)*ChargeValues[scene.difficulty].charge).."¤"
+        local chargeString = scene.charge.."¤"
+        local overchargeString = "+"..scene.overcharge.."¤"
+        local totalChargeString = (scene.charge+scene.overcharge).."¤"
         local xchargeString = math.floor((scene.charge+scene.overcharge)*ChargeValues[scene.difficulty].xcharge).."¤"
         local offsetString = math.floor(scene.offset*100)/100 .. " ms"
         local comboString = tostring(MaxCombo)
 
         love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
-        love.graphics.printf("REAL SCORE", 48, 160 + 16*0, 160, "center")
+        love.graphics.printf("PLAY SCORE", 48, 160 + 16*0, 160, "center")
 
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
         love.graphics.print("CHARGE", 48, 160 + 16*1)
         love.graphics.print("OVERCHARGE", 48, 160 + 16*2)
         love.graphics.print("TOTAL CHARGE", 48, 160 + 16*3)
-        love.graphics.print("X-CHARGE", 48, 160 + 16*4)
         love.graphics.print(chargeString, 48+8*(20-utf8.len(chargeString)), 160 + 16*1)
         love.graphics.print(overchargeString, 48+8*(20-utf8.len(overchargeString)), 160 + 16*2)
         love.graphics.print(totalChargeString, 48+8*(20-utf8.len(totalChargeString)), 160 + 16*3)
-        love.graphics.print(xchargeString, 48+8*(20-utf8.len(xchargeString)), 160 + 16*4)
+
+        love.graphics.print("X-CHARGE", 48, 160 + 16*5)
+        love.graphics.print(xchargeString, 48+8*(20-utf8.len(xchargeString)), 160 + 16*5)
 
         love.graphics.print("AVG OFFSET", 48, 160 + 16*7)
         love.graphics.print("MAX COMBO", 48, 160 + 16*8)
         love.graphics.print(offsetString, 48+8*(20-utf8.len(offsetString)), 160 + 16*7)
         love.graphics.print(comboString, 48+8*(20-utf8.len(comboString)), 160 + 16*8)
     else
-        local chargeString = scene.charge.."¤"
-        local overchargeString = "+"..scene.overcharge.."¤"
-        local totalChargeString = (scene.charge+scene.overcharge).."¤"
+        local chargeString = math.floor(scene.charge*ChargeValues[scene.difficulty].charge).."¤"
+        local overchargeString = "+"..math.floor(scene.overcharge*ChargeValues[scene.difficulty].charge).."¤"
+        local totalChargeString = math.floor((scene.charge+scene.overcharge)*ChargeValues[scene.difficulty].charge).."¤"
         local accuracyString = math.floor(Accuracy/math.max(Hits,1)*100*100)/100 .. "%"
 
         love.graphics.print("CHARGE", 48, 160 + 16*0)
