@@ -80,7 +80,7 @@ function scene.action(a)
             scene.showMore = not scene.showMore
         end
     end
-    if a == "overvolt" and scene.campaign.hasOvervolt then
+    if a == "overvolt" and SongSelectHasOvervolt and SongSelectHasNotOvervolt then
         MissTime = 2
         SongSelectOvervoltMode = not SongSelectOvervoltMode
         local prev = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
@@ -315,13 +315,23 @@ function scene.load(args)
     --     end
     -- end
     SongSelectHasOvervolt = false
+    SongSelectHasNotOvervolt = false
     for s,section in ipairs(scene.campaign.sections) do
         for S,song in ipairs(section.songs) do
             song.unlockConditions, song.isUnlocked, song.hide = testLock(song.lock or {})
-            if song.isUnlocked and (table.index(song.difficulties, "overvolt") or table.index(song.difficulties, "hidden")) then
-                SongSelectHasOvervolt = true
+            if song.isUnlocked then
+                for _,difficulty in ipairs(song.difficulties) do
+                    if difficulty == "overvolt" or difficulty == "hidden" then
+                        SongSelectHasOvervolt = true
+                    else
+                        SongSelectHasNotOvervolt = true
+                    end
+                end
             end
         end
+    end
+    if not SongSelectHasNotOvervolt and SongSelectHasOvervolt then
+        SongSelectOvervoltMode = true
     end
     -- playSong(scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong])
     finishSelection()
@@ -571,7 +581,7 @@ function scene.draw()
     end
     love.graphics.printf(KeyLabel(binds.confirm) .. " - Play", 32, 400, 576, "right")
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    if SongSelectHasOvervolt then
+    if SongSelectHasOvervolt and SongSelectHasNotOvervolt then
         if SongSelectOvervoltMode then
             love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
             love.graphics.printf("GO BACK", 32, 400, 576, "center")
