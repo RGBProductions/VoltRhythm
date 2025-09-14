@@ -17,16 +17,23 @@ function scene.action(a)
     if a == "confirm" then
         if not scene.going and not scene.complete then
             scene.going = true
+            scene.wait = true
             scene.source:play()
         elseif not scene.complete then
             scene.going = false
             scene.complete = true
             scene.source:stop()
-            SystemSettings.audio_offset = math.floor(scene.offset/scene.hits*1000)/1000
+            if scene.hits > 0 then
+                SystemSettings.audio_offset = math.floor(scene.offset/scene.hits*1000)/1000
+            end
         else
             SceneManager.Transition("scenes/settings", {stay=true})
         end
     elseif scene.going then
+        if scene.wait then
+            scene.wait = false
+            return
+        end
         local len = scene.source:getDuration("seconds")
         local t = scene.source:tell("seconds")/len*4
         local off = ((t-1) % 4) - 2
@@ -58,7 +65,11 @@ function scene.draw()
         love.graphics.printf("Press any " .. (HasGamepad and "button" or "key") .. " on the fourth beat.\nPress " .. (HasGamepad and "(A)" or "enter") .. " to stop.\n\nOffset is " .. math.floor((scene.offset/scene.hits)*1000) .. "ms", 0, 240-16-16, 640, "center")
     end
     if scene.complete then
-        love.graphics.printf("Your new offset is " .. math.floor((scene.offset/scene.hits)*1000) .. "ms.\n\nPress " .. (HasGamepad and "(A)" or "enter") .. " to exit", 0, 240-8-16, 640, "center")
+        if scene.hits == 0 then
+            love.graphics.printf("No inputs were made. Your offset has not changed.\n\nPress " .. (HasGamepad and "(A)" or "enter") .. " to exit", 0, 240-8-16, 640, "center")
+        else
+            love.graphics.printf("Your new offset is " .. math.floor((scene.offset/scene.hits)*1000) .. "ms.\n\nPress " .. (HasGamepad and "(A)" or "enter") .. " to exit", 0, 240-8-16, 640, "center")
+        end
     end
 end
 
