@@ -18,6 +18,9 @@ local options = {
     {"CREDITS", "ATTRIBUTION", love.graphics.newImage("images/menu/mp.png"), function()
         SceneManager.Transition("scenes/credits")
     end},
+    {"REPORT BUG", "CREATE ISSUE ON GITHUB", love.graphics.newImage("images/menu/bug.png"), function()
+        love.system.openURL("https://github.com/RGBProductions/VoltRhythm/issues")
+    end},
     {"EXIT", "SHUTDOWN SYSTEM", love.graphics.newImage("images/menu/exit.png"), function()
         love.event.push("quit")
     end}
