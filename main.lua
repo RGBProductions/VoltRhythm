@@ -653,7 +653,7 @@ function love.update(dt)
     love.audio.setVolume(SystemSettings.master_volume)
     
     local border = Borders[Save.Read("border")]
-    if border then border.update(dt) end
+    if border and border.update then border.update(dt) end
 
     do
         if CurveModifierSmoothing == 0 then
@@ -722,7 +722,7 @@ function love.draw()
     SceneManager.DrawTransition()
     love.graphics.setColor(1,1,1)
     local border = Borders[Save.Read("border")]
-    if border and not SuppressBorder then border.draw() end
+    if border and not SuppressBorder and border.draw then border.draw() end
     love.graphics.setColor(1,1,1)
     love.graphics.print(Version.name .. " v" .. Version.version .. (SystemSettings.show_fps and (" - " .. love.timer.getFPS() .. " FPS") or ""), 16, 480-16-16)
     if Cursor then
@@ -742,7 +742,7 @@ function love.draw()
         love.graphics.setColor(1,1,1)
         SceneManager.DrawTransition()
         love.graphics.setColor(1,1,1)
-        if border and not SuppressBorder then border.draw() end
+        if border and not SuppressBorder and border.draw then border.draw() end
         love.graphics.setColor(1,1,1)
         love.graphics.print(Version.name .. " v" .. Version.version .. (SystemSettings.show_fps and (" - " .. love.timer.getFPS() .. " FPS") or ""), 16, 480-16-16)
     
