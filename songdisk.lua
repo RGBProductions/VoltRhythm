@@ -51,6 +51,8 @@ function SongDisk.Retrieve()
                     for _,song in ipairs(section.songs) do
                         if not inFullLibrary[song.song] then
                             table.insert(sec.songs, song)
+                            local songData = LoadSongData((disk.source or "songs") .. "/" .. song.song)
+                            SongDisk.AllSongNames[song.song] = (songData or {}).name or song.song
                             inFullLibrary[song.song] = song
                         else
                             for _,difficulty in ipairs(song.difficulties) do

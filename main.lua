@@ -27,8 +27,6 @@ require "save"
 json = require "json"
 texture = require "texture"
 
-SongDisk.Retrieve()
-
 Version = (require "version")()
 
 ChargeYield = 200
@@ -434,6 +432,8 @@ function KeyLabel(v)
     end
     return mapped:upper()
 end
+
+SongDisk.Retrieve()
 
 function love.gamepadaxis(stick,axis,value)
     GamepadAxes[axis] = value
