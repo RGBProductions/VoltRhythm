@@ -209,7 +209,7 @@ function SetCursor(cursor,x,y)
     CursorY = y or 0
 end
 
-Font = love.graphics.newImageFont("images/font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%()[].,'\"!?/:+-_=┌─┐│└┘├┤┴┬┼█▓▒░┊┈╬○◇▷◁║¤👑▧▥▨◐◑◻☓⚠🡙ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω🮰✨�Ħ🔗ⒶⒷⓍⓎⓛⓡⓁⓇⓑⓢ⮜⮞⮝⮟⒧⒭ⓧⓄⓈⓉⓞⓗⓥⓕⓜⓟ➀➁")
+Font = love.graphics.newImageFont("images/font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%()[].,'\"`~\\|!?/:;@#$^&*<>{}+-_=┌─┐│└┘├┤┴┬┼█▓▒░┊┈╬○◇▷◁║¤👑▧▥▨◐◑◻☓⚠🡙ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω🮰✨�Ħ🔗ⒶⒷⓍⓎⓛⓡⓁⓇⓑⓢ⮜⮞⮝⮟⒧⒭ⓧⓄⓈⓉⓞⓗⓥⓕⓜⓟ➀➁")
 
 NoteFontOptions = {"dots"}
 
@@ -458,6 +458,9 @@ function love.gamepadaxis(stick,axis,value)
             if BindContains(Save.Read("keybinds.show_more"), "gtrigger", axis) then
                 SceneManager.Action("show_more")
             end
+            if BindContains(Save.Read("keybinds.edit_profile"), "gtrigger", axis) then
+                SceneManager.Action("edit_profile")
+            end
             if BindContains(Save.Read("keybinds.menu_left"), "gtrigger", axis) then
                 SceneManager.Action("left")
             end
@@ -513,6 +516,9 @@ function love.gamepadpressed(stick,button)
     end
     if BindContains(Save.Read("keybinds.show_more"), "gbutton", button) then
         SceneManager.Action("show_more")
+    end
+    if BindContains(Save.Read("keybinds.edit_profile"), "gbutton", button) then
+        SceneManager.Action("edit_profile")
     end
     if BindContains(Save.Read("keybinds.menu_left"), "gbutton", button) then
         SceneManager.Action("left")
@@ -588,6 +594,9 @@ function love.keypressed(k)
     end
     if BindContains(Save.Read("keybinds.show_more"), "key", k) then
         SceneManager.Action("show_more")
+    end
+    if BindContains(Save.Read("keybinds.edit_profile"), "key", k) then
+        SceneManager.Action("edit_profile")
     end
     if BindContains(Save.Read("keybinds.menu_left"), "key", k) then
         SceneManager.Action("left")

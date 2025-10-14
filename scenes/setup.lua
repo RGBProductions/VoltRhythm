@@ -15,16 +15,45 @@ for _,icon in ipairs(love.filesystem.getDirectoryItems("images/profile")) do
     end
 end
 
+local keyboard = {
+    pos = {1,1},
+    shift = 0, -- 0 = off, 1 = on, 2 = stay on
+    -- type 0 = char
+    -- type 1 = space
+    -- type 2 = shift
+    -- type 3 = delete
+    -- type 4 = confirm
+    keys = {
+        {{0,"`","~"},{0,"1","!"},{0,"2","@"},{0,"3","#"},{0,"4","$"},{0,"5","%"},{0,"6","^"},{0,"7","&"},{0,"8","*"},{0,"9","("},{0,"0",")"},{0,"-","_"},{0,"=","+"},{3," "," "},selectOffset={1,0}},
+        {{0,"q","Q"},{0,"w","W"},{0,"e","E"},{0,"r","R"},{0,"t","T"},{0,"y","Y"},{0,"u","U"},{0,"i","I"},{0,"o","O"},{0,"p","P"},{0,"[","{"},{0,"]","}"},{0,"\\","|"}},
+        {{0,"a","A"},{0,"s","S"},{0,"d","D"},{0,"f","F"},{0,"g","G"},{0,"h","H"},{0,"j","J"},{0,"k","K"},{0,"l","L"},{0,";",":"},{0,"'",'"'},{4," "," "}},
+        {{2," "," "},{0,"z","Z"},{0,"x","X"},{0,"c","C"},{0,"v","V"},{0,"b","B"},{0,"n","N"},{0,"m","M"},{0,",","<"},{0,".",">"},{0,"/","?"},{1," "," "},selectOffset={-1,0}}
+    }
+}
+for _,row in ipairs(keyboard.keys) do
+    local w = 0
+    for _,key in ipairs(row) do
+        if key[1] == 0 then
+            w = w + 40
+        else
+            w = w + 64
+        end
+    end
+    row.width = w
+end
+
 function scene.load(args)
     scene.destination = args.destination
     scene.transition = args.transition
     scene.set = args.set
     scene.quitOnFail = args.quitOnFail
 
+    scene.frame = 0
     scene.state = args.minState or 0
     scene.minState = args.minState or 0
 
     scene.name = args.name or ""
+    scene.id = args.id
     scene.icon = args.icon or 1
     if type(scene.icon) == "string" then
         scene.icon = table.index(icons, scene.icon) or 1
@@ -42,6 +71,138 @@ function scene.load(args)
 
     love.keyboard.setKeyRepeat(true)
     love.keyboard.setTextInput(scene.state == 0)
+end
+
+function scene.gamepadpressed(s, b)
+    if scene.state == 0 then
+        if b == "dpleft" then
+            repeat
+                keyboard.pos[1] = ((keyboard.pos[1] - 2) % #keyboard.keys[keyboard.pos[2]]) + 1
+            until ((keyboard.keys[keyboard.pos[2]] or {})[keyboard.pos[1]] or {0,"",""})[1] > -1
+        end
+        if b == "dpright" then
+            repeat
+                keyboard.pos[1] = (keyboard.pos[1] % #keyboard.keys[keyboard.pos[2]]) + 1
+            until ((keyboard.keys[keyboard.pos[2]] or {})[keyboard.pos[1]] or {0,"",""})[1] > -1
+        end
+        if b == "dpup" then
+            if keyboard.keys[keyboard.pos[2]].selectOffset then
+                keyboard.pos[1] = math.max(1,math.min(#keyboard.keys[keyboard.pos[2]], keyboard.pos[1] - keyboard.keys[keyboard.pos[2]].selectOffset[1]))
+                keyboard.pos[2] = keyboard.pos[2] - keyboard.keys[keyboard.pos[2]].selectOffset[2]
+            end
+            repeat
+                keyboard.pos[2] = ((keyboard.pos[2] - 2) % #keyboard.keys) + 1
+                keyboard.pos[1] = math.max(1,math.min(#keyboard.keys[keyboard.pos[2]], keyboard.pos[1]))
+            until ((keyboard.keys[keyboard.pos[2]] or {})[keyboard.pos[1]] or {0,"",""})[1] > -1
+            if keyboard.keys[keyboard.pos[2]].selectOffset then
+                keyboard.pos[1] = math.max(1,math.min(#keyboard.keys[keyboard.pos[2]], keyboard.pos[1] + keyboard.keys[keyboard.pos[2]].selectOffset[1]))
+                keyboard.pos[2] = keyboard.pos[2] + keyboard.keys[keyboard.pos[2]].selectOffset[2]
+            end
+        end
+        if b == "dpdown" then
+            if keyboard.keys[keyboard.pos[2]].selectOffset then
+                keyboard.pos[1] = math.max(1,math.min(#keyboard.keys[keyboard.pos[2]], keyboard.pos[1] - keyboard.keys[keyboard.pos[2]].selectOffset[1]))
+                keyboard.pos[2] = keyboard.pos[2] - keyboard.keys[keyboard.pos[2]].selectOffset[2]
+            end
+            repeat
+                keyboard.pos[2] = (keyboard.pos[2] % #keyboard.keys) + 1
+                keyboard.pos[1] = math.max(1,math.min(#keyboard.keys[keyboard.pos[2]], keyboard.pos[1]))
+            until ((keyboard.keys[keyboard.pos[2]] or {})[keyboard.pos[1]] or {0,"",""})[1] > -1
+            if keyboard.keys[keyboard.pos[2]].selectOffset then
+                keyboard.pos[1] = math.max(1,math.min(#keyboard.keys[keyboard.pos[2]], keyboard.pos[1] + keyboard.keys[keyboard.pos[2]].selectOffset[1]))
+                keyboard.pos[2] = keyboard.pos[2] + keyboard.keys[keyboard.pos[2]].selectOffset[2]
+            end
+        end
+    end
+    if b == "dpleft" then
+        scene.keypressed("left")
+    end
+    if b == "dpright" then
+        scene.keypressed("right")
+    end
+    if b == "dpup" then
+        scene.keypressed("up")
+    end
+    if b == "dpdown" then
+        scene.keypressed("down")
+    end
+    if b == "a" then
+        if scene.state == 0 then
+            local key = (keyboard.keys[keyboard.pos[2]] or {})[keyboard.pos[1]] or {0,"",""}
+            if key[1] == 0 then
+                scene.textinput(keyboard.shift > 0 and key[3] or key[2])
+                keyboard.shift = keyboard.shift <= 1 and 0 or 2
+            end
+            if key[1] == 1 then
+                scene.textinput(" ")
+                keyboard.shift = keyboard.shift <= 1 and 0 or 2
+            end
+            if key[1] == 2 then
+                keyboard.shift = (keyboard.shift + 1) % 3
+            end
+            if key[1] == 3 then
+                scene.keypressed("backspace")
+            end
+            if key[1] == 4 then
+                scene.keypressed("return")
+            end
+        else
+            scene.keypressed("return")
+        end
+    end
+    if b == "b" then
+        if scene.state == 0 then
+            scene.keypressed("backspace")
+        else
+            scene.keypressed("escape")
+        end
+    end
+    if b == "y" then
+        if scene.state == 0 then
+            keyboard.shift = (keyboard.shift + 1) % 3
+        end
+    end
+    if b == "x" then
+        if scene.state == 0 then
+            scene.keypressed("space")
+        end
+    end
+    if b == "start" then
+        if scene.state == 0 then
+            scene.keypressed("return")
+        end
+    end
+    if b == "back" then
+        scene.keypressed("escape")
+    end
+    return true
+end
+
+local leftx = 0
+local lefty = 0
+
+function scene.gamepadaxis(s, a, v)
+    local lx = leftx
+    local ly = lefty
+    if a == "leftx" then
+        leftx = v
+    end
+    if a == "lefty" then
+        lefty = v
+    end
+    if leftx >= 0.5 and lx < 0.5 then
+        scene.gamepadpressed(s, "dpright")
+    end
+    if leftx <= -0.5 and lx > -0.5 then
+        scene.gamepadpressed(s, "dpleft")
+    end
+    if lefty >= 0.5 and ly < 0.5 then
+        scene.gamepadpressed(s, "dpdown")
+    end
+    if lefty <= -0.5 and ly > -0.5 then
+        scene.gamepadpressed(s, "dpup")
+    end
+    return true
 end
 
 function scene.keypressed(k)
@@ -65,9 +226,9 @@ function scene.keypressed(k)
             if scene.quitOnFail then
                 love.event.push("quit")
             end
-            return
+            return true
         end
-        return
+        return true
     end
     if scene.state == 1 then
         if scene.iconSelectingType == 0 then
@@ -80,13 +241,14 @@ function scene.keypressed(k)
             if k == "return" then
                 if scene.iconSetupPointer == 3 then
                     local current = Save.Profile
-                    Save.SetProfile(scene.name)
+                    Save.SetProfile(scene.id or scene.name)
+                    Save.Write("name", scene.name)
                     Save.Write("icon", icons[scene.icon])
                     Save.Write("main_color", scene.mainColor)
                     Save.Write("accent_color", scene.accentColor)
                     if not scene.set then Save.SetProfile(current) end
                     SceneManager[scene.transition and "Transition" or "LoadScene"]("scenes/"..scene.destination, {profileSetupFailed = false})
-                    return
+                    return true
                 end
                 scene.iconSelectingType = scene.iconSetupPointer + 1
                 if scene.iconSelectingType == 1 then
@@ -112,9 +274,9 @@ function scene.keypressed(k)
                 if scene.quitOnFail then
                     love.event.push("quit")
                 end
-                return
+                return true
             end
-            return
+            return true
         end
         if scene.iconSelectingType == 1 then
             if k == "up" then
@@ -132,7 +294,7 @@ function scene.keypressed(k)
             if k == "escape" then
                 scene.iconSelectingType = 0
             end
-            return
+            return true
         end
         if scene.iconSelectingType > 1 then
             if k == "right" then
@@ -158,18 +320,21 @@ function scene.keypressed(k)
             if k == "escape" then
                 scene.iconSelectingType = 0
             end
-            return
+            return true
         end
     end
+    return true
 end
 
 function scene.textinput(t)
+    if scene.frame == 0 then return end
     if scene.state == 0 then
         scene.name = utf8.sub(scene.name .. t, 1, 20)
     end
 end
 
 function scene.update(dt)
+    scene.frame = 1
     local blend = math.pow(1/((5/4)^60), dt)
     scene.iconSelectionView = blend*(scene.iconSelectionView-scene.iconSelectionViewTarget)+scene.iconSelectionViewTarget
     if math.abs(scene.iconSelectionViewTarget-scene.iconSelectionView) <= 8/128 then
@@ -180,12 +345,43 @@ end
 function scene.draw()
     if scene.state == 0 then
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        DrawBoxHalfWidth(26, 12.5, 26, 3)
-        love.graphics.printf("TYPE YOUR PROFILE'S NAME", 0, 216, 640, "center")
-        love.graphics.printf(scene.name, 0, 248, 640, "center")
+        local showKeyboard = HasGamepad
+        local kboffset = (showKeyboard and 64 or 0)
+        DrawBoxHalfWidth(26, 12.5-kboffset/16, 26, 3)
+        love.graphics.printf("TYPE YOUR PROFILE'S NAME", 0, 216 - kboffset, 640, "center")
+        love.graphics.printf(scene.name, 0, 248-kboffset, 640, "center")
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        love.graphics.print("█", 320+(utf8.len(scene.name)*8)/2, 248)
-        love.graphics.line(320-12*8, 264, 320+12*8, 264)
+        love.graphics.print("█", 320+(utf8.len(scene.name)*8)/2, 248-kboffset)
+        love.graphics.line(320-12*8, 264-kboffset, 320+12*8, 264-kboffset)
+        if showKeyboard then
+            for i,row in ipairs(keyboard.keys) do
+                local x = 320 - row.width / 2
+                local y = i*48 + 192
+                local ox = -12
+                for j,key in ipairs(row) do
+                    love.graphics.setColor(TerminalColors[(keyboard.pos[1] == j and keyboard.pos[2] == i) and ColorID.WHITE or ColorID.DARK_GRAY])
+                    local w = (key[1] == 0 or key[1] == -1) and 3 or 9
+                    if key[1] > -1 then
+                        DrawBoxHalfWidth((x+ox)/8, y/16, w, 1)
+                        local txt = keyboard.shift == 0 and key[2] or key[3]
+                        if key[1] == 1 then
+                            txt = KeyLabel({"gbutton","x"}) .. " SPACE"
+                        end
+                        if key[1] == 2 then
+                            txt = KeyLabel({"gbutton","y"}) .. " " .. (keyboard.shift == 0 and "shift" or (keyboard.shift == 1 and "Shift" or "SHIFT"))
+                        end
+                        if key[1] == 3 then
+                            txt = KeyLabel({"gbutton","b"}) .. " BCKSP"
+                        end
+                        if key[1] == 4 then
+                            txt = KeyLabel({"gbutton","start"}) .. " CNFRM"
+                        end
+                        love.graphics.printf(txt,(x+ox)+8,y+16,w*8,"center")
+                    end
+                    ox = ox + w * 8 + 16
+                end
+            end
+        end
     end
     if scene.state == 1 then
         love.graphics.setColor(TerminalColors[ColorID.WHITE])

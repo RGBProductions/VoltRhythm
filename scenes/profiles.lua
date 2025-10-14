@@ -35,13 +35,10 @@ function scene.action(a)
         ProfilesSelection = (ProfilesSelection + 1) % (#scene.profiles + 1)
         ProfilesViewTarget = (ProfilesViewTarget + 1) % (#scene.profiles + 1)
     end
-end
-
-function scene.keypressed(k)
-    if k == "e" then
+    if a == "edit_profile" then
         if ProfilesSelection < #scene.profiles then
             local profile = scene.profiles[ProfilesSelection+1]
-            SceneManager.LoadScene("scenes/setup", {destination = "profiles", set = false, minState = 1, name = profile.name, icon = profile.icon, mainColor = profile.main_color, accentColor = profile.accent_color, transition = false})
+            SceneManager.LoadScene("scenes/setup", {destination = "profiles", set = false, minState = 0, name = profile.name, id = profile.id, icon = profile.icon, mainColor = profile.main_color, accentColor = profile.accent_color, transition = false})
         end
     end
 end
@@ -67,7 +64,8 @@ end
 
 function scene.draw()
     local binds = {
-        confirm = HasGamepad and Save.Read("keybinds.confirm")[2] or Save.Read("keybinds.confirm")[1]
+        confirm = HasGamepad and Save.Read("keybinds.confirm")[2] or Save.Read("keybinds.confirm")[1],
+        edit = HasGamepad and Save.Read("keybinds.edit_profile")[2] or Save.Read("keybinds.edit_profile")[1]
     }
 
     local pos = 14-ProfilesView*6
@@ -77,7 +75,7 @@ function scene.draw()
     if ProfilesSelection >= #scene.profiles then
         love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
     end
-    love.graphics.printf("E - Edit", 480, (16)*16, 176, "left")
+    love.graphics.printf(KeyLabel(binds.edit) .. " - Edit", 480, (16)*16, 176, "left")
 
     local function drawProfile(i,icon,profile)
         local name = profile.name

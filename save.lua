@@ -4,6 +4,8 @@ Save = {
 
 local profiles = {}
 
+local disallowed = "[%s-\\/:%*%?\"<>|]"
+
 local defaultSave = {
     name = "Profile",
     icon = "icon1",
@@ -23,6 +25,7 @@ local defaultSave = {
         restart = {{"key","r"},{"gbutton","y"}},
         overvolt = {{"key","o"},{"gbutton","y"}},
         show_more = {{"key","tab"},{"gbutton","x"}},
+        edit_profile = {{"key","e"},{"gbutton","y"}},
         menu_left = {{"key","left"},{"gbutton","dpleft"}}, -- implicit: left stick left
         menu_right = {{"key","right"},{"gbutton","dpright"}}, -- implicit: left stick right
         menu_up = {{"key","up"},{"gbutton","dpup"}}, -- implicit: left stick up
@@ -87,7 +90,7 @@ end
 
 ---@param profile string
 function Save.SetProfile(profile)
-    Save.Profile = profile:lower():gsub("[%s-]", "_")
+    Save.Profile = profile:lower():gsub(disallowed, "_")
     if not profiles[Save.Profile] then
         profiles[Save.Profile] = table.merge({}, defaultSave)
         profiles[Save.Profile].name = profile
