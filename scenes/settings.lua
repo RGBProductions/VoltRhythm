@@ -380,6 +380,16 @@ local root = {
                     end
                 },
                 {
+                    label = "EDIT PROFILE",
+                    type = "key",
+                    read = function(i)
+                        return Save.Read("keybinds.edit_profile")[i]
+                    end,
+                    write = function(value,t,i)
+                        Save.Write("keybinds.edit_profile."..i, {t, value})
+                    end
+                },
+                {
                     label = "MENU LEFT",
                     type = "key",
                     read = function(i)
