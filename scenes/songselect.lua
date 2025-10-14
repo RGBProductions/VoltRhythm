@@ -201,9 +201,9 @@ local function testLock(lock)
     local global = lock.global or {}
     local songs = lock.songs or {}
     local requirements = {}
-    if global.charge then table.insert(requirements, {type = "Get " .. global.charge .. " total Charge", value = global.charge, passed = scene.totalCharge >= global.charge}) end
-    if global.overcharge then table.insert(requirements, {type = "Get " .. global.overcharge .. " total Overcharge", value = global.overcharge, passed = scene.totalOvercharge >= global.overcharge}) end
-    if global.xcharge then table.insert(requirements, {type = "Get " .. global.xcharge .. " total X-Charge", value = global.xcharge, passed = scene.totalXCharge >= global.xcharge}) end
+    if global.charge then table.insert(requirements, {type = "Get " .. global.charge .. " total Charge (" .. math.floor(scene.totalCharge) .. "/" .. global.charge .. ")", value = global.charge, passed = scene.totalCharge >= global.charge}) end
+    if global.overcharge then table.insert(requirements, {type = "Get " .. global.overcharge .. " total Overcharge (" .. math.floor(scene.totalOvercharge) .. "/" .. global.overcharge .. ")", value = global.overcharge, passed = scene.totalOvercharge >= global.overcharge}) end
+    if global.xcharge then table.insert(requirements, {type = "Get " .. global.xcharge .. " total X-Charge (" .. math.floor(scene.totalXCharge) .. "/" .. global.xcharge .. ")", value = global.xcharge, passed = scene.totalXCharge >= global.xcharge}) end
     local namesSorted = {}
     for name,_ in pairs(songs) do
         table.insert(namesSorted, name)
@@ -222,9 +222,9 @@ local function testLock(lock)
             x = x + (c + o)/ChargeYield*XChargeYield
         end
         if song.completed ~= nil then table.insert(requirements, {type = "Complete \"" .. scene.songNames[name] .. "\" on any difficulty", song = name, value = song.completed, passed = savedRatingExists}) end
-        if song.charge then table.insert(requirements, {type = "Get " .. song.charge .. " Charge in \"" .. scene.songNames[name] .. '"', song = name, value = song.charge, passed = c >= song.charge}) end
-        if song.overcharge then table.insert(requirements, {type = "Get " .. song.overcharge .. " Overcharge in \"" .. scene.songNames[name] .. '"', song = name, value = song.overcharge, passed = o >= song.overcharge}) end
-        if song.xcharge then table.insert(requirements, {type = "Get " .. song.xcharge .. " X-Charge in \"" .. scene.songNames[name] .. '"', song = name, value = song.xcharge, passed = x >= song.xcharge}) end
+        if song.charge then table.insert(requirements, {type = "Get " .. song.charge .. " Charge in \"" .. scene.songNames[name] .. '" (' .. math.floor(c) .. "/" .. song.charge .. ")", song = name, value = song.charge, passed = c >= song.charge}) end
+        if song.overcharge then table.insert(requirements, {type = "Get " .. song.overcharge .. " Overcharge in \"" .. scene.songNames[name] .. '" (' .. math.floor(o) .. "/" .. song.overcharge .. ")", song = name, value = song.overcharge, passed = o >= song.overcharge}) end
+        if song.xcharge then table.insert(requirements, {type = "Get " .. song.xcharge .. " X-Charge in \"" .. scene.songNames[name] .. '" (' .. math.floor(x) .. "/" .. song.xcharge .. ")", song = name, value = song.xcharge, passed = x >= song.xcharge}) end
     end
     local meets = true
     for _,requirement in ipairs(requirements) do
@@ -315,17 +315,19 @@ function scene.load(args)
     --     end
     -- end
     SongSelectHasOvervolt = false
+    SongSelectOvervoltUnlocked = false
     SongSelectHasNotOvervolt = false
     for s,section in ipairs(scene.campaign.sections) do
         for S,song in ipairs(section.songs) do
             song.unlockConditions, song.isUnlocked, song.hide = testLock(song.lock or {})
-            if song.isUnlocked then
-                for _,difficulty in ipairs(song.difficulties) do
-                    if difficulty == "overvolt" or difficulty == "hidden" then
-                        SongSelectHasOvervolt = true
-                    else
-                        SongSelectHasNotOvervolt = true
+            for _,difficulty in ipairs(song.difficulties) do
+                if difficulty == "overvolt" or difficulty == "hidden" then
+                    if song.isUnlocked then
+                        SongSelectOvervoltUnlocked = true
                     end
+                    SongSelectHasOvervolt = true
+                else
+                    SongSelectHasNotOvervolt = true
                 end
             end
         end
@@ -581,7 +583,7 @@ function scene.draw()
     end
     love.graphics.printf(KeyLabel(binds.confirm) .. " - Play", 32, 400, 576, "right")
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    if SongSelectHasOvervolt and SongSelectHasNotOvervolt then
+    if SongSelectHasOvervolt and SongSelectHasNotOvervolt and SongSelectOvervoltUnlocked then
         if SongSelectOvervoltMode then
             love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
             love.graphics.printf("GO BACK", 32, 400, 576, "center")

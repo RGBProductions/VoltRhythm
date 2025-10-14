@@ -18,7 +18,7 @@
                             "divinitydissonant": {"completed": true},
                             "savefile": {"completed": true}
                         },
-                        "global": {"overcharge": 80}
+                        "global": {"overcharge": 50}
                     }},
                     
                     {"song": "worstnightmare", "difficulties": ["overvolt"], "lock": {

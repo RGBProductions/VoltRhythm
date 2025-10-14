@@ -80,31 +80,31 @@ function scene.draw()
 
         local mx = math.max(utf8.len(chargeTxt),utf8.len(ochargeTxt),utf8.len(xchargeTxt))
 
-        love.graphics.print("┌─────────────────────────────────────────────┬──────┬──────┐", 9.5*8,  8*16)
-        love.graphics.print("│                                             │      │      │", 9.5*8,  9*16)
-        love.graphics.print("├─────────────────────────────────────────────┼──────┼──────┤", 9.5*8, 10*16)
-        love.graphics.print("│                                             │      │      │", 9.5*8, 11*16)
-        love.graphics.print("├─────────────────────────────────────────────┼──────┼──────┤", 9.5*8, 12*16)
-        love.graphics.print("│                                             │      │      │", 9.5*8, 13*16)
-        love.graphics.print("└─────────────────────────────────────────────┴──────┴──────┘", 9.5*8, 14*16)
+        love.graphics.print("           ┌─────────────────────────────────────────────┬──────┬──────┐", 4*8,  8*16)
+        love.graphics.print("    CHARGE │                                             │      │      │", 4*8,  9*16)
+        love.graphics.print("           ├─────────────────────────────────────────────┼──────┼──────┤", 4*8, 10*16)
+        love.graphics.print("OVERCHARGE │                                             │      │      │", 4*8, 11*16)
+        love.graphics.print("           ├─────────────────────────────────────────────┼──────┼──────┤", 4*8, 12*16)
+        love.graphics.print("  X-CHARGE │                                             │      │      │", 4*8, 13*16)
+        love.graphics.print("           └─────────────────────────────────────────────┴──────┴──────┘", 4*8, 14*16)
         
         love.graphics.setColor(TerminalColors[ColorID.LIGHT_GREEN])
-        love.graphics.print(("█"):rep(45*chargep), 10.5*8, 9*16)
+        love.graphics.print(("█"):rep(45*chargep), 16*8, 9*16)
         local ocChunks = math.floor(45*ochargep)
         for i = 1, ocChunks do
             local chunkColor = (math.floor(-love.timer.getTime()*#OverchargeColors)+i-1)%#OverchargeColors
             love.graphics.setColor(TerminalColors[OverchargeColors[chunkColor+1]])
-            love.graphics.print("█", (9.5+i)*8, 11*16)
+            love.graphics.print("█", (15+i)*8, 11*16)
         end
         love.graphics.setColor(TerminalColors[ColorID.MAGENTA])
-        love.graphics.print(("█"):rep(45*xchargep), 10.5*8, 13*16)
+        love.graphics.print(("█"):rep(45*xchargep), 16*8, 13*16)
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        love.graphics.printf(chargeTxt, (68.5-utf8.len(chargeTxt))*8, 9*16, utf8.len(chargeTxt)*8, "right")
-        love.graphics.printf(ochargeTxt, (68.5-utf8.len(ochargeTxt))*8, 11*16, utf8.len(ochargeTxt)*8, "right")
-        love.graphics.printf(xchargeTxt, (68.5-utf8.len(xchargeTxt))*8, 13*16, utf8.len(xchargeTxt)*8, "right")
-        love.graphics.printf(chargepTxt, (61.5-utf8.len(chargepTxt))*8, 9*16, utf8.len(chargepTxt)*8, "right")
-        love.graphics.printf(ochargepTxt, (61.5-utf8.len(ochargepTxt))*8, 11*16, utf8.len(ochargepTxt)*8, "right")
-        love.graphics.printf(xchargepTxt, (61.5-utf8.len(xchargepTxt))*8, 13*16, utf8.len(xchargepTxt)*8, "right")
+        love.graphics.printf(chargeTxt, (74-utf8.len(chargeTxt))*8, 9*16, utf8.len(chargeTxt)*8, "right")
+        love.graphics.printf(ochargeTxt, (74-utf8.len(ochargeTxt))*8, 11*16, utf8.len(ochargeTxt)*8, "right")
+        love.graphics.printf(xchargeTxt, (74-utf8.len(xchargeTxt))*8, 13*16, utf8.len(xchargeTxt)*8, "right")
+        love.graphics.printf(chargepTxt, (67-utf8.len(chargepTxt))*8, 9*16, utf8.len(chargepTxt)*8, "right")
+        love.graphics.printf(ochargepTxt, (67-utf8.len(ochargepTxt))*8, 11*16, utf8.len(ochargepTxt)*8, "right")
+        love.graphics.printf(xchargepTxt, (67-utf8.len(xchargepTxt))*8, 13*16, utf8.len(xchargepTxt)*8, "right")
     end
 
     for i = CampaignViewTarget-2, CampaignViewTarget+2 do
