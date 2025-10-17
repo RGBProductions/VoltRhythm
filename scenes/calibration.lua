@@ -58,17 +58,21 @@ function scene.update(dt)
 end
 
 function scene.draw()
+    local binds = {
+        confirm = HasGamepad and Save.Read("keybinds.confirm")[2] or Save.Read("keybinds.confirm")[1]
+    }
+
     if not scene.going and not scene.complete then
-        love.graphics.printf("Press " .. (HasGamepad and "(A)" or "enter") .. " to begin calibration.", 0, 240-8, 640, "center")
+        love.graphics.printf("Press " .. KeyLabel(binds.confirm) .. " to begin calibration.", 0, 240-8, 640, "center")
     end
     if scene.going then
-        love.graphics.printf("Press any " .. (HasGamepad and "button" or "key") .. " on the fourth beat.\nPress " .. (HasGamepad and "(A)" or "enter") .. " to stop.\n\nOffset is " .. math.floor((scene.offset/scene.hits)*1000) .. "ms", 0, 240-16-16, 640, "center")
+        love.graphics.printf("Press any " .. (HasGamepad and "button" or "key") .. " on the fourth beat.\nPress " .. KeyLabel(binds.confirm) .. " to stop.\n\nOffset is " .. math.floor((scene.offset/scene.hits)*1000) .. "ms", 0, 240-16-16, 640, "center")
     end
     if scene.complete then
         if scene.hits == 0 then
-            love.graphics.printf("No inputs were made. Your offset has not changed.\n\nPress " .. (HasGamepad and "(A)" or "enter") .. " to exit", 0, 240-8-16, 640, "center")
+            love.graphics.printf("No inputs were made. Your offset has not changed.\n\nPress " .. KeyLabel(binds.confirm) .. " to exit", 0, 240-8-16, 640, "center")
         else
-            love.graphics.printf("Your new offset is " .. math.floor((scene.offset/scene.hits)*1000) .. "ms.\n\nPress " .. (HasGamepad and "(A)" or "enter") .. " to exit", 0, 240-8-16, 640, "center")
+            love.graphics.printf("Your new offset is " .. math.floor((scene.offset/scene.hits)*1000) .. "ms.\n\nPress " .. KeyLabel(binds.confirm) .. " to exit", 0, 240-8-16, 640, "center")
         end
     end
 end
