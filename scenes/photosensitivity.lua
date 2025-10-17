@@ -12,6 +12,7 @@ local options = {
     {"CONTINUE (EFFECTS OFF)", function()
         SystemSettings.enable_screen_effects = false
         SystemSettings.enable_chart_effects = false
+        SystemSettings.enable_background = false
         SceneManager.Transition("scenes/startup")
     end},
     {"DON'T TELL ME AGAIN", function()

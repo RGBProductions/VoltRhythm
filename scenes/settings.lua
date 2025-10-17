@@ -92,6 +92,16 @@ local root = {
                     end
                 },
                 {
+                    label = "CHART BG",
+                    type = "toggle",
+                    read = function()
+                        return SystemSettings.enable_background
+                    end,
+                    write = function(value)
+                        SystemSettings.enable_background = value
+                    end
+                },
+                {
                     label = "CURVATURE",
                     type = "number",
                     min = 0,

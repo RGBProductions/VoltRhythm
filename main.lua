@@ -270,6 +270,7 @@ SystemSettings = {
     audio_offset = 0,
     enable_chart_effects = true,
     enable_screen_effects = true,
+    enable_background = true,
     pause_on_lost_focus = true,
     show_fps = false,
     screen_effects = {

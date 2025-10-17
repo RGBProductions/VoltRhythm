@@ -769,7 +769,7 @@ function scene.draw()
     love.graphics.setCanvas(GameDisplay)
     love.graphics.clear(0,0,0)
     -- Backgrounds
-    if scene.background and scene.background.draw then
+    if scene.background and scene.background.draw and SystemSettings.enable_background then
         scene.background.draw()
     end
     if scene.video then
