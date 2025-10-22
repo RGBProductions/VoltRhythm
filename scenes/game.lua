@@ -104,12 +104,7 @@ function scene.load(args)
     ScrollSpeedMod = 1
     ScrollSpeedModTarget = 1
     ScrollSpeedModSmoothing = 0
-    NoteSpeedMods = {
-        {1,1,0},
-        {1,1,0},
-        {1,1,0},
-        {1,1,0}
-    }
+    NoteSpeedMods = {}
     ViewOffset = 0
     ViewOffsetTarget = 0
     ViewOffsetSmoothing = 16
@@ -134,6 +129,7 @@ function scene.load(args)
     for i = 1, scene.chart.lanes do
         PressAmounts[i] = 0
         HitAmounts[i] = 0
+        NoteSpeedMods[i] = {1,1,0}
     end
 
     NoteBrightness = 1
