@@ -81,8 +81,6 @@ local opening = {
     {type = "dynamic", func = function()
         return done < num and (num-done .. " SONGS FAILED TO RETRIEVE, EXPECT MINOR STUTTERING (" .. table.concat(missed, ", ") .. ")") or ("FOUND " .. num .. " SONGS")
     end},
-    {type = "line", text = "READING STORY DATA AT /dev/fd2", duration = 0.05},
-    {type = "line", text = "E: could not read /dev/fd2: no such file or directory", color = ColorID.LIGHT_RED, duration = 0.01},
     {type = "line", text = "RETRIEVING PROFILE INFORMATION", duration = 0.05},
     {type = "run", func = function()
         loadedProfile = Save.Load()
