@@ -85,7 +85,7 @@ local opening = {
     {type = "run", func = function()
         loadedProfile = Save.Load()
         if loadedProfile then
-            index = 12
+            index = 10
         end
     end},
     {type = "line", text = "NO PROFILES FOUND", duration = 0},
