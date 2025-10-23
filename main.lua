@@ -254,11 +254,12 @@ end
 
 -- SceneManager.LoadScene("scenes/game", {chart = "songs/cute/hard.json"})
 
-BorderOptions = {"none", "overcharged"}
+BorderOptions = {"none", "overcharged", "spooky_pumpkins"}
 
 Borders = {
     none = nil,
-    overcharged = require("borders.overcharged")
+    overcharged = require("borders.overcharged"),
+    spooky_pumpkins = require("borders.halloween")
 }
 
 -- border = nil

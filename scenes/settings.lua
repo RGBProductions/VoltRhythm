@@ -520,7 +520,7 @@ local root = {
                     max = #BorderOptions,
                     step = 1,
                     text = function(value)
-                        return BorderOptions[value]:upper()
+                        return BorderOptions[value]:upper():gsub("_", " ")
                     end,
                     read = function()
                         return table.index(BorderOptions, Save.Read("border")) or 1
