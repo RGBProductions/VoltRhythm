@@ -164,7 +164,7 @@ function scene.gamepadpressed(s, b)
     end
     if b == "x" then
         if scene.state == 0 then
-            scene.textinput("space")
+            scene.textinput(" ")
         end
     end
     if b == "start" then
