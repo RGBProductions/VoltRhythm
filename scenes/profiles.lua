@@ -21,7 +21,7 @@ function scene.action(a)
     end
     if a == "confirm" then
         if ProfilesSelection < #scene.profiles then
-            Save.SetProfile(scene.profiles[ProfilesSelection+1].name)
+            Save.SetProfile(scene.profiles[ProfilesSelection+1].id)
             SceneManager.Transition("scenes/menu")
         else
             SceneManager.LoadScene("scenes/setup", {destination = "profiles", set = false, transition = false})
