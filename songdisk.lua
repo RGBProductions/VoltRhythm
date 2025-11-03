@@ -187,7 +187,7 @@ function SongDisk.Load(disk)
             for _,name in ipairs(song.difficulties) do
                 if name == "overvolt" or name == "hidden" then
                     disk.hasOvervolt = true
-                    song.hasOvervolt = true
+                    section.songs[S].hasOvervolt = true
                     metrics.overvoltPositions[section.songs[S]] = lastOVPosition
                     metrics.overvoltPositionsByName[song.song] = lastOVPosition
                     lastOVPosition = lastOVPosition + 1

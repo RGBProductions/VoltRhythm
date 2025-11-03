@@ -24,6 +24,7 @@ require "chart"
 require "songdisk"
 require "input"
 require "save"
+require "easer"
 json = require "json"
 texture = require "texture"
 
@@ -180,13 +181,11 @@ ChargeValues = {
 }
 
 function TimeBPM(t,bpm)
-    local secPerSixteenth = 15/bpm
-    return secPerSixteenth*t
+    return 15*t/bpm
 end
 
 function WhichSixteenth(t,bpm)
-    local secPerSixteenth = 15/bpm
-    return t/secPerSixteenth
+    return bpm*t/15
 end
 
 -- ーあいうえおかきくけこさしすせそたちつてとなにぬねの
@@ -279,7 +278,9 @@ SystemSettings = {
         scanlines = 0.5,
         chromatic_aberration = 1,
         bloom = 1,
-        saturation = 1
+        screen_tearing = 1,
+        saturation = 1,
+        zoom_blur = 1
     }
 }
 
@@ -311,33 +312,40 @@ Bloom = love.graphics.newCanvas()
 Final = love.graphics.newCanvas()
 Partial = love.graphics.newCanvas()
 
-CurveStrength = 0.5
+-- CurveStrength = 0.5
 
-CurveModifier = 1
-CurveModifierTarget = 1
-CurveModifierSmoothing = 0
+CurveModifier = Easer:new(1)
+-- CurveModifierTarget = 1
+-- CurveModifierSmoothing = 0
 
-Chromatic = 1
-ChromaticModifier = 0
-ChromaticModifierTarget = 0
-ChromaticModifierSmoothing = 0
+-- Chromatic = 1
+ChromaticModifier = Easer:new(0)
+-- ChromaticModifierTarget = 0
+-- ChromaticModifierSmoothing = 0
 
-TearingStrength = 1
-TearingModifier = 0
-TearingModifierTarget = 0
-TearingModifierSmoothing = 0
+-- TearingStrength = 1
+TearingModifier = Easer:new(0)
+-- TearingModifierTarget = 0
+-- TearingModifierSmoothing = 0
 
-BloomStrength = 1
-BloomStrengthModifier = 1
-BloomStrengthModifierTarget = 1
-BloomStrengthModifierSmoothing = 0
+-- BloomStrength = 1
+BloomStrengthModifier = Easer:new(1)
+-- BloomStrengthModifierTarget = 1
+-- BloomStrengthModifierSmoothing = 0
+
+-- ZoomBlurStrength = 1
+ZoomBlurStrengthModifier = Easer:new(0)
+
+SaturationModifier = Easer:new(1)
+
+ViewOffset = Easer:new(0)
 
 ScreenShader = love.graphics.newShader("shaders/screen.frag")
-ScreenShader:send("curveStrength", SystemSettings.screen_effects.screen_curvature*CurveModifier)
+ScreenShader:send("curveStrength", SystemSettings.screen_effects.screen_curvature*CurveModifier:get())
 ScreenShader:send("scanlineStrength", 1-SystemSettings.screen_effects.scanlines)
 ScreenShader:send("texSize", {Display:getDimensions()})
 ScreenShader:send("tearStrength", 0)
-ScreenShader:send("chromaticStrength", SystemSettings.screen_effects.chromatic_aberration*ChromaticModifier)
+ScreenShader:send("chromaticStrength", SystemSettings.screen_effects.chromatic_aberration*ChromaticModifier:get())
 ScreenShader:send("horizBlurStrength", 0.5)
 ScreenShader:send("tearTime", love.timer.getTime())
 ScreenShader:send("saturation", SystemSettings.screen_effects.saturation)
@@ -666,50 +674,58 @@ function love.update(dt)
     local border = Borders[Save.Read("border")]
     if border and border.update then border.update(dt) end
 
-    do
-        if CurveModifierSmoothing == 0 then
-            CurveModifier = CurveModifierTarget
-        else
-            local blend = math.pow(1/CurveModifierSmoothing,dt*EffectTimescale)
-            CurveModifier = blend*(CurveModifier-CurveModifierTarget)+CurveModifierTarget
-        end
-    end
-    do
-        if ChromaticModifierSmoothing == 0 then
-            ChromaticModifier = ChromaticModifierTarget
-        else
-            local blend = math.pow(1/ChromaticModifierSmoothing,dt*EffectTimescale)
-            ChromaticModifier = blend*(ChromaticModifier-ChromaticModifierTarget)+ChromaticModifierTarget
-        end
-    end
-    do
-        if TearingModifierSmoothing == 0 then
-            TearingModifier = TearingModifierTarget
-        else
-            local blend = math.pow(1/TearingModifierSmoothing,dt*EffectTimescale)
-            TearingModifier = blend*(TearingModifier-TearingModifierTarget)+TearingModifierTarget
-        end
-    end
-    do
-        if BloomStrengthModifierSmoothing == 0 then
-            BloomStrengthModifier = BloomStrengthModifierTarget
-        else
-            local blend = math.pow(1/BloomStrengthModifierSmoothing,dt*EffectTimescale)
-            BloomStrengthModifier = blend*(BloomStrengthModifier-BloomStrengthModifierTarget)+BloomStrengthModifierTarget
-        end
-    end
+    CurveModifier:update(dt)
+    -- do
+    --     if CurveModifierSmoothing == 0 then
+    --         CurveModifier = CurveModifierTarget
+    --     else
+    --         local blend = math.pow(1/CurveModifierSmoothing,dt*EffectTimescale)
+    --         CurveModifier = blend*(CurveModifier-CurveModifierTarget)+CurveModifierTarget
+    --     end
+    -- end
+    ChromaticModifier:update(dt)
+    -- do
+    --     if ChromaticModifierSmoothing == 0 then
+    --         ChromaticModifier = ChromaticModifierTarget
+    --     else
+    --         local blend = math.pow(1/ChromaticModifierSmoothing,dt*EffectTimescale)
+    --         ChromaticModifier = blend*(ChromaticModifier-ChromaticModifierTarget)+ChromaticModifierTarget
+    --     end
+    -- end
+    TearingModifier:update(dt)
+    -- do
+    --     if TearingModifierSmoothing == 0 then
+    --         TearingModifier = TearingModifierTarget
+    --     else
+    --         local blend = math.pow(1/TearingModifierSmoothing,dt*EffectTimescale)
+    --         TearingModifier = blend*(TearingModifier-TearingModifierTarget)+TearingModifierTarget
+    --     end
+    -- end
+    BloomStrengthModifier:update(dt)
+    -- do
+    --     if BloomStrengthModifierSmoothing == 0 then
+    --         BloomStrengthModifier = BloomStrengthModifierTarget
+    --     else
+    --         local blend = math.pow(1/BloomStrengthModifierSmoothing,dt*EffectTimescale)
+    --         BloomStrengthModifier = blend*(BloomStrengthModifier-BloomStrengthModifierTarget)+BloomStrengthModifierTarget
+    --     end
+    -- end
+    ZoomBlurStrengthModifier:update(dt)
     
     MissTime = math.max(0,MissTime - dt * 8 * EffectTimescale)
     
-    ScreenShader:send("curveStrength", SystemSettings.screen_effects.screen_curvature*CurveModifier)
+    ScreenShader:send("curveStrength", SystemSettings.screen_effects.screen_curvature*CurveModifier:get())
     ScreenShader:send("scanlineStrength", 1-SystemSettings.screen_effects.scanlines)
-    ScreenShader:send("tearStrength", TearingStrength*(MissTime*2/Display:getWidth() + TearingModifier))
-    ScreenShader:send("chromaticStrength", SystemSettings.screen_effects.chromatic_aberration * ChromaticModifier)
+    ScreenShader:send("tearStrength", SystemSettings.screen_effects.screen_tearing*(MissTime*2/Display:getWidth() + TearingModifier:get()))
+    ScreenShader:send("chromaticStrength", SystemSettings.screen_effects.chromatic_aberration * ChromaticModifier:get())
     ScreenShader:send("horizBlurStrength", 0.5)
     ScreenShader:send("tearTime", love.timer.getTime())
-    ScreenShader:send("saturation", SystemSettings.screen_effects.saturation)
-
-    BloomShader:send("strength", SystemSettings.screen_effects.bloom*BloomStrengthModifier)
+    ScreenShader:send("saturation", SystemSettings.screen_effects.saturation*SaturationModifier:get())
+    
+    BloomShader:send("strength", SystemSettings.screen_effects.bloom*BloomStrengthModifier:get())
+    local zoomBlur = SystemSettings.screen_effects.zoom_blur*ZoomBlurStrengthModifier:get()
+    BloomShader:send("enableZoomBlur", zoomBlur > 0)
+    BloomShader:send("zoomBlurStrength", zoomBlur/8)
 
     SceneManager.Update(dt)
     SceneManager.UpdateTransition(dt)

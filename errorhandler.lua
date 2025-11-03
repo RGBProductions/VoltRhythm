@@ -78,28 +78,12 @@ return function (msg)
 	p = p:gsub("\t", "")
 	p = p:gsub("%[string \"(.-)\"%]", "%1")
 
-    CurveStrength = 0.5
-    
-    CurveModifier = 1
-    CurveModifierTarget = 1
-    CurveModifierSmoothing = 0
-    
-    Chromatic = 1
-    ChromaticModifier = 0
-    ChromaticModifierTarget = 0
-    ChromaticModifierSmoothing = 0
-    
-    TearingStrength = 1
-    TearingModifier = 0
-    TearingModifierTarget = 0
-    TearingModifierSmoothing = 0
-
     ScreenShader = love.graphics.newShader("shaders/screen.frag")
-    ScreenShader:send("curveStrength", SystemSettings.screen_effects.screen_curvature*CurveModifier)
+    ScreenShader:send("curveStrength", SystemSettings.screen_effects.screen_curvature)
     ScreenShader:send("scanlineStrength", 0.5)
     ScreenShader:send("texSize", {Display:getDimensions()})
     ScreenShader:send("tearStrength", 0)
-    ScreenShader:send("chromaticStrength", Chromatic*ChromaticModifier)
+    ScreenShader:send("chromaticStrength", 0)
     ScreenShader:send("horizBlurStrength", 0.5)
     ScreenShader:send("tearTime", love.timer.getTime())
 

@@ -55,6 +55,7 @@ local function finishSelection()
             end
         end
     end
+    SongSelectDifficultyView:start(SongSelectOvervoltMode and (table.index(SongDifficultyOrder, selected.difficulties[#selected.difficulties]) or 5) or SongSelectDifficulty, "outExpo", 0.3)
     playSong(selected)
 end
 
@@ -102,8 +103,10 @@ function scene.action(a)
                 end
             end
         end
-        SongSelectOffsetViewTarget = (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] * 128
+        -- SongSelectOffsetViewTarget = (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] * 128
+        SongSelectOffsetView:start((SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] * 128, "outExpo", 0.5)
         finishSelection()
+        SongSelectDifficultyView:set(SongSelectDifficultyView.target)
     end
     if a == "editor" then
         if preview then
@@ -124,7 +127,8 @@ function scene.action(a)
                 found = true
             end
         end
-        SongSelectOffsetViewTarget = (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] * 128
+        -- SongSelectOffsetViewTarget = (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] * 128
+        SongSelectOffsetView:start((SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] * 128, "outExpo", 0.5)
         finishSelection()
     end
     if a == "left" then
@@ -139,7 +143,8 @@ function scene.action(a)
                 found = true
             end
         end
-        SongSelectOffsetViewTarget = (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] * 128
+        -- SongSelectOffsetViewTarget = (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] * 128
+        SongSelectOffsetView:start((SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] * 128, "outExpo", 0.5)
         finishSelection()
     end
     if not SongSelectOvervoltMode then
@@ -151,6 +156,7 @@ function scene.action(a)
                     SongSelectDifficulty = (SongSelectDifficulty % 4) + 1
                 until table.index(selected.difficulties, SongDifficultyOrder[SongSelectDifficulty])
             end
+            SongSelectDifficultyView:start(SongSelectDifficulty, "outExpo", 0.3)
         end
         if a == "down" then
             local selected = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
@@ -160,6 +166,7 @@ function scene.action(a)
                     SongSelectDifficulty = ((SongSelectDifficulty - 2) % 4) + 1
                 until table.index(selected.difficulties, SongDifficultyOrder[SongSelectDifficulty])
             end
+            SongSelectDifficultyView:start(SongSelectDifficulty, "outExpo", 0.3)
         end
     end
 
@@ -192,9 +199,11 @@ function scene.action(a)
 end
 
 function scene.update(dt)
-    local blendAmt = 1/((5/4) ^ 60)
-    local blend = blendAmt^dt
-    SongSelectOffsetView = blend*(SongSelectOffsetView - SongSelectOffsetViewTarget) + SongSelectOffsetViewTarget
+    -- local blendAmt = 1/((5/4) ^ 60)
+    -- local blend = blendAmt^dt
+    -- SongSelectOffsetView = blend*(SongSelectOffsetView - SongSelectOffsetViewTarget) + SongSelectOffsetViewTarget
+    SongSelectOffsetView:update(dt)
+    SongSelectDifficultyView:update(dt)
 end
 
 local function testLock(lock)
@@ -241,23 +250,25 @@ function scene.load(args)
     scene.destination = args.destination or "game"
 
     -- scene.campaigns = json.decode(love.filesystem.read("campaign/campaigns.json"))
+    SongSelectSelectedSong = SongSelectSelectedSong or 1
+    SongSelectSelectedSection = SongSelectSelectedSection or 1
+    ---@type Easer
+    SongSelectOffsetView = SongSelectOffsetView or Easer:new(0)
+    -- SongSelectOffsetViewTarget = SongSelectOffsetViewTarget or 0
+    SongSelectDifficulty = SongSelectDifficulty or 3
+    SongSelectDifficultyView = SongSelectDifficultyView or Easer:new(SongSelectDifficulty)
+    SongSelectOvervoltMode = SongSelectOvervoltMode or false
     if (args.campaign or SongSelectCampaign) ~= SongSelectCampaign then
         SongSelectSelectedSong = 1
         SongSelectSelectedSection = 1
-        SongSelectOffsetView = 0
-        SongSelectOffsetViewTarget = 0
+        SongSelectOffsetView:set(0)
+        -- SongSelectOffsetViewTarget = 0
         SongSelectOvervoltMode = false
     end
     SongSelectCampaign = args.campaign or SongSelectCampaign or "mainline"
-    SongSelectSelectedSong = SongSelectSelectedSong or 1
-    SongSelectSelectedSection = SongSelectSelectedSection or 1
-    SongSelectOffsetView = SongSelectOffsetView or 0
-    SongSelectOffsetViewTarget = SongSelectOffsetViewTarget or 0
-    SongSelectDifficulty = SongSelectDifficulty or 3
-    SongSelectOvervoltMode = SongSelectOvervoltMode or false
-    scene.campaign = SongDisk.Get(SongSelectCampaign)
     local metrics = SongDisk.Load(SongSelectCampaign)
     local chargeMetrics = SongDisk.GetChargeMetrics(SongSelectCampaign)
+    scene.campaign = SongDisk.Get(SongSelectCampaign)
     scene.showMore = false
     scene.totalCharge = chargeMetrics.totalCharge
     scene.totalOvercharge = chargeMetrics.totalOvercharge
@@ -375,10 +386,10 @@ function scene.draw()
     local function drawSong(song)
         if not (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[song] then return end
         local pos = (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[song] * 128
-        local x = 320 + pos - SongSelectOffsetView
+        local x = 320 + pos - SongSelectOffsetView:get()
         if x < -64 or x >= 704 then return end
 
-        local offset = math.max(-1, math.min(1, (pos - SongSelectOffsetView)/128))
+        local offset = math.max(-1, math.min(1, (pos - SongSelectOffsetView:get())/128))
         local s = 1-(math.abs(offset)*0.25)
 
         local targetDiff = SongDifficultyOrder[SongSelectDifficulty]
@@ -529,15 +540,15 @@ function scene.draw()
         end
     end
 
-    DrawBoxHalfWidth(2, 21, 74, 2)
+    DrawBoxHalfWidth(2, 21, 74, 3)
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     local emblem = Assets.Emblem(selected.songData.emblem)
     local emblemSize = selected.hide and 0 or (emblem and (emblem:getWidth() + 8) or 0)
     local songName = selected.hide and "- NO DATA -" or ((selected.songData or {}).name or "Unrecognized Song")
-    love.graphics.print(songName, (640-(utf8.len(songName)*8 + emblemSize))/2 + emblemSize, 352 + (selected.hide and 8 or 0))
-    if emblem and not selected.hide then love.graphics.draw(emblem, (640-(utf8.len(songName)*8 + emblemSize))/2, 360, 0, 1, 1, 0, emblem:getHeight()/2) end
+    love.graphics.print(songName, (640-(utf8.len(songName)*8 + emblemSize))/2 + emblemSize, 360 + (selected.hide and 8 or 0))
+    if emblem and not selected.hide then love.graphics.draw(emblem, (640-(utf8.len(songName)*8 + emblemSize))/2, 368, 0, 1, 1, 0, emblem:getHeight()/2) end
     love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
-    if not selected.hide then love.graphics.printf((selected.songData or {}).author or "???", 0, 368, 640, "center") end
+    if not selected.hide then love.graphics.printf((selected.songData or {}).author or "???", 0, 376, 640, "center") end
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     local charter = "???"
     if selected.songData then
@@ -547,52 +558,61 @@ function scene.draw()
         end
     end
     if selected.isUnlocked then
-        love.graphics.printf("CHART: " .. charter, 32, 352, 640, "left")
-        love.graphics.printf("COVER: " .. ((selected.songData or {}).coverArtist or "???"), 32, 368, 640, "left")
+        love.graphics.printf("CHART: " .. charter, 32, 360, 640, "left")
+        love.graphics.printf("COVER: " .. ((selected.songData or {}).coverArtist or "???"), 32, 376, 640, "left")
         -- local difficultyName = SongDifficulty[difficulties[SongSelectDifficulty] or "easy"].name or scene.difficulty:upper()
         -- local difficultyColor = SongDifficulty[difficulties[SongSelectDifficulty] or "easy"].color or TerminalColors[ColorID.WHITE]
         -- local diffs = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].difficulties
         -- local difficulty = SongSelectOvervoltMode and (table.index(difficulties, diffs[#diffs]) or 5) or SongSelectDifficulty
-        local difficultyLevel = 0
-        if selected.songData then
-            difficultyLevel = selected.songData:getLevel(SongDifficultyOrder[difficulty])
-        end
         -- love.graphics.setColor(difficultyColor)
         -- love.graphics.print(difficultyName, 608 - (#difficultyName + 1 + #tostring(difficultyLevel) + 2) * 8, 360)
-        PrintDifficulty(592,360,SongDifficultyOrder[difficulty],difficultyLevel,"right")
         ---@type SongData?
         local data = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].songData
-        if data then
-            local hasEffects = #((data:loadChart(SongDifficultyOrder[difficulty] or "easy") or {}).effects or {}) ~= 0
-            if hasEffects then
-                local x = 592 - 8 * (utf8.len(SongDifficulty[SongDifficultyOrder[difficulty] or "easy"].name .. (difficultyLevel ~= nil and (" " .. (difficultyLevel or 0)) or "")) + 3)
-                love.graphics.print("✨", x, 360)
+        for _,diff in ipairs(selected.difficulties) do
+            -- print(diff)
+            local index = table.index(SongDifficultyOrder, diff)
+            local p = (index - SongSelectDifficultyView:get())
+            if p >= -1.5 and p <= 1.5 and ((SongSelectOvervoltMode and diff == "overvolt") or (not SongSelectOvervoltMode and diff ~= "overvolt")) then
+                local difficultyLevel = 0
+                if selected.songData then
+                    difficultyLevel = selected.songData:getLevel(diff)
+                end
+                love.graphics.setColor(index == (SongSelectOvervoltMode and (table.index(SongDifficultyOrder, selected.difficulties[#selected.difficulties]) or 5) or SongSelectDifficulty) and {1,1,1} or {0.5,0.5,0.5})
+                PrintDifficulty(592,368 - p*16,diff,difficultyLevel,"right")
+                if data then
+                    local hasEffects = #((data:loadChart(diff or "easy") or {}).effects or {}) ~= 0
+                    if hasEffects then
+                        local x = 592 - 8 * (utf8.len(SongDifficulty[diff].name .. (difficultyLevel ~= nil and (" " .. (difficultyLevel or 0)) or "")) + 3)
+                        love.graphics.print("✨", x, 368 - p*16)
+                    end
+                end
             end
         end
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
         -- love.graphics.print(tostring(difficultyLevel), 608 - (#tostring(difficultyLevel) + 2) * 8, 360)
-        if not SongSelectOvervoltMode and (#selected.difficulties - (selected.hasOvervolt and 1 or 0) > 1) then love.graphics.print("🡙", 600, 360) end
+        -- print(#selected.difficulties - (selected.hasOvervolt and 1 or 0))
+        if not SongSelectOvervoltMode and (#selected.difficulties - (selected.hasOvervolt and 1 or 0) > 1) then love.graphics.print("🡙", 600, 368) end
     end
 
     -- love.graphics.printf("Press F8 to create a new song in the editor", 32, 400, 576, "left")
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    love.graphics.printf(KeyLabel(binds.back) .. " - Exit", 32, 400, 576, "left")
+    love.graphics.printf(KeyLabel(binds.back) .. " - Exit", 32, 416, 576, "left")
     local canPlay = selected.isUnlocked and (selected.songData and selected.songData:loadChart(SongDifficultyOrder[difficulty]) ~= nil)
     if not canPlay then
         love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
     end
-    love.graphics.printf(KeyLabel(binds.confirm) .. " - Play", 32, 400, 576, "right")
+    love.graphics.printf(KeyLabel(binds.confirm) .. " - Play", 32, 416, 576, "right")
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     if SongSelectHasOvervolt and SongSelectHasNotOvervolt and SongSelectOvervoltUnlocked then
         if SongSelectOvervoltMode then
             love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
-            love.graphics.printf("GO BACK", 32, 400, 576, "center")
+            love.graphics.printf("GO BACK", 32, 416, 576, "center")
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
-            love.graphics.printf("PRESS " .. KeyLabel(binds.overvolt), 32, 416, 576, "center")
+            love.graphics.printf("PRESS " .. KeyLabel(binds.overvolt), 32, 432, 576, "center")
         else
-            PrintDifficulty(320, 400, "overvolt", nil, "center")
+            PrintDifficulty(320, 416, "overvolt", nil, "center")
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
-            love.graphics.printf("PRESS " .. KeyLabel(binds.overvolt), 32, 416, 576, "center")
+            love.graphics.printf("PRESS " .. KeyLabel(binds.overvolt), 32, 432, 576, "center")
         end
     end
     -- love.graphics.printf("Total Charge: " .. math.floor(scene.totalCharge) .. "¤ (" .. math.floor(scene.totalCharge / scene.potentialCharge * 100) .. "%)", 32, 400, 576, "left")

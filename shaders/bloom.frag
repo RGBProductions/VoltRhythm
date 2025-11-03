@@ -7,7 +7,7 @@ uniform vec2 zoomBlurFocus;
 
 vec4 effect(vec4 c, Image t, vec2 tc, vec2 sc) {
     int num = 1;
-    if (enableZoomBlur) {
+    if (enableZoomBlur && zoomBlurStrength > 0.0) {
         num = 32;
     }
     vec4 final = vec4(0,0,0,0);

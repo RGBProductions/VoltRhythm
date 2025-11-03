@@ -105,9 +105,8 @@ function scene.load(args)
     ScrollSpeedModTarget = 1
     ScrollSpeedModSmoothing = 0
     NoteSpeedMods = {}
-    ViewOffset = 0
-    ViewOffsetTarget = 0
-    ViewOffsetSmoothing = 16
+    -- ViewOffsetTarget = 0
+    -- ViewOffsetSmoothing = 16
     ViewOffsetFreeze = 0
     ViewOffsetMoveLine = true
     ChartFrozen = false
@@ -148,31 +147,32 @@ function scene.load(args)
 end
 
 function ResetEffects()
-    DisplayShift = {0,0}
-    DisplayShiftTarget = {0,0}
-    DisplayShiftSmoothing = 0
-    DisplayScale = {1,1}
-    DisplayScaleTarget = {1,1}
-    DisplayScaleSmoothing = 0
-    DisplayRotation = 0
-    DisplayRotationTarget = 0
-    DisplayRotationSmoothing = 0
-    DisplayShear = {0,0}
-    DisplayShearTarget = {0,0}
-    DisplayShearSmoothing = 0
+    DisplayShift = {Easer:new(0),Easer:new(0)}
+    -- DisplayShiftTarget = {0,0}
+    -- DisplayShiftSmoothing = 0
+    DisplayScale = {Easer:new(1),Easer:new(1)}
+    -- DisplayScaleTarget = {1,1}
+    -- DisplayScaleSmoothing = 0
+    DisplayRotation = Easer:new(0)
+    -- DisplayRotationTarget = 0
+    -- DisplayRotationSmoothing = 0
+    DisplayShear = {Easer:new(0),Easer:new(0)}
+    -- DisplayShearTarget = {0,0}
+    -- DisplayShearSmoothing = 0
 
-    BloomStrengthModifier = 1
-    BloomStrengthModifierTarget = 1
-    BloomStrengthModifierSmoothing = 0
-    ChromaticModifier = 0
-    ChromaticModifierTarget = 0
-    ChromaticModifierSmoothing = 0
-    TearingModifier = 0
-    TearingModifierTarget = 0
-    TearingModifierSmoothing = 0
-    CurveModifier = 1
-    CurveModifierTarget = 1
-    CurveModifierSmoothing = 0
+    BloomStrengthModifier:set(1)
+    -- BloomStrengthModifierTarget = 1
+    -- BloomStrengthModifierSmoothing = 0
+    ChromaticModifier:set(0)
+    -- ChromaticModifierTarget = 0
+    -- ChromaticModifierSmoothing = 0
+    TearingModifier:set(0)
+    -- TearingModifierTarget = 0
+    -- TearingModifierSmoothing = 0
+    CurveModifier:set(1)
+    -- CurveModifierTarget = 1
+    -- CurveModifierSmoothing = 0
+    ViewOffset:set(0)
 end
 
 function PauseGame()
@@ -228,7 +228,7 @@ local function notePress(laneIndex)
                         accuracy = 0 -- 100%
                         local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
                         for _=1, 4 do
-                            local drawPos = (5)+(15)+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed*ScrollSpeedMod)
+                            local drawPos = (5)+(15)+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed*ScrollSpeedMod)
                             table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
                         end
                     end
@@ -490,7 +490,7 @@ function scene.update(dt)
                                     RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                                     local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
                                     for _=1, 4 do
-                                        local drawPos = (5)+(15)+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed*ScrollSpeedMod)
+                                        local drawPos = (5)+(15)+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed*ScrollSpeedMod)
                                         table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
                                     end
                                     Accuracy = Accuracy + 1
@@ -528,7 +528,7 @@ function scene.update(dt)
                             if (lastBeatCount % 0.5) > (scene.beatCount % 0.5) then
                                 local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
                                 for _=1, 4 do
-                                    local drawPos = (5)+(15)+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed*ScrollSpeedMod)
+                                    local drawPos = (5)+(15)+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed*ScrollSpeedMod)
                                     table.insert(Particles, {id = "holdgrind", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*32, vy = -(love.math.random()*2)*64, life = (love.math.random()*0.5+0.5)*0.25, color = NoteColors[note.lane+1][3], char = "¤"})
                                 end
                             end
@@ -663,52 +663,60 @@ function scene.update(dt)
     --     Chromatic = blend*Chromatic
     --     ScreenShader:send("chromaticStrength", Chromatic)
     -- end
-    do
-        if DisplayShiftSmoothing == 0 then
-            DisplayShift[1] = DisplayShiftTarget[1]
-            DisplayShift[2] = DisplayShiftTarget[2]
-        else
-            local blend = math.pow(1/DisplayShiftSmoothing,dt*EffectTimescale)
-            DisplayShift[1] = blend*(DisplayShift[1]-DisplayShiftTarget[1])+DisplayShiftTarget[1]
-            DisplayShift[2] = blend*(DisplayShift[2]-DisplayShiftTarget[2])+DisplayShiftTarget[2]
-        end
-    end
-    do
-        if DisplayScaleSmoothing == 0 then
-            DisplayScale[1] = DisplayScaleTarget[1]
-            DisplayScale[2] = DisplayScaleTarget[2]
-        else
-            local blend = math.pow(1/DisplayScaleSmoothing,dt*EffectTimescale)
-            DisplayScale[1] = blend*(DisplayScale[1]-DisplayScaleTarget[1])+DisplayScaleTarget[1]
-            DisplayScale[2] = blend*(DisplayScale[2]-DisplayScaleTarget[2])+DisplayScaleTarget[2]
-        end
-    end
-    do
-        if DisplayRotationSmoothing == 0 then
-            DisplayRotation = DisplayRotationTarget
-        else
-            local blend = math.pow(1/DisplayRotationSmoothing,dt*EffectTimescale)
-            DisplayRotation = blend*(DisplayRotation-DisplayRotationTarget)+DisplayRotationTarget
-        end
-    end
-    do
-        if DisplayShearSmoothing == 0 then
-            DisplayShear[1] = DisplayShearTarget[1]
-            DisplayShear[2] = DisplayShearTarget[2]
-        else
-            local blend = math.pow(1/DisplayShearSmoothing,dt*EffectTimescale)
-            DisplayShear[1] = blend*(DisplayShear[1]-DisplayShearTarget[1])+DisplayShearTarget[1]
-            DisplayShear[2] = blend*(DisplayShear[2]-DisplayShearTarget[2])+DisplayShearTarget[2]
-        end
-    end
-    do
-        if ViewOffsetSmoothing == 0 then
-            ViewOffset = ViewOffsetTarget
-        else
-            local blend = math.pow(1/ViewOffsetSmoothing,dt*EffectTimescale)
-            ViewOffset = blend*(ViewOffset-ViewOffsetTarget)+ViewOffsetTarget
-        end
-    end
+    DisplayShift[1]:update(dt*EffectTimescale)
+    DisplayShift[2]:update(dt*EffectTimescale)
+    -- do
+    --     if DisplayShiftSmoothing == 0 then
+    --         DisplayShift[1] = DisplayShiftTarget[1]
+    --         DisplayShift[2] = DisplayShiftTarget[2]
+    --     else
+    --         local blend = math.pow(1/DisplayShiftSmoothing,dt*EffectTimescale)
+    --         DisplayShift[1] = blend*(DisplayShift[1]-DisplayShiftTarget[1])+DisplayShiftTarget[1]
+    --         DisplayShift[2] = blend*(DisplayShift[2]-DisplayShiftTarget[2])+DisplayShiftTarget[2]
+    --     end
+    -- end
+    DisplayScale[1]:update(dt*EffectTimescale)
+    DisplayScale[2]:update(dt*EffectTimescale)
+    -- do
+    --     if DisplayScaleSmoothing == 0 then
+    --         DisplayScale[1] = DisplayScaleTarget[1]
+    --         DisplayScale[2] = DisplayScaleTarget[2]
+    --     else
+    --         local blend = math.pow(1/DisplayScaleSmoothing,dt*EffectTimescale)
+    --         DisplayScale[1] = blend*(DisplayScale[1]-DisplayScaleTarget[1])+DisplayScaleTarget[1]
+    --         DisplayScale[2] = blend*(DisplayScale[2]-DisplayScaleTarget[2])+DisplayScaleTarget[2]
+    --     end
+    -- end
+    DisplayRotation:update(dt*EffectTimescale)
+    -- do
+    --     if DisplayRotationSmoothing == 0 then
+    --         DisplayRotation = DisplayRotationTarget
+    --     else
+    --         local blend = math.pow(1/DisplayRotationSmoothing,dt*EffectTimescale)
+    --         DisplayRotation = blend*(DisplayRotation-DisplayRotationTarget)+DisplayRotationTarget
+    --     end
+    -- end
+    DisplayShear[1]:update(dt*EffectTimescale)
+    DisplayShear[2]:update(dt*EffectTimescale)
+    -- do
+    --     if DisplayShearSmoothing == 0 then
+    --         DisplayShear[1] = DisplayShearTarget[1]
+    --         DisplayShear[2] = DisplayShearTarget[2]
+    --     else
+    --         local blend = math.pow(1/DisplayShearSmoothing,dt*EffectTimescale)
+    --         DisplayShear[1] = blend*(DisplayShear[1]-DisplayShearTarget[1])+DisplayShearTarget[1]
+    --         DisplayShear[2] = blend*(DisplayShear[2]-DisplayShearTarget[2])+DisplayShearTarget[2]
+    --     end
+    -- end
+    ViewOffset:update(dt)
+    -- do
+    --     if ViewOffsetSmoothing == 0 then
+    --         ViewOffset = ViewOffsetTarget
+    --     else
+    --         local blend = math.pow(1/ViewOffsetSmoothing,dt*EffectTimescale)
+    --         ViewOffset = blend*(ViewOffset-ViewOffsetTarget)+ViewOffsetTarget
+    --     end
+    -- end
     do
         if ScrollSpeedModSmoothing == 0 then
             ScrollSpeedMod = ScrollSpeedModTarget
@@ -777,11 +785,11 @@ function scene.draw()
     end
 
     love.graphics.push()
-    love.graphics.translate(DisplayShift[1], DisplayShift[2])
+    love.graphics.translate(DisplayShift[1]:get(), DisplayShift[2]:get())
     love.graphics.translate(320,240)
-    love.graphics.scale(DisplayScale[1], DisplayScale[2])
-    love.graphics.rotate(DisplayRotation)
-    love.graphics.shear(DisplayShear[1], DisplayShear[2])
+    love.graphics.scale(DisplayScale[1]:get(), DisplayScale[2]:get())
+    love.graphics.rotate(DisplayRotation:get())
+    love.graphics.shear(DisplayShear[1]:get(), DisplayShear[2]:get())
     love.graphics.translate(-320,-240)
 
     love.graphics.translate(AnaglyphSide, 0)
@@ -877,7 +885,7 @@ function scene.draw()
     local jlBrightness = math.max(BoardBrightness,NoteBrightness)
     love.graphics.setColor(r3*jlBrightness,g3*jlBrightness,b3*jlBrightness,a3)
     do
-        local drawPos = (5)+(15)+(ViewOffsetMoveLine and ((ViewOffset or 0)+(ViewOffsetFreeze or 0)) or 0)*(ScrollSpeed*ScrollSpeedMod)
+        local drawPos = (5)+(15)+(ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0)*(ScrollSpeed*ScrollSpeedMod)
         if drawPos >= 5 and drawPos <= 20 then
             love.graphics.print("┈┈┈"..("╬┈┈┈"):rep(scene.chart.lanes-1), ((80-(scene.chart.lanes*4-1))/2 - 1+(1-1)*4 + 1)*8, drawPos*16-16)
         end
@@ -888,7 +896,7 @@ function scene.draw()
         local x = (80-(scene.chart.lanes*4-1))/2 - 1+(i-1)*4 + 1
         local v = math.ceil(math.min(1,PressAmounts[i])+HitAmounts[i]*2)
         if v > 0 then
-            local drawPos = (5)+(15)+(ViewOffsetMoveLine and ((ViewOffset or 0)+(ViewOffsetFreeze or 0)) or 0)*(ScrollSpeed*ScrollSpeedMod)
+            local drawPos = (5)+(15)+(ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0)*(ScrollSpeed*ScrollSpeedMod)
             love.graphics.setColor(TerminalColors[NoteColors[((i-1)%(#NoteColors))+1][v+1]])
             love.graphics.print("███", x*8 + AnaglyphSide*0.75, drawPos*16-16)
             -- if HitAmounts[i] > 0 then

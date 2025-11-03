@@ -1366,9 +1366,9 @@ function scene.draw()
                     local C,D = note.time,note.time+note.length
 
                     local pos1 = C-scene.chartTimeTemp
-                    local drawPos1 = chartPos+chartHeight-pos1*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+                    local drawPos1 = chartPos+chartHeight-pos1*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
                     local pos2 = D-scene.chartTimeTemp
-                    local drawPos2 = chartPos+chartHeight-pos2*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+                    local drawPos2 = chartPos+chartHeight-pos2*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
                     local a = (chartX+A*4)*8-4
                     local b = (chartX+B*4)*8+12
                     love.graphics.rectangle("fill", a, drawPos2*16-24, math.abs(b-a), math.abs((drawPos2*16)-(drawPos1*16))+16)
@@ -1380,7 +1380,7 @@ function scene.draw()
         love.graphics.setFont(Font)
         love.graphics.setColor(TerminalColors[ColorID.CYAN])
         for _,change in ipairs(bpmChanges) do
-            local drawPos = chartPos+chartHeight-(change.time - scene.chartTimeTemp)*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local drawPos = chartPos+chartHeight-(change.time - scene.chartTimeTemp)*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
             local txt = change.bpm .. " BPM ▷"
             local w = 8*#txt
             love.graphics.printf(txt, chartX*8-24 - w, drawPos*16-24, w, "right")
@@ -1391,13 +1391,13 @@ function scene.draw()
         local effectPos = {}
         local lastEffectPos = -math.huge
         for _,effect in ipairs(scene.chart.effects or {}) do
-            local samePos = chartPos+chartHeight-(effect.time)*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local samePos = chartPos+chartHeight-(effect.time)*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
             if math.abs(lastEffectPos - samePos) <= 1 then
                 samePos = lastEffectPos
             else
                 lastEffectPos = samePos
             end
-            local drawPos = chartPos+chartHeight-(effect.time - scene.chartTimeTemp)*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local drawPos = chartPos+chartHeight-(effect.time - scene.chartTimeTemp)*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
             local actualPos = drawPos*8
             if actualPos < 0 then
                 break
@@ -1417,9 +1417,9 @@ function scene.draw()
             local C,D = math.min(scene.selection.start[2], scene.selection.stop[2]),math.max(scene.selection.start[2], scene.selection.stop[2])
 
             local pos1 = C-scene.chartTimeTemp
-            local drawPos1 = chartPos+chartHeight-pos1*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local drawPos1 = chartPos+chartHeight-pos1*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
             local pos2 = D-scene.chartTimeTemp
-            local drawPos2 = chartPos+chartHeight-pos2*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local drawPos2 = chartPos+chartHeight-pos2*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
             local x1,x2 = (chartX+A*4)*8-4,(chartX+B*4)*8-4
             love.graphics.rectangle("fill", x1, drawPos2*16-24, x2-x1+16, math.abs((drawPos2*16)-(drawPos1*16))+16)
         end
@@ -1444,7 +1444,7 @@ function scene.draw()
         love.graphics.setFont(Font)
         love.graphics.setColor(TerminalColors[ColorID.CYAN])
         if scene.placementMode == placementModes.bpm then
-            local drawPos = chartPos+chartHeight-(scene.lastNoteTime - scene.chartTimeTemp)*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local drawPos = chartPos+chartHeight-(scene.lastNoteTime - scene.chartTimeTemp)*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
             local txt = "▷"
             local w = 8*#txt
             love.graphics.printf(txt, chartX*8-24 - w, drawPos*16-24, w, "right")
@@ -1456,7 +1456,7 @@ function scene.draw()
         lastEffectPos = -math.huge
         local lastEffectTime = 0
         for _,effect in ipairs(scene.chart.effects or {}) do
-            local samePos = chartPos+chartHeight-(effect.time)*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local samePos = chartPos+chartHeight-(effect.time)*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
             if math.abs(lastEffectPos - samePos) <= 1 then
                 samePos = lastEffectPos
             else
@@ -1471,13 +1471,13 @@ function scene.draw()
         love.graphics.setFont(Font)
         love.graphics.setColor(TerminalColors[ColorID.MAGENTA])
         if scene.placementMode == placementModes.effect then
-            local samePos = chartPos+chartHeight-(scene.lastNoteTime)*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local samePos = chartPos+chartHeight-(scene.lastNoteTime)*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
             if math.abs(lastEffectPos - samePos) <= 1 then
                 samePos = lastEffectPos
             else
                 lastEffectPos = samePos
             end
-            local drawPos = chartPos+chartHeight-(scene.lastNoteTime - scene.chartTimeTemp)*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local drawPos = chartPos+chartHeight-(scene.lastNoteTime - scene.chartTimeTemp)*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
             local txt = "¤"
             local w = 8
             love.graphics.printf(txt, chartX*8+136 + (effectPos[lastEffectPos] or 0)*12 - w, drawPos*16-24, w, "right")
@@ -1717,7 +1717,7 @@ function scene.mousepressed(x,y,b)
         local speed = 25
 
         for i,change in ipairs(scene.chart.bpmChanges or {}) do
-            local drawPos = chartPos+chartHeight-(change.time - scene.chartTimeTemp)*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local drawPos = chartPos+chartHeight-(change.time - scene.chartTimeTemp)*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
             local txt = change.bpm .. " BPM ▷"
             local w = 8*#txt
             
@@ -1734,7 +1734,7 @@ function scene.mousepressed(x,y,b)
 
         local effectPos = {}
         for i,effect in ipairs(scene.chart.effects or {}) do
-            local drawPos = chartPos+chartHeight-(effect.time - scene.chartTimeTemp)*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local drawPos = chartPos+chartHeight-(effect.time - scene.chartTimeTemp)*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
             local samePos = math.floor(drawPos*2)
             local eX = effectPos[samePos] or 0
             local txt = "¤"
