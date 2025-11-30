@@ -32,7 +32,6 @@ NoteTypes = {
             
             local cells = self.length * math.abs(speed)
             for i = 0.5, cells do
-            -- for i = 1, cells do
                 local barPos = mainpos+i/speed
                 if not isEditor then barPos = barPos+math.sin(barPos*8)*Waviness/speed end
                 local extPos = chartPos+chartHeight-barPos*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
@@ -41,8 +40,6 @@ NoteTypes = {
                     local R,G,B,A = love.graphics.getColor()
                     love.graphics.setColor(r*R,g*G,b*B,a*A)
                     love.graphics.print("║", (chartX+visualLane*4)*8+4, math.floor(extPos*16-8-0), 0, 1, 1, NoteFont:getWidth("║")/2)
-                    -- love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][2]])
-                    -- love.graphics.print("▥▥▥", (chartX+self.lane*4-1)*8, math.floor(extPos*16-8))
                 end
             end
 
@@ -51,7 +48,6 @@ NoteTypes = {
                 local R,G,B,A = love.graphics.getColor()
                 love.graphics.setColor(r*R,g*G,b*B,a*A)
                 love.graphics.print("○", (chartX+visualLane*4)*8+4, math.floor(drawPos*16-8-(isEditor and 0 or 4)), 0, 1, 1, NoteFont:getWidth("○")/2)
-                -- love.graphics.print("▥▥▥", (chartX+self.lane*4-1)*8, math.floor(drawPos*16-8))
             end
             
             love.graphics.setColor(r,g,b,a)
@@ -84,7 +80,7 @@ NoteTypes = {
             local drawPos = chartPos+chartHeight-pos*speed
             local laneOffset = isEditor and 1 or math.max(0,math.min(1, ((pos*speed)-7)/4))
             local visualLane = (self.visualLane or self.lane) - self.extra.dir*laneOffset
-            local symbol = isEditor and ((self.extra.dir == 1 and "▷") or (self.extra.dir == -1 and "◁") or "◇") or ((math.abs(visualLane-self.lane) <= 1/4 and "○") or (math.abs(visualLane-(self.lane-self.extra.dir)) <= 1/4 and (self.extra.dir == 1 and "▷" or "◁")) or "◇")
+            local symbol = isEditor and ((self.extra.dir >= 1 and "▷") or (self.extra.dir <= -1 and "◁") or "◇") or ((math.abs(visualLane-self.lane) <= 1/4 and "○") or (math.abs(visualLane-(self.lane-self.extra.dir)) <= 1/4 and (self.extra.dir >= 1 and "▷" or "◁")) or "◇")
             if useSteps then drawPos = math.floor(drawPos) end
 
             local r,g,b,a = love.graphics.getColor()
@@ -134,7 +130,9 @@ NoteTypes = {
     merge = {
         ---@param self Note
         draw = function (self,time,speed,chartPos,chartHeight,chartX,isEditor)
-            -- ▧▥▨ ◐◑
+            if (self.extra.dir or 0) == 0 then
+                return NoteTypes.normal.draw(self,time,speed,chartPos,chartHeight,chartX,isEditor)
+            end
             local mainpos = self.time-time
             local pos = mainpos
             chartHeight = chartHeight or 15
@@ -153,7 +151,6 @@ NoteTypes = {
                     local R,G,B,A = love.graphics.getColor()
                     love.graphics.setColor(r*R,g*G,b*B,a*A)
                     love.graphics.print(((i == min and i == max) and "◻○◼") or (i == min and "◻◐▥▨") or (i == max and "▧▥◑◼") or "▧▥▥▥▨", (chartX+(i)*4-2)*8, math.floor(drawPos*16-8-(isEditor and 0 or 4)))
-                    -- love.graphics.print(((i == min and i == max) and "◻▥▥▥◻") or (i == min and "◻▥▥▥▨") or (i == max and "▧▥▥▥◻") or "▧▥▥▥▨", (chartX+(i)*4-2)*8, math.floor(drawPos*16-8))
                 end
             end
             
@@ -362,11 +359,6 @@ EffectTypes = {
             else
                 CurveModifier:start(self.data.strength, self.data.easeMethod or "linear", self.data.easeDuration or 0)
             end
-            -- CurveModifierTarget = self.data.strength
-            -- CurveModifierSmoothing = self.data.smoothing or 0
-            -- if (self.data.smoothing or 0) == 0 then
-            --     CurveModifier = CurveModifierTarget
-            -- end
         end,
         editor = function(self,container)
             local strengthIn = DialogInput:new(0,0,container.width,16,"STRENGTH",5)
@@ -389,11 +381,6 @@ EffectTypes = {
             else
                 ChromaticModifier:start(self.data.strength, self.data.easeMethod or "linear", self.data.easeDuration or 0)
             end
-            -- ChromaticModifierTarget = self.data.strength
-            -- ChromaticModifierSmoothing = self.data.smoothing or 0
-            -- if (self.data.smoothing or 0) == 0 then
-            --     ChromaticModifier = ChromaticModifierTarget
-            -- end
         end,
         editor = function(self,container)
             local strengthIn = DialogInput:new(0,0,container.width,16,"STRENGTH",5)
@@ -416,11 +403,6 @@ EffectTypes = {
             else
                 TearingModifier:start(self.data.strength, self.data.easeMethod or "linear", self.data.easeDuration or 0)
             end
-            -- TearingModifierTarget = self.data.strength
-            -- TearingModifierSmoothing = self.data.smoothing or 0
-            -- if (self.data.smoothing or 0) == 0 then
-            --     TearingModifier = TearingModifierTarget
-            -- end
         end,
         editor = function(self,container)
             local strengthIn = DialogInput:new(0,0,container.width,16,"STRENGTH",5)
@@ -487,11 +469,6 @@ EffectTypes = {
             else
                 BloomStrengthModifier:start(self.data.strength, self.data.easeMethod or "linear", self.data.easeDuration or 0)
             end
-            -- BloomStrengthModifierTarget = self.data.strength
-            -- BloomStrengthModifierSmoothing = self.data.smoothing or 0
-            -- if (self.data.smoothing or 0) == 0 then
-            --     BloomStrengthModifier = BloomStrengthModifierTarget
-            -- end
         end,
         editor = function(self,container)
             local strengthIn = DialogInput:new(0,0,container.width,16,"STRENGTH",5)
@@ -572,11 +549,6 @@ EffectTypes = {
     offset = {
         readable = "VIEW OFFSET",
         apply = function(self)
-            -- ViewOffsetTarget = self.data.offset
-            -- ViewOffsetSmoothing = self.data.smoothing or 0
-            -- if (self.data.smoothing or 0) == 0 then
-            --     ViewOffset = ViewOffsetTarget
-            -- end
             if self.data.smoothing then
                 ViewOffset:fromSmoothing(self.data.offset, self.data.smoothing)
             else
@@ -710,9 +682,6 @@ EffectTypes = {
                     DisplayShift[1]:start(self.data.shift[1], self.data.easeMethod or "linear", self.data.easeDuration or 0)
                     DisplayShift[2]:start(self.data.shift[2], self.data.easeMethod or "linear", self.data.easeDuration or 0)
                 end
-                -- DisplayShiftTarget[1] = (self.data.shift or DisplayShiftTarget)[1]
-                -- DisplayShiftTarget[2] = (self.data.shift or DisplayShiftTarget)[2]
-                -- DisplayShiftSmoothing = self.data.smoothing or 0
             end
             if self.data.scale then
                 if self.data.smoothing then
@@ -722,9 +691,6 @@ EffectTypes = {
                     DisplayScale[1]:start(self.data.scale[1], self.data.easeMethod or "linear", self.data.easeDuration or 0)
                     DisplayScale[2]:start(self.data.scale[2], self.data.easeMethod or "linear", self.data.easeDuration or 0)
                 end
-                -- DisplayScaleTarget[1] = (self.data.scale or DisplayScaleTarget)[1]
-                -- DisplayScaleTarget[2] = (self.data.scale or DisplayScaleTarget)[2]
-                -- DisplayScaleSmoothing = self.data.smoothing or 0
             end
             if self.data.rotation then
                 if self.data.smoothing then
@@ -732,8 +698,6 @@ EffectTypes = {
                 else
                     DisplayRotation:start(self.data.rotation, self.data.easeMethod or "linear", self.data.easeDuration or 0)
                 end
-                -- DisplayRotationTarget = self.data.rotation or DisplayRotationTarget
-                -- DisplayRotationSmoothing = self.data.smoothing or 0
             end
             if self.data.shear then
                 if self.data.smoothing then
@@ -743,19 +707,7 @@ EffectTypes = {
                     DisplayShear[1]:start(self.data.shear[1], self.data.easeMethod or "linear", self.data.easeDuration or 0)
                     DisplayShear[2]:start(self.data.shear[2], self.data.easeMethod or "linear", self.data.easeDuration or 0)
                 end
-                -- DisplayShearTarget[1] = (self.data.shear or DisplayShearTarget)[1]
-                -- DisplayShearTarget[2] = (self.data.shear or DisplayShearTarget)[2]
-                -- DisplayShearSmoothing = self.data.smoothing or 0
             end
-            -- if (self.data.smoothing or 0) == 0 then
-            --     DisplayShift[1] = DisplayShiftTarget[1]
-            --     DisplayShift[2] = DisplayShiftTarget[2]
-            --     DisplayScale[1] = DisplayScaleTarget[1]
-            --     DisplayScale[2] = DisplayScaleTarget[2]
-            --     DisplayRotation = DisplayRotationTarget
-            --     DisplayShear[1] = DisplayShearTarget[1]
-            --     DisplayShear[2] = DisplayShearTarget[2]
-            -- end
         end,
         editor = function(self,container)
             local shiftXIn = DialogInput:new(0,0,container.width/2-8,16,"SHIFT X",5)

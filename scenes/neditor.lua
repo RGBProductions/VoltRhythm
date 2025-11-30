@@ -414,6 +414,137 @@ local function metadataDialog()
     table.insert(scene.dialogs, 1, dialog)
 end
 
+local function groupDialog()
+    local groupnameInput = DialogInput:new(0, 16, 240, 16, "GROUP NAME", 30)
+    table.insert(scene.dialogs, 1, {
+        title = "GROUPING " .. #scene.selectedNotes .. " NOTES",
+        width = 16,
+        height = 9,
+        contents = {
+            groupnameInput,
+            DialogButton:new(136, 80, 64, 16, "CANCEL", function ()
+                table.remove(scene.dialogs, 1)
+            end),
+            DialogButton:new(40, 80, 64, 16, "GROUP", function ()
+                for _,note in ipairs(scene.selectedNotes) do
+                    note.extra.group = groupnameInput.content
+                end
+                table.remove(scene.dialogs, 1)
+            end)
+        }
+    })
+end
+
+local function notePropertiesDialog(note)
+    local copy = table.merge({}, note)
+    local container = DialogContainer:new(0,64,304,304,{})
+    local typeButton
+    local apply = function(self)
+        self.type = copy.type
+        self.time = copy.time
+        self.data = copy.data
+    end
+    
+    local function set(noteType)
+        copy.type = noteType
+        typeButton.label = noteType
+        container.contents = {}
+        local t = NoteTypes[noteType] or {}
+        -- if type(t.editor) == "function" then
+        --     apply = t.editor(copy, container)
+        -- end
+    end
+
+    local noteType = copy.type or "NOTE TYPE"
+    typeButton = DialogButton:new(0, 0, 304, 16, "NOTE TYPE", function()
+        local buttons = {}
+        local names = {}
+        for name,_ in pairs(NoteTypes) do
+            table.insert(names, {_.readable or name,name})
+        end
+        table.sort(names,function (a, b)
+            return a[1] < b[1]
+        end)
+        local optionContainer = DialogContainer:new(0,0,304,240,{})
+        local scroll = 0
+        local function setscroll(n) end
+        local max = 0
+        local dialog = {
+            title = "NOTE TYPE",
+            width = 20,
+            height = 20,
+            contents = {
+                optionContainer,
+                DialogButton:new(120, 256, 64, 16, "CANCEL", function ()
+                    table.remove(scene.dialogs, 1)
+                end),
+                DialogButton:new(16, 256, 32, 16, "UP", function ()
+                    setscroll(math.max(scroll-5, 0))
+                end),
+                DialogButton:new(264, 256, 32, 16, "DN", function ()
+                    setscroll(math.min(scroll+5,math.ceil(max/5)*5-5))
+                end)
+            }
+        }
+        local pos = 0
+        for _,val in pairs(names) do
+            local name = val[2]
+            local readable = val[1]
+            local button = DialogButton:new(16, 48*pos, 272, 16, readable, function ()
+                noteType = name
+                set(noteType)
+                table.remove(scene.dialogs, 1)
+            end)
+            max = max + 1
+            table.insert(buttons, button)
+            pos = pos + 1
+        end
+        setscroll = function(n)
+            scroll = n
+            optionContainer.contents = {}
+            for i,button in ipairs(buttons) do
+                button.y = 48*(i-1-scroll)
+                if button.y >= 0 and button.y < 240 then
+                    table.insert(optionContainer.contents, button)
+                end
+            end
+        end
+        setscroll(scroll)
+        table.insert(scene.dialogs, 1, dialog)
+    end)
+    local timeInput = DialogInput:new(0, 48, 304, 16, "NOTE TIME", 24, nil, function(self)
+        print(self.content)
+    end)
+    timeInput.content = tostring(copy.time)
+    local data = copy.data
+    set(noteType)
+    local pos = 0
+    local dataElements = {}
+    local dialog = {
+        title = "NOTE PROPERTIES",
+        width = 20,
+        height = 20,
+        contents = {
+            typeButton,
+            -- DialogLabel:new(0, 32, 304, "EFFECT DATA", "center"),
+            timeInput,
+            container,
+            DialogButton:new(216, 256, 64, 16, "CANCEL", function ()
+                table.remove(scene.dialogs, 1)
+            end),
+            DialogButton:new(24, 256, 64, 16, "APPLY", function ()
+                note.type = noteType
+                if type(apply) == "function" then
+                    apply(note)
+                end
+                scene.chart:sort()
+                table.remove(scene.dialogs, 1)
+            end)
+        }
+    }
+    table.insert(scene.dialogs, 1, dialog)
+end
+
 local editorMenu = {
     {
         id = "file",
@@ -1212,24 +1343,7 @@ function scene.keypressed(k)
         end
     end
     if k == "g" and love.keyboard.isDown("lctrl") then
-        local groupnameInput = DialogInput:new(0, 16, 240, 16, "GROUP NAME", 30)
-        table.insert(scene.dialogs, 1, {
-            title = "GROUPING " .. #scene.selectedNotes .. " NOTES",
-            width = 16,
-            height = 9,
-            contents = {
-                groupnameInput,
-                DialogButton:new(136, 80, 64, 16, "CANCEL", function ()
-                    table.remove(scene.dialogs, 1)
-                end),
-                DialogButton:new(40, 80, 64, 16, "GROUP", function ()
-                    for _,note in ipairs(scene.selectedNotes) do
-                        note.extra.group = groupnameInput.content
-                    end
-                    table.remove(scene.dialogs, 1)
-                end)
-            }
-        })
+        groupDialog()
     end
 end
 
@@ -1563,7 +1677,7 @@ function scene.draw()
     end
 end
 
-function scene.mousepressed(x,y,b)
+function scene.mousepressed(x,y,b,t,p)
     if b == 1 then
         if #scene.dialogs > 0 then
             local dialog = scene.dialogs[1]
@@ -1638,6 +1752,10 @@ function scene.mousepressed(x,y,b)
         end
         
         if scene.chart then
+            local chartX = (80-(scene.chart.lanes*4-1))/2 - 1 + 2
+            local chartPos = 7
+            local chartHeight = 16
+            local speed = 25
             if scene.placementMode ~= placementModes.select then
                 if scene.placementMode < placementModes.bpm then
                     if scene.lastNoteLane >= 0 and scene.lastNoteLane <= 3 then
@@ -1684,6 +1802,26 @@ function scene.mousepressed(x,y,b)
                     effectPlacementDialog({time = scene.lastNoteTime, data = {}}, false)
                 end
             elseif not scene.scrollbarGrab then
+                local effectPos = {}
+                for i,effect in ipairs(scene.chart.effects or {}) do
+                    local drawPos = chartPos+chartHeight-(effect.time - scene.chartTimeTemp)*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+                    local samePos = math.floor(drawPos*2)
+                    local eX = effectPos[samePos] or 0
+                    local txt = "¤"
+                    local w = 8
+                    effectPos[samePos] = eX + 1
+                    
+                    local X,Y = chartX*8+136 + (eX*12) - w, drawPos*16-24
+                    if x >= X and x < X+w and y >= Y-8 and y < Y+16+8 then
+                        if p == 2 then
+                            effectPlacementDialog(effect, true)
+                        end
+                        return
+                    end
+                end
+
+                local preserveSelection = false
+
                 for i,note in ipairs(scene.selectedNotes) do
                     local A,B = math.min(note.lane, note.lane+(note.extra.dir or 0)),math.max(note.lane, note.lane+(note.extra.dir or 0))
                     if note.type == "swap" then
@@ -1692,14 +1830,24 @@ function scene.mousepressed(x,y,b)
         
                     local C,D = note.time-0.05,note.time+note.length+0.05
                     if (scene.lastNoteLane >= A and scene.lastNoteLane <= B) and (scene.lastNoteTime >= C and scene.lastNoteTime <= D) then
-                        scene.selection.dragging = true
-                        scene.selection.start = {scene.lastNoteLane, scene.lastNoteTime}
-                        scene.selection.stop = {scene.lastNoteLane, scene.lastNoteTime}
+                        if p == 2 then
+                            -- TODO: Note properties dialog
+                            if #scene.selectedNotes == 1 then
+                                notePropertiesDialog(note)
+                            else
+                                groupDialog()
+                                preserveSelection = true
+                            end
+                        else
+                            scene.selection.dragging = true
+                            scene.selection.start = {scene.lastNoteLane, scene.lastNoteTime}
+                            scene.selection.stop = {scene.lastNoteLane, scene.lastNoteTime}
+                        end
                         break
                     end
                 end
 
-                if not scene.selection.dragging then
+                if not scene.selection.dragging and not preserveSelection then
                     if not love.keyboard.isDown("lshift") then
                         scene.selectedNotes = {}
                     end
@@ -1715,7 +1863,6 @@ function scene.mousepressed(x,y,b)
         local chartPos = 7
         local chartHeight = 16
         local speed = 25
-
         for i,change in ipairs(scene.chart.bpmChanges or {}) do
             local drawPos = chartPos+chartHeight-(change.time - scene.chartTimeTemp)*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
             local txt = change.bpm .. " BPM ▷"
@@ -1784,6 +1931,15 @@ local function aabb(x1,y1,w1,h1, x2,y2,w2,h2)
 end
 
 function scene.mousereleased(x,y,b)
+    if scene.placement.placing then
+        local noteType = scene.placement.type
+        local note = scene.placement.note
+        if note and noteType == "merge" and note.extra.dir == 0 then
+            scene.placement.type = "normal"
+            note.type = "normal"
+            note.extra.dir = nil
+        end
+    end
     scene.placement.placing = false
     if scene.scrollbarGrab then
         scene.scrollbarGrab = false

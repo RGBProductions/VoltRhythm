@@ -247,6 +247,7 @@ function scene.keypressed(k)
                     Save.Write("main_color", scene.mainColor)
                     Save.Write("accent_color", scene.accentColor)
                     if not scene.set then Save.SetProfile(current) end
+                    NoteFont = NoteFonts[Save.Read("note_skin")] or NoteFonts.dots
                     SceneManager[scene.transition and "Transition" or "LoadScene"]("scenes/"..scene.destination, {profileSetupFailed = false})
                     return true
                 end

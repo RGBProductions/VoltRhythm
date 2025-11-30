@@ -22,6 +22,7 @@ function scene.action(a)
     if a == "confirm" then
         if ProfilesSelection < #scene.profiles then
             Save.SetProfile(scene.profiles[ProfilesSelection+1].id)
+            NoteFont = NoteFonts[Save.Read("note_skin")] or NoteFonts.dots
             SceneManager.Transition("scenes/menu")
         else
             SceneManager.LoadScene("scenes/setup", {destination = "profiles", set = false, transition = false})

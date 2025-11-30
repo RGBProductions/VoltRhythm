@@ -124,7 +124,8 @@ local function handle()
             reading[2] = ""
         end
         if t == "dynamic" then
-            table.insert(lines, {text = d.func(), color = d.color or ColorID.WHITE})
+            local text, color = d.func()
+            table.insert(lines, {text = text or d.text, color = color or d.color or ColorID.WHITE})
         end
         if t == "run" then
             d.func()

@@ -86,7 +86,6 @@ function scene.load(args)
         ColorTransitionTable[colorIndexes[4]]
     }
     NoteFont = NoteFonts[Save.Read("note_skin")] or NoteFonts.dots
-    -- Keybinds[4] = Save.Read("keybinds")
     Input.ReadBinds()
     HitOffset = 0
     RealHits = 0
@@ -105,8 +104,6 @@ function scene.load(args)
     ScrollSpeedModTarget = 1
     ScrollSpeedModSmoothing = 0
     NoteSpeedMods = {}
-    -- ViewOffsetTarget = 0
-    -- ViewOffsetSmoothing = 16
     ViewOffsetFreeze = 0
     ViewOffsetMoveLine = true
     ChartFrozen = false
@@ -148,30 +145,14 @@ end
 
 function ResetEffects()
     DisplayShift = {Easer:new(0),Easer:new(0)}
-    -- DisplayShiftTarget = {0,0}
-    -- DisplayShiftSmoothing = 0
     DisplayScale = {Easer:new(1),Easer:new(1)}
-    -- DisplayScaleTarget = {1,1}
-    -- DisplayScaleSmoothing = 0
     DisplayRotation = Easer:new(0)
-    -- DisplayRotationTarget = 0
-    -- DisplayRotationSmoothing = 0
     DisplayShear = {Easer:new(0),Easer:new(0)}
-    -- DisplayShearTarget = {0,0}
-    -- DisplayShearSmoothing = 0
 
     BloomStrengthModifier:set(1)
-    -- BloomStrengthModifierTarget = 1
-    -- BloomStrengthModifierSmoothing = 0
     ChromaticModifier:set(0)
-    -- ChromaticModifierTarget = 0
-    -- ChromaticModifierSmoothing = 0
     TearingModifier:set(0)
-    -- TearingModifierTarget = 0
-    -- TearingModifierSmoothing = 0
     CurveModifier:set(1)
-    -- CurveModifierTarget = 1
-    -- CurveModifierSmoothing = 0
     ViewOffset:set(0)
 end
 
@@ -388,20 +369,13 @@ function scene.update(dt)
                 local drift = st-scene.chart.time
                 -- Only fix drift if we're NOT at the end of song AND we are too much offset
                 if math.abs(drift) >= 0.05 and drift > -scene.song:getDuration("seconds") then
-                    scene.chart.time = scene.song:tell("seconds")
+                    scene.chart.time = scene.song:tell("seconds")-scene.audioOffset
                 end
             end
         end
         if scene.song then scene.song:setPitch(scene.modifiers.speed or 1) end
         if scene.video then scene.video:getSource():setPitch(scene.modifiers.speed or 1) end
     end
-
-    -- remember this for later
-    -- when you cross a bpm change:
-    -- > store the time in the song of the bpm change
-    -- > store the current number of beats
-    -- then to calculate current beat, take the beat count as:
-    -- WhichSixteenth(time - bpmChangeTime) / 4 + bpmChangeBeats
 
     local lastBeatCount = scene.beatCount
     for _,bpmChange in ipairs(scene.chart.bpmChanges) do
@@ -653,70 +627,19 @@ function scene.update(dt)
         end
     end
 
-    -- do
-    --     local blend = math.pow(0.01,dt)
-    --     CurveModifier = blend*(CurveModifier-1)+1
-    --     ScreenShader:send("curveStrength", SystemSettings.screen_effects.screen_curvature*CurveModifier)
-    -- end
-    -- do
-    --     local blend = math.pow(0.05,dt)
-    --     Chromatic = blend*Chromatic
-    --     ScreenShader:send("chromaticStrength", Chromatic)
-    -- end
     DisplayShift[1]:update(dt*EffectTimescale)
     DisplayShift[2]:update(dt*EffectTimescale)
-    -- do
-    --     if DisplayShiftSmoothing == 0 then
-    --         DisplayShift[1] = DisplayShiftTarget[1]
-    --         DisplayShift[2] = DisplayShiftTarget[2]
-    --     else
-    --         local blend = math.pow(1/DisplayShiftSmoothing,dt*EffectTimescale)
-    --         DisplayShift[1] = blend*(DisplayShift[1]-DisplayShiftTarget[1])+DisplayShiftTarget[1]
-    --         DisplayShift[2] = blend*(DisplayShift[2]-DisplayShiftTarget[2])+DisplayShiftTarget[2]
-    --     end
-    -- end
+    
     DisplayScale[1]:update(dt*EffectTimescale)
     DisplayScale[2]:update(dt*EffectTimescale)
-    -- do
-    --     if DisplayScaleSmoothing == 0 then
-    --         DisplayScale[1] = DisplayScaleTarget[1]
-    --         DisplayScale[2] = DisplayScaleTarget[2]
-    --     else
-    --         local blend = math.pow(1/DisplayScaleSmoothing,dt*EffectTimescale)
-    --         DisplayScale[1] = blend*(DisplayScale[1]-DisplayScaleTarget[1])+DisplayScaleTarget[1]
-    --         DisplayScale[2] = blend*(DisplayScale[2]-DisplayScaleTarget[2])+DisplayScaleTarget[2]
-    --     end
-    -- end
+    
     DisplayRotation:update(dt*EffectTimescale)
-    -- do
-    --     if DisplayRotationSmoothing == 0 then
-    --         DisplayRotation = DisplayRotationTarget
-    --     else
-    --         local blend = math.pow(1/DisplayRotationSmoothing,dt*EffectTimescale)
-    --         DisplayRotation = blend*(DisplayRotation-DisplayRotationTarget)+DisplayRotationTarget
-    --     end
-    -- end
+    
     DisplayShear[1]:update(dt*EffectTimescale)
     DisplayShear[2]:update(dt*EffectTimescale)
-    -- do
-    --     if DisplayShearSmoothing == 0 then
-    --         DisplayShear[1] = DisplayShearTarget[1]
-    --         DisplayShear[2] = DisplayShearTarget[2]
-    --     else
-    --         local blend = math.pow(1/DisplayShearSmoothing,dt*EffectTimescale)
-    --         DisplayShear[1] = blend*(DisplayShear[1]-DisplayShearTarget[1])+DisplayShearTarget[1]
-    --         DisplayShear[2] = blend*(DisplayShear[2]-DisplayShearTarget[2])+DisplayShearTarget[2]
-    --     end
-    -- end
+    
     ViewOffset:update(dt)
-    -- do
-    --     if ViewOffsetSmoothing == 0 then
-    --         ViewOffset = ViewOffsetTarget
-    --     else
-    --         local blend = math.pow(1/ViewOffsetSmoothing,dt*EffectTimescale)
-    --         ViewOffset = blend*(ViewOffset-ViewOffsetTarget)+ViewOffsetTarget
-    --     end
-    -- end
+    
     do
         if ScrollSpeedModSmoothing == 0 then
             ScrollSpeedMod = ScrollSpeedModTarget
@@ -811,19 +734,13 @@ function scene.draw()
     love.graphics.setColor(r1*BoardBrightness,g1*BoardBrightness,b1*BoardBrightness,a1)
     -- Text Displays
     if not HideTitlebar then
-        local difficultyName = SongDifficulty[scene.masquerade or "easy"].name or scene.masquerade:upper()
-        local difficultyColor = SongDifficulty[scene.masquerade or "easy"].color or TerminalColors[ColorID.WHITE]
         local level = scene.songData:getLevel(scene.difficulty)
         local fullText = scene.songData.name .. (scene.chart.hideDifficulty and "" or (" - " .. SongDifficulty[scene.masquerade].name .. (level ~= nil and (" " .. level) or "")))
-        -- local fullText = scene.songData.name .. " - " .. difficultyName .. " " .. level
         love.graphics.print("┌─" .. ("─"):rep(utf8.len(fullText)) .. "─┐\n│ " .. (" "):rep(utf8.len(fullText)) .. " │\n└─" .. ("─"):rep(utf8.len(fullText)) .. "─┘", ((80-(utf8.len(fullText)+4))/2)*8, 1*16)
         love.graphics.print(scene.songData.name .. (scene.chart.hideDifficulty and "" or " - "), ((80-(utf8.len(fullText)+4))/2 + 2)*8, 2*16)
-        -- love.graphics.setColor(difficultyColor)
-        -- love.graphics.print(difficultyName, ((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - "))*8, 2*16)
         if not scene.chart.hideDifficulty then PrintDifficulty(((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - "))*8, 2*16, scene.masquerade or "easy", level, "left") end
         love.graphics.setColor(r1*BoardBrightness,g1*BoardBrightness,b1*BoardBrightness,a1)
     end
-    -- love.graphics.print(tostring(level), ((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - " .. difficultyName .. " "))*8, 2*16)
 
     if Autoplay then love.graphics.print("┬──────────┬\n│ ".. (Showcase and "SHOWCASE" or "AUTOPLAY") .. " │\n┴──────────┴", 34*8, 21*16) end
 
@@ -899,10 +816,6 @@ function scene.draw()
             local drawPos = (5)+(15)+(ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0)*(ScrollSpeed*ScrollSpeedMod)
             love.graphics.setColor(TerminalColors[NoteColors[((i-1)%(#NoteColors))+1][v+1]])
             love.graphics.print("███", x*8 + AnaglyphSide*0.75, drawPos*16-16)
-            -- if HitAmounts[i] > 0 then
-            --     love.graphics.setColor(TerminalColors[ColorID.BLACK])
-            --     love.graphics.print("○", x*8 + 8 + AnaglyphSide*0.75, drawPos*16-16)
-            -- end
         end
     end
 
@@ -925,10 +838,6 @@ function scene.draw()
         x = x + AnaglyphSide*0.75
         NoteRatings[LastRating].draw(x,y,true)
     end
-    -- if LastOffset then
-    --     love.graphics.printf(math.floor(LastOffset*1000*100)/100 .. " ms", 320-128, 9*16, 256, "center")
-    --     love.graphics.printf(math.floor((HitOffset/RealHits)*1000*100)/100 .. " ms", 320-128, 10*16, 256, "center")
-    -- end
     local comboString = tostring(Combo)
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     love.graphics.print(comboString, ((80-(#comboString))/2)*8 + AnaglyphSide*0.75, 7*16)
@@ -980,11 +889,6 @@ function scene.draw()
             end
         end
     end
-
-    -- love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    -- love.graphics.print(tostring(scene.chart:getDifficulty()), 64, 64)
-    -- love.graphics.print(tostring(math.floor(scene.chart:getDifficulty() + 0.5)), 64, 64+16)
-    -- love.graphics.print(tostring(math.floor(scene.chart:getDensity()*1.5 + 0.5)), 64, 64+16)
 end
 
 function scene.unload()

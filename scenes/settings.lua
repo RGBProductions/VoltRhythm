@@ -102,99 +102,148 @@ local root = {
                     end
                 },
                 {
-                    label = "CURVATURE",
-                    type = "number",
-                    min = 0,
-                    max = 20,
-                    step = 1,
-                    enable = function()
-                        return SystemSettings.enable_screen_effects
-                    end,
-                    text = function(value)
-                        return value*5 .. "%"
-                    end,
-                    read = function()
-                        return SystemSettings.screen_effects.screen_curvature*20
-                    end,
-                    write = function(value)
-                        SystemSettings.screen_effects.screen_curvature = value/20
-                    end
-                },
-                {
-                    label = "SCANLINES",
-                    type = "number",
-                    min = 0,
-                    max = 20,
-                    step = 1,
-                    enable = function()
-                        return SystemSettings.enable_screen_effects
-                    end,
-                    text = function(value)
-                        return value*5 .. "%"
-                    end,
-                    read = function()
-                        return SystemSettings.screen_effects.scanlines*20
-                    end,
-                    write = function(value)
-                        SystemSettings.screen_effects.scanlines = value/20
-                    end
-                },
-                {
-                    label = "BLOOM",
-                    type = "number",
-                    min = 0,
-                    max = 20,
-                    step = 1,
-                    enable = function()
-                        return SystemSettings.enable_screen_effects
-                    end,
-                    text = function(value)
-                        return value*5 .. "%"
-                    end,
-                    read = function()
-                        return SystemSettings.screen_effects.bloom*20
-                    end,
-                    write = function(value)
-                        SystemSettings.screen_effects.bloom = value/20
-                    end
-                },
-                {
-                    label = "ABERRATION",
-                    type = "number",
-                    min = 0,
-                    max = 20,
-                    step = 1,
-                    enable = function()
-                        return SystemSettings.enable_screen_effects
-                    end,
-                    text = function(value)
-                        return value*5 .. "%"
-                    end,
-                    read = function()
-                        return SystemSettings.screen_effects.chromatic_aberration*20
-                    end,
-                    write = function(value)
-                        SystemSettings.screen_effects.chromatic_aberration = value/20
-                    end
-                },
-                {
-                    label = "SATURATION",
-                    type = "number",
-                    min = 0,
-                    max = 40,
-                    step = 1,
-                    enable = function()
-                        return SystemSettings.enable_screen_effects
-                    end,
-                    text = function(value)
-                        return value*5 .. "%"
-                    end,
-                    read = function()
-                        return SystemSettings.screen_effects.saturation*20
-                    end,
-                    write = function(value)
-                        SystemSettings.screen_effects.saturation = value/20
-                    end
+                    label = "ADJUST SCREEN FX",
+                    type = "menu",
+                    options = {
+                        {
+                            label = "CURVATURE",
+                            type = "number",
+                            min = 0,
+                            max = 20,
+                            step = 1,
+                            enable = function()
+                                return SystemSettings.enable_screen_effects
+                            end,
+                            text = function(value)
+                                return value*5 .. "%"
+                            end,
+                            read = function()
+                                return SystemSettings.screen_effects.screen_curvature*20
+                            end,
+                            write = function(value)
+                                SystemSettings.screen_effects.screen_curvature = value/20
+                            end
+                        },
+                        {
+                            label = "SCANLINES",
+                            type = "number",
+                            min = 0,
+                            max = 20,
+                            step = 1,
+                            enable = function()
+                                return SystemSettings.enable_screen_effects
+                            end,
+                            text = function(value)
+                                return value*5 .. "%"
+                            end,
+                            read = function()
+                                return SystemSettings.screen_effects.scanlines*20
+                            end,
+                            write = function(value)
+                                SystemSettings.screen_effects.scanlines = value/20
+                            end
+                        },
+                        {
+                            label = "BLOOM",
+                            type = "number",
+                            min = 0,
+                            max = 20,
+                            step = 1,
+                            enable = function()
+                                return SystemSettings.enable_screen_effects
+                            end,
+                            text = function(value)
+                                return value*5 .. "%"
+                            end,
+                            read = function()
+                                return SystemSettings.screen_effects.bloom*20
+                            end,
+                            write = function(value)
+                                SystemSettings.screen_effects.bloom = value/20
+                            end
+                        },
+                        {
+                            label = "ABERRATION",
+                            type = "number",
+                            min = 0,
+                            max = 20,
+                            step = 1,
+                            enable = function()
+                                return SystemSettings.enable_screen_effects
+                            end,
+                            text = function(value)
+                                return value*5 .. "%"
+                            end,
+                            read = function()
+                                return SystemSettings.screen_effects.chromatic_aberration*20
+                            end,
+                            write = function(value)
+                                ChromaticModifier:set(2)
+                                ChromaticModifier:start(0, "linear", 0.5)
+                                SystemSettings.screen_effects.chromatic_aberration = value/20
+                            end
+                        },
+                        {
+                            label = "SCREEN TEARING",
+                            type = "number",
+                            min = 0,
+                            max = 20,
+                            step = 1,
+                            enable = function()
+                                return SystemSettings.enable_screen_effects
+                            end,
+                            text = function(value)
+                                return value*5 .. "%"
+                            end,
+                            read = function()
+                                return SystemSettings.screen_effects.screen_tearing*20
+                            end,
+                            write = function(value)
+                                MissTime = 2
+                                SystemSettings.screen_effects.screen_tearing = value/20
+                            end
+                        },
+                        {
+                            label = "ZOOM BLUR",
+                            type = "number",
+                            min = 0,
+                            max = 20,
+                            step = 1,
+                            enable = function()
+                                return SystemSettings.enable_screen_effects
+                            end,
+                            text = function(value)
+                                return value*5 .. "%"
+                            end,
+                            read = function()
+                                return SystemSettings.screen_effects.zoom_blur*20
+                            end,
+                            write = function(value)
+                                ZoomBlurStrengthModifier:set(1)
+                                ZoomBlurStrengthModifier:start(0, "linear", 0.5)
+                                SystemSettings.screen_effects.zoom_blur = value/20
+                            end
+                        },
+                        {
+                            label = "SATURATION",
+                            type = "number",
+                            min = 0,
+                            max = 40,
+                            step = 1,
+                            enable = function()
+                                return SystemSettings.enable_screen_effects
+                            end,
+                            text = function(value)
+                                return value*5 .. "%"
+                            end,
+                            read = function()
+                                return SystemSettings.screen_effects.saturation*20
+                            end,
+                            write = function(value)
+                                SystemSettings.screen_effects.saturation = value/20
+                            end
+                        }
+                    }
                 }
             }
         },
@@ -527,6 +576,23 @@ local root = {
                     end,
                     write = function(value)
                         Save.Write("border", BorderOptions[value])
+                    end
+                },
+                {
+                    label = "NOTE SKIN",
+                    type = "number",
+                    min = 1,
+                    max = #NoteFontOptions,
+                    step = 1,
+                    text = function(value)
+                        return NoteFontOptions[value]:upper():gsub("_", " ")
+                    end,
+                    read = function()
+                        return table.index(NoteFontOptions, Save.Read("note_skin")) or 1
+                    end,
+                    write = function(value)
+                        Save.Write("note_skin", NoteFontOptions[value])
+                        NoteFont = NoteFonts[NoteFontOptions[value]]
                     end
                 }
             }

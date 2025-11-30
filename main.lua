@@ -188,10 +188,6 @@ function WhichSixteenth(t,bpm)
     return bpm*t/15
 end
 
--- ーあいうえおかきくけこさしすせそたちつてとなにぬねの
-
--- ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω
-
 Cursor = nil
 CursorX = 0
 CursorY = 0
@@ -208,10 +204,11 @@ end
 
 Font = love.graphics.newImageFont("images/font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%()[].,'\"`~\\|!?/:;@#$^&*<>{}+-_=┌─┐│└┘├┤┴┬┼█▓▒░┊┈╬○◇▷◁║¤👑▧▥▨◐◑◻☓⚠🡙ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω🮰✨�Ħ🔗ⒶⒷⓍⓎⓛⓡⓁⓇⓑⓢ⮜⮞⮝⮟⒧⒭ⓧⓄⓈⓉⓞⓗⓥⓕⓜⓟ➀➁")
 
-NoteFontOptions = {"dots"}
+NoteFontOptions = {"dots", "bars"}
 
 NoteFonts = {
-    dots = love.graphics.newImageFont("images/notes/default.png", "○◇▷◁║▧▥▨◐◑◻◼☓⚠┊")
+    dots = love.graphics.newImageFont("images/notes/default.png", "○◇▷◁║▧▥▨◐◑◻◼☓⚠┊"),
+    bars = love.graphics.newImageFont("images/notes/bar.png", "○◇▷◁║▧▥▨◐◑◻◼☓⚠┊")
 }
 
 NoteFont = NoteFonts.dots
@@ -240,18 +237,6 @@ if love.filesystem.getInfo("hidepswarning") then
 else
     SceneManager.LoadScene("scenes/photosensitivity")
 end
-
--- if loadedProfile then
---     SceneManager.LoadScene("scenes/photosensitivity")
---     -- SceneManager.LoadScene("scenes/profile")
--- else
---     -- SceneManager.LoadScene("scenes/photosensitivity")
---     -- local songData = LoadSongData("songs/cute")
---     -- SceneManager.LoadScene("scenes/game", {songData = songData, difficulty = "hard"})
---     SceneManager.LoadScene("scenes/photosensitivity")
--- end
-
--- SceneManager.LoadScene("scenes/game", {chart = "songs/cute/hard.json"})
 
 BorderOptions = {"none", "overcharged", "spooky_pumpkins"}
 
@@ -312,30 +297,11 @@ Bloom = love.graphics.newCanvas()
 Final = love.graphics.newCanvas()
 Partial = love.graphics.newCanvas()
 
--- CurveStrength = 0.5
-
 CurveModifier = Easer:new(1)
--- CurveModifierTarget = 1
--- CurveModifierSmoothing = 0
-
--- Chromatic = 1
 ChromaticModifier = Easer:new(0)
--- ChromaticModifierTarget = 0
--- ChromaticModifierSmoothing = 0
-
--- TearingStrength = 1
 TearingModifier = Easer:new(0)
--- TearingModifierTarget = 0
--- TearingModifierSmoothing = 0
-
--- BloomStrength = 1
 BloomStrengthModifier = Easer:new(1)
--- BloomStrengthModifierTarget = 1
--- BloomStrengthModifierSmoothing = 0
-
--- ZoomBlurStrength = 1
 ZoomBlurStrengthModifier = Easer:new(0)
-
 SaturationModifier = Easer:new(1)
 
 ViewOffset = Easer:new(0)
@@ -643,8 +609,8 @@ function love.mousemoved(x,y,dx,dy)
     SceneManager.MouseMoved(MouseX,MouseY,MouseX-omx,MouseY-omy)
 end
 
-function love.mousepressed(x,y,b)
-    SceneManager.MousePressed(MouseX,MouseY,b)
+function love.mousepressed(x,y,b,t,p)
+    SceneManager.MousePressed(MouseX,MouseY,b,t,p)
 end
 
 function love.mousereleased(x,y,b)
@@ -675,41 +641,9 @@ function love.update(dt)
     if border and border.update then border.update(dt) end
 
     CurveModifier:update(dt)
-    -- do
-    --     if CurveModifierSmoothing == 0 then
-    --         CurveModifier = CurveModifierTarget
-    --     else
-    --         local blend = math.pow(1/CurveModifierSmoothing,dt*EffectTimescale)
-    --         CurveModifier = blend*(CurveModifier-CurveModifierTarget)+CurveModifierTarget
-    --     end
-    -- end
     ChromaticModifier:update(dt)
-    -- do
-    --     if ChromaticModifierSmoothing == 0 then
-    --         ChromaticModifier = ChromaticModifierTarget
-    --     else
-    --         local blend = math.pow(1/ChromaticModifierSmoothing,dt*EffectTimescale)
-    --         ChromaticModifier = blend*(ChromaticModifier-ChromaticModifierTarget)+ChromaticModifierTarget
-    --     end
-    -- end
     TearingModifier:update(dt)
-    -- do
-    --     if TearingModifierSmoothing == 0 then
-    --         TearingModifier = TearingModifierTarget
-    --     else
-    --         local blend = math.pow(1/TearingModifierSmoothing,dt*EffectTimescale)
-    --         TearingModifier = blend*(TearingModifier-TearingModifierTarget)+TearingModifierTarget
-    --     end
-    -- end
     BloomStrengthModifier:update(dt)
-    -- do
-    --     if BloomStrengthModifierSmoothing == 0 then
-    --         BloomStrengthModifier = BloomStrengthModifierTarget
-    --     else
-    --         local blend = math.pow(1/BloomStrengthModifierSmoothing,dt*EffectTimescale)
-    --         BloomStrengthModifier = blend*(BloomStrengthModifier-BloomStrengthModifierTarget)+BloomStrengthModifierTarget
-    --     end
-    -- end
     ZoomBlurStrengthModifier:update(dt)
     
     MissTime = math.max(0,MissTime - dt * 8 * EffectTimescale)
@@ -757,8 +691,7 @@ function love.draw()
     end
 
     love.graphics.setColor(TerminalColors[16])
-    -- love.graphics.print("▒", MouseX-4, MouseY-8)
-
+    
     if AnaglyphOn then
         AnaglyphSide = AnaglyphL
         love.graphics.setCanvas(Display2)
