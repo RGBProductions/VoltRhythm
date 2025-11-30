@@ -3,6 +3,9 @@ local scene = {}
 local rebinding = nil
 local rebindTime = 0
 
+local hitsound = love.audio.newSource("sounds/hit.ogg", "stream")
+local soundprev = love.audio.newSource("sounds/menunav.ogg", "stream")
+
 SettingsChart = SettingsChart or {
     Note:new(TimeBPM(0, 60), 0, 0, "normal", {}),
     Note:new(TimeBPM(2, 60), 1, 0, "normal", {}),
@@ -265,6 +268,9 @@ local root = {
                     end,
                     write = function(value)
                         SystemSettings.master_volume = value/20
+                        soundprev:stop()
+                        soundprev:setVolume(1)
+                        soundprev:play()
                     end
                 },
                 {
@@ -281,6 +287,9 @@ local root = {
                     end,
                     write = function(value)
                         SystemSettings.song_volume = value/20
+                        soundprev:stop()
+                        soundprev:setVolume(SystemSettings.song_volume)
+                        soundprev:play()
                     end
                 },
                 {
@@ -297,6 +306,9 @@ local root = {
                     end,
                     write = function(value)
                         SystemSettings.sound_volume = value/20
+                        soundprev:stop()
+                        soundprev:setVolume(SystemSettings.sound_volume)
+                        soundprev:play()
                     end
                 },
                 {
@@ -307,6 +319,11 @@ local root = {
                     end,
                     write = function(value)
                         Save.Write("enable_hit_sounds", value)
+                        if value then
+                            hitsound:stop()
+                            hitsound:setVolume(SystemSettings.sound_volume)
+                            hitsound:play()
+                        end
                     end
                 },
                 {
