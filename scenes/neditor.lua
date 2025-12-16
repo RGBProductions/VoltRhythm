@@ -1140,7 +1140,7 @@ function scene.update(dt)
                 local lane = note.lane - (note.extra.dir or 0)
                 local dir = scene.placement.stop[1]-scene.placement.start[1]
                 local endLane = math.max(0,math.min(3,lane + dir))
-                note.extra.dir = math.max(-1,math.min(1,endLane - lane))
+                note.extra.dir = math.max(-3,math.min(3,endLane - lane))
                 note.lane = scene.placement.start[1]+note.extra.dir
             end
             if noteType == "merge" then
