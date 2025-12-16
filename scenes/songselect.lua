@@ -11,6 +11,9 @@ hiddenAmbience:setLooping(true)
 local askToDelete = nil
 local askToDeleteDiff = nil
 
+local overvoltWarning = false
+local shouldOvervoltWarning = love.filesystem.getInfo("hideovwarning") == nil
+
 local function playSong(songInfo)
     local nextPreview
     local p = songInfo.hide and hiddenAmbience or songInfo.preview
@@ -106,6 +109,11 @@ function scene.action(a)
         -- SongSelectOffsetViewTarget = (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] * 128
         SongSelectOffsetView:start((SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] * 128, "outExpo", 0.5)
         finishSelection()
+        if SongSelectOvervoltMode and shouldOvervoltWarning then
+            shouldOvervoltWarning = false
+            overvoltWarning = true
+            love.filesystem.write("hideovwarning", "")
+        end
         SongSelectDifficultyView:set(SongSelectDifficultyView.target)
     end
     if a == "editor" then
@@ -190,6 +198,10 @@ function scene.action(a)
     end
 
     if a == "back" then
+        if overvoltWarning then
+            overvoltWarning = false
+            return
+        end
         if preview then
             preview:stop()
             preview:setLooping(false)
@@ -534,7 +546,7 @@ function scene.draw()
             love.graphics.print(pc .. "¤", 64+8*(20-#tostring(pc)), 128-16)
             love.graphics.print("+" .. po .. "¤", 64+8*(20-#("+" .. tostring(po))), 144-16)
             love.graphics.print(px .. "¤", 64+8*(20-#tostring(px)), 160-16)
-            love.graphics.print(math.floor((savedRating.accuracy or 0)*100*100)/100 .. "%", 64+8*(19-#tostring(math.floor((savedRating.accuracy or 0)*100*100)/100)), 176-16)
+            love.graphics.print(math.floor((savedRating.accuracy or 0)*100*100)/100 .. "%", 64+8*(20-#tostring(math.floor((savedRating.accuracy or 0)*100*100)/100)), 176-16)
 
             love.graphics.printf(KeyLabel(binds.show_more) .. " - CHART", 64, 192, 160, "center")
         end
@@ -636,6 +648,18 @@ function scene.draw()
         love.graphics.printf("ARE YOU SURE?", 0, 240, 640, "center")
         love.graphics.printf("ESC - No", x*8+16, 288, w*8-16, "left")
         love.graphics.printf("ENTER - Yes", x*8+16, 288, w*8-16, "right")
+    end
+
+    if overvoltWarning then
+        local w = math.max(32, utf8.len(songName)+2)
+        local x = 40-w/2-1
+        love.graphics.setColor(0,0,0,0.75)
+        love.graphics.rectangle("fill", 0, 0, 640, 480)
+        love.graphics.setColor(1,1,1)
+        DrawBoxHalfWidth(x, 8.5, w, 11)
+        love.graphics.printf("FOR YOUR SAFETY...", 0, 152, 640, "center")
+        love.graphics.printf("OVERVOLT charts are SEVERELY overcharted by design. Please be careful playing these charts.\n\nIf at any point you feel excessive pain in your hands, discontinue play immediately.", x*8+16, 184, w*8-16, "center")
+        love.graphics.printf(KeyLabel(binds.back) .. " - Dismiss", x*8+16, 312, w*8-16, "center")
     end
 end
 
