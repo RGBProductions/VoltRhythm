@@ -124,6 +124,9 @@ function scene.load(args)
     scene.disk = SongDisk.Disks[SongSelectCampaign]
     scene.chargeMetrics = scene.disk.metrics
 
+    scene.source = args.source or "menu"
+    scene.destination = args.destination or "game"
+
     for _,song in ipairs(scene.disk.allSongs) do
         song.unlocks = {}
         for _,diff in ipairs(SongDifficultyOrder) do
@@ -154,7 +157,7 @@ function scene.action(a)
             return
         end
         if preview then preview:stop() end
-        SceneManager.Transition("scenes/songdiskselect")
+        SceneManager.Transition("scenes/" .. scene.source)
     end
     local set = SongSelectOvervoltMode and scene.disk.overvoltSongs or scene.disk.normalSongs
     if a == "right" then
@@ -205,7 +208,7 @@ function scene.action(a)
         if not scene.selected.unlocks[diff].passed then return end
         
         if preview then preview:stop() end
-        SceneManager.Transition("scenes/game", {songData = data, difficulty = diff})
+        SceneManager.Transition("scenes/" .. scene.destination, {songData = data, difficulty = diff})
     end
     if a == "show_more" then
         scene.showMore = not scene.showMore

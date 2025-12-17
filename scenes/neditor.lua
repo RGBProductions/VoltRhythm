@@ -633,6 +633,13 @@ local editorMenu = {
                 contents = {}
             },
             {
+                id = "file.fromdisk",
+                type = "menu",
+                label = "OPEN FROM DISK",
+                open = false,
+                contents = {}
+            },
+            {
                 id = "file.save",
                 type = "action",
                 label = "SAVE",
@@ -1129,6 +1136,24 @@ buildRecentMenu = function()
     end
 end
 
+local function buildExistingMenu()
+    local menu = getMenuItemById("file.fromdisk")
+    if not menu then return end
+    menu.contents = {}
+    for _,itm in ipairs(SongDisk.Disks) do
+        table.insert(menu.contents, {
+            id = "file.fromdisk." .. itm.name,
+            label = itm.name,
+            type = "action",
+            onclick = function()
+                shutoffMusic()
+                SceneManager.Transition("scenes/songselect", {campaign = itm.name, source = "neditor", destination = "neditor"})
+                return true
+            end
+        })
+    end
+end
+
 local scrollbarX = 472
 
 function scene.load(args)
@@ -1184,6 +1209,7 @@ function scene.load(args)
         scene.history = {}
     end
     buildRecentMenu()
+    buildExistingMenu()
 
     if scene.songData then
         hoistHistory(scene.songData.path, scene.songData.name)
