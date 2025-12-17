@@ -795,6 +795,60 @@ local editorMenu = {
                     table.insert(scene.dialogs, dialog)
                     return true
                 end
+            },
+            {
+                id = "edit.copy_effects",
+                type = "action",
+                label = "COPY EFFECTS",
+                onclick = function()
+                    if not scene.songData then return true end
+                    local difficulties = {
+                        "easy", "medium", "hard", "extreme", "overvolt"
+                    }
+                    local dialog = {
+                        width = 15,
+                        height = 6,
+                        title = "COPY EFFECTS FROM",
+                        contents = {}
+                    }
+                    local y = 16
+                    for i,difficulty in ipairs(difficulties) do
+                        local numEffects = #((scene.songData:loadChart(difficulty) or {}).effects or {})
+                        local hasDifficulty = scene.songData:hasLevel(difficulty) and numEffects > 0 and difficulty ~= scene.difficulty
+                        if hasDifficulty then
+                            local difficultyLabel = DialogDifficulty:new(32,y,128,difficulty,nil,"left")
+                            local numLabel = DialogLabel:new(32, y, 160, numEffects .. " EFFECT" .. (numEffects ~= 1 and "S" or ""), "right")
+                            table.insert(dialog.contents, DialogButton:new(16,y,192,16,"",function()
+                                local savedialog = {
+                                    title = "COPY EFFECTS FROM " .. difficulty:upper(),
+                                    width = 16,
+                                    height = 10,
+                                    contents = {
+                                        DialogLabel:new(0, 16, 240, "THIS WILL OVERWRITE THE CURRENT CHART'S EFFECTS! ARE YOU SURE?", "center"),
+                                        DialogButton:new(136, 96, 64, 16, "CANCEL", function ()
+                                            table.remove(scene.dialogs, 1)
+                                        end),
+                                        DialogButton:new(40, 96, 64, 16, "COPY", function ()
+                                            scene.chart.effects = scene.songData:loadChart(difficulty).effects
+                                            table.remove(scene.dialogs, 1)
+                                            table.remove(scene.dialogs, 1)
+                                        end)
+                                    }
+                                }
+                                table.insert(scene.dialogs, 1, savedialog)
+                            end))
+                            table.insert(dialog.contents, difficultyLabel)
+                            table.insert(dialog.contents, numLabel)
+                            y = y + 48
+                            dialog.height = dialog.height + 3
+                        end
+                    end
+                    table.insert(dialog.contents, DialogButton:new(48, y+16, 128, 16, "CANCEL", function ()
+                        table.remove(scene.dialogs, 1)
+                    end))
+                    table.insert(scene.dialogs, dialog)
+                    return true
+                end
             }
         }
     },
@@ -1664,8 +1718,10 @@ function scene.draw()
         love.graphics.print(tostring(math.floor(difficulty*1000)/1000), 168, 416)
     end
 
-    love.graphics.setColor(TerminalColors[ColorID.WHITE])
     for i = #scene.dialogs, 1, -1 do
+        love.graphics.setColor(0,0,0,0.75)
+        love.graphics.rectangle("fill", 0, 0, 640, 480)
+        love.graphics.setColor(TerminalColors[ColorID.WHITE])
         local dialog = scene.dialogs[i]
         local x = (80-dialog.width*2)/2-1
         local y = (30-dialog.height)/2-1
