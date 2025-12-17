@@ -7,6 +7,9 @@ local preview = nil
 local previewTimes = {0,math.huge}
 local hiddenAmbience = love.audio.newSource("sounds/ominous_ambience.ogg", "stream")
 hiddenAmbience:setLooping(true)
+local lockImage = love.graphics.newImage("images/lock.png")
+local hiddenCover = love.graphics.newImage("images/cover/hidden.png")
+local songselectText = love.graphics.newImage("images/title/songselect.png")
 
 local askToDelete = nil
 local askToDeleteDiff = nil
@@ -14,376 +17,205 @@ local askToDeleteDiff = nil
 local overvoltWarning = false
 local shouldOvervoltWarning = love.filesystem.getInfo("hideovwarning") == nil
 
-local function playSong(songInfo)
-    local nextPreview
-    local p = songInfo.hide and hiddenAmbience or songInfo.preview
-    if p then
-        nextPreview = p
-    end
-    if preview == nextPreview then return end
-    if preview then preview:stop() end
-    if (not songInfo) or (not songInfo.songData) then
-        preview = nil
-        previewTimes = {0,math.huge}
+function SongSelectSetSelectedSong(song, difficulty)
+    local last = scene.selected.identifier
+    
+    difficulty = difficulty or SongDifficultyOrder[SongSelectDifficulty]
+    local set = (difficulty == "overvolt" or difficulty == "hidden") and scene.disk.overvoltSongs or scene.disk.normalSongs
+    local item = set[song]
+    if not item then
         return
     end
-    preview = nextPreview
-    if preview then
-        preview:setVolume(SystemSettings.song_volume)
-        preview:setLooping(true)
-        preview:play()
+    for i = 1, #set do
+        if set[i] == item then
+            SongSelectSelectedSong = i
+            break
+        end
     end
-end
+    SongSelectOffsetView:start(item.position * 128, "outExpo", 0.5)
 
-local lockImage = love.graphics.newImage("images/lock.png")
-local hiddenCover = love.graphics.newImage("images/cover/hidden.png")
+    ---@type SongData
+    local data = item.songData
 
-local function finishSelection()
-    local selected = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
-    if selected.songData then
-        if not table.index(selected.difficulties, SongDifficultyOrder[SongSelectDifficulty]) then
-            for i = 1, 5 do
-                if table.index(selected.difficulties, SongDifficultyOrder[SongSelectDifficulty-i]) then
-                    if (not SongSelectOvervoltMode) and SongDifficultyOrder[SongSelectDifficulty-i] ~= "overvolt" and SongDifficultyOrder[SongSelectDifficulty-i] ~= "hidden" then
-                        SongSelectDifficulty = SongSelectDifficulty-i
-                        break
-                    end
-                end
-                if table.index(selected.difficulties, SongDifficultyOrder[SongSelectDifficulty+i]) then
-                    if (not SongSelectOvervoltMode) and SongDifficultyOrder[SongSelectDifficulty+i] ~= "overvolt" and SongDifficultyOrder[SongSelectDifficulty+i] ~= "hidden" then
-                        SongSelectDifficulty = SongSelectDifficulty+i
-                        break
-                    end
-                end
-            end
-        end
-    end
-    SongSelectDifficultyView:start(SongSelectOvervoltMode and (table.index(SongDifficultyOrder, selected.difficulties[#selected.difficulties]) or 5) or SongSelectDifficulty, "outExpo", 0.3)
-    playSong(selected)
-end
-
-function scene.action(a)
-    if SceneManager.TransitioningIn() or SceneManager.TransitioningOut() then return end
-    if askToDelete then
-        if a == "confirm" then
-            Save.Write("songs." .. askToDelete .. "." .. askToDeleteDiff, nil)
-            askToDelete = nil
-            askToDeleteDiff = nil
-        end
-        if a == "back" then
-            askToDelete = nil
-            askToDeleteDiff = nil
-        end
-        return
-    end
-    if a == "show_more" then
-        local selected = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
-        local difficulty = SongSelectOvervoltMode and (table.index(SongDifficultyOrder, selected.difficulties[1]) or 5) or SongSelectDifficulty
-        local savedRating = Save.Read("songs."..(selected.scorePrefix or "")..selected.name.."."..SongDifficultyOrder[difficulty])
-        if savedRating and selected.isUnlocked then
-            scene.showMore = not scene.showMore
-        end
-    end
-    if a == "overvolt" and SongSelectHasOvervolt and SongSelectHasNotOvervolt then
-        MissTime = 2
-        SongSelectOvervoltMode = not SongSelectOvervoltMode
-        local prev = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
-        local foundSame = nil
-        for i,song in ipairs(scene.campaign.sections[SongSelectSelectedSection].songs) do
-            if (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[song] and song.name == prev.name then
-                foundSame = i
-            end
-        end
-        if foundSame then
-            SongSelectSelectedSong = foundSame
+    local j = table.index(SongDifficultyOrder, difficulty)
+    if not table.index(item.difficulties, difficulty) then
+        if table.index(item.difficulties, SongDifficultyOrder[math.min(j+1, 4)]) then
+            j = math.min(j+1, 4)
+        elseif table.index(item.difficulties, SongDifficultyOrder[math.max(j-1, 1)]) then
+            j = math.max(j-1, 1)
         else
-            SongSelectSelectedSong = 1
-            while not (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] do
-                SongSelectSelectedSong = SongSelectSelectedSong + 1
-                if SongSelectSelectedSong > #scene.campaign.sections[SongSelectSelectedSection].songs then
-                    SongSelectSelectedSection = (SongSelectSelectedSection % #scene.campaign.sections) + 1
-                    SongSelectSelectedSong = 1
+            for i = 1, 4 do
+                if table.index(item.difficulties, SongDifficultyOrder[(j+i-1)%4+1]) then
+                    j = (j+i-1)%4+1
+                    break
+                end
+                if table.index(item.difficulties, SongDifficultyOrder[(j-i-1)%4+1]) then
+                    j = (j-i-1)%4+1
+                    break
                 end
             end
         end
-        -- SongSelectOffsetViewTarget = (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] * 128
-        SongSelectOffsetView:start((SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] * 128, "outExpo", 0.5)
-        finishSelection()
+    end
+
+    ---@type number
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    SongSelectDifficulty = j
+    SongSelectDifficultyView:start(SongSelectDifficulty, "outExpo", 0.3)
+    difficulty = SongDifficultyOrder[SongSelectDifficulty]
+
+    local wasOvervolt = SongSelectOvervoltMode
+    SongSelectOvervoltMode = difficulty == "overvolt" or difficulty == "hidden"
+    if wasOvervolt ~= SongSelectOvervoltMode then
+        MissTime = 2
+        SongSelectDifficultyView:set(SongSelectDifficultyView.target)
+        SongSelectOffsetView:set(SongSelectOffsetView.target)
         if SongSelectOvervoltMode and shouldOvervoltWarning then
             shouldOvervoltWarning = false
             overvoltWarning = true
             love.filesystem.write("hideovwarning", "")
         end
-        SongSelectDifficultyView:set(SongSelectDifficultyView.target)
     end
-    if a == "editor" then
+    
+    set = SongSelectOvervoltMode and scene.disk.overvoltSongs or scene.disk.normalSongs
+    scene.selected = set[SongSelectSelectedSong]
+
+    local hide = (scene.selected.lock or {}).hideUntilUnlocked and not scene.selected.unlocks[difficulty].passed
+    local nextPreview = hide and hiddenAmbience or Assets.Preview(data.songPath, data.songPreview)
+    if nextPreview and nextPreview ~= preview then
+        local times = {previewTimes[1], previewTimes[2]}
+        local stopTime = 0
         if preview then
+            stopTime = preview:tell("seconds")
             preview:stop()
-            preview:setLooping(false)
         end
-        SceneManager.Transition("scenes/neditor")
+        previewTimes = data.songPreview
+        preview = nextPreview
+        preview:setLooping(true)
+        preview:setVolume(SystemSettings.song_volume)
+        preview:play()
+        if data.keepPreview and last == scene.selected.linkedTo then
+            local t = math.max(0, math.min(1, stopTime/(times[2]-times[1])))
+            local T = t*(previewTimes[2]-previewTimes[1])
+            preview:seek(T, "seconds")
+        end
     end
-    if a == "right" then
-        local found = false
-        while not found do
-            SongSelectSelectedSong = SongSelectSelectedSong + 1
-            if SongSelectSelectedSong > #scene.campaign.sections[SongSelectSelectedSection].songs then
-                SongSelectSelectedSection = (SongSelectSelectedSection % #scene.campaign.sections) + 1
-                SongSelectSelectedSong = 1
-            end
-            if (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] then
-                found = true
-            end
-        end
-        -- SongSelectOffsetViewTarget = (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] * 128
-        SongSelectOffsetView:start((SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] * 128, "outExpo", 0.5)
-        finishSelection()
-    end
-    if a == "left" then
-        local found = false
-        while not found do
-            SongSelectSelectedSong = SongSelectSelectedSong - 1
-            if SongSelectSelectedSong <= 0 then
-                SongSelectSelectedSection = ((SongSelectSelectedSection - 2) % #scene.campaign.sections) + 1
-                SongSelectSelectedSong = #scene.campaign.sections[1].songs
-            end
-            if (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] then
-                found = true
-            end
-        end
-        -- SongSelectOffsetViewTarget = (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] * 128
-        SongSelectOffsetView:start((SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]] * 128, "outExpo", 0.5)
-        finishSelection()
-    end
-    if not SongSelectOvervoltMode then
-        if a == "up" then
-            local selected = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
-            if selected.songData and selected.isUnlocked then
-                -- SongSelectDifficulty = (SongSelectDifficulty % 4) + 1
-                repeat
-                    SongSelectDifficulty = (SongSelectDifficulty % 4) + 1
-                until table.index(selected.difficulties, SongDifficultyOrder[SongSelectDifficulty])
-            end
-            SongSelectDifficultyView:start(SongSelectDifficulty, "outExpo", 0.3)
-        end
-        if a == "down" then
-            local selected = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
-            if selected.songData and selected.isUnlocked then
-                -- SongSelectDifficulty = ((SongSelectDifficulty - 2) % 4) + 1
-                repeat
-                    SongSelectDifficulty = ((SongSelectDifficulty - 2) % 4) + 1
-                until table.index(selected.difficulties, SongDifficultyOrder[SongSelectDifficulty])
-            end
-            SongSelectDifficultyView:start(SongSelectDifficulty, "outExpo", 0.3)
-        end
+end
+
+function scene.load(args)
+    ---@type Easer
+    SongSelectOffsetView = SongSelectOffsetView or Easer:new(0)
+    SongSelectSelectedSong = SongSelectSelectedSong or 1
+    SongSelectSelectedSection = SongSelectSelectedSection or 1
+    SongSelectDifficulty = SongSelectDifficulty or 3
+    SongSelectDifficultyView = SongSelectDifficultyView or Easer:new(SongSelectDifficulty)
+    SongSelectOvervoltMode = SongSelectOvervoltMode or false
+
+    if (args.campaign or SongSelectCampaign) ~= SongSelectCampaign then
+        SongSelectSelectedSong = 1
+        SongSelectSelectedSection = 1
+        SongSelectDifficulty = 3
+        SongSelectDifficultyView:set(SongSelectDifficulty)
+        SongSelectOffsetView:set(0)
+        SongSelectOvervoltMode = false
     end
 
-    if a == "confirm" then
-        if scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].isUnlocked then
-            local diffs = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].difficulties
-            local difficulty = SongSelectOvervoltMode and (table.index(SongDifficultyOrder, diffs[#diffs]) or 5) or SongSelectDifficulty
-            ---@type SongData?
-            local songData = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].songData
-            local scorePrefix = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].scorePrefix
-            if songData and songData:loadChart(SongDifficultyOrder[difficulty]) ~= nil then
-                if preview then
-                    preview:stop()
-                    preview:setLooping(false)
-                end
-                Autoplay = love.keyboard.isDown("lshift")
-                Showcase = love.keyboard.isDown("lctrl") and Autoplay
-                SceneManager.Transition("scenes/" .. scene.destination, {songData = songData, scorePrefix = scorePrefix, difficulty = SongDifficultyOrder[difficulty]})
+    SongSelectCampaign = args.campaign or SongSelectCampaign or "mainline"
+
+    scene.disk = SongDisk.Disks[SongSelectCampaign]
+    scene.chargeMetrics = scene.disk.metrics
+
+    for _,song in ipairs(scene.disk.allSongs) do
+        song.unlocks = {}
+        for _,diff in ipairs(SongDifficultyOrder) do
+            if not song.lock then
+                song.unlocks[diff] = {passed = true}
+            else
+                song.unlocks[diff] = song.lock:check(scene.disk, diff)
             end
         end
     end
 
+    local set = SongSelectOvervoltMode and scene.disk.overvoltSongs or scene.disk.normalSongs
+    scene.selected = set[SongSelectSelectedSong]
+
+    SongSelectHasNormal = #scene.disk.normalSongs > 0
+    SongSelectHasOvervolt = #scene.disk.overvoltSongs > 0
+    SongSelectOvervoltUnlocked = true
+
+    SongSelectSetSelectedSong(scene.selected.identifier, SongDifficultyOrder[SongSelectDifficulty])
+end
+
+function scene.action(a)
+    if SceneManager.TransitionState.Transitioning then return end
+    
     if a == "back" then
         if overvoltWarning then
             overvoltWarning = false
             return
         end
-        if preview then
-            preview:stop()
-            preview:setLooping(false)
+        if preview then preview:stop() end
+        SceneManager.Transition("scenes/songdiskselect")
+    end
+    local set = SongSelectOvervoltMode and scene.disk.overvoltSongs or scene.disk.normalSongs
+    if a == "right" then
+        SongSelectSetSelectedSong(set[(SongSelectSelectedSong % #set) + 1].identifier, SongDifficultyOrder[SongSelectDifficulty])
+    end
+    if a == "left" then
+        SongSelectSetSelectedSong(set[((SongSelectSelectedSong - 2) % #set) + 1].identifier, SongDifficultyOrder[SongSelectDifficulty])
+    end
+    local selected = set[SongSelectSelectedSong]
+    if a == "up" then
+        if selected.songData then
+            repeat
+                if SongSelectOvervoltMode then
+                    SongSelectDifficulty = ((SongSelectDifficulty - 4) % 2) + 5
+                else
+                    SongSelectDifficulty = (SongSelectDifficulty % 4) + 1
+                end
+            until table.index(selected.difficulties, SongDifficultyOrder[SongSelectDifficulty])
         end
-        SceneManager.Transition("scenes/" .. scene.source)
+        SongSelectDifficultyView:start(SongSelectDifficulty, "outExpo", 0.3)
+    end
+    if a == "down" then
+        if selected.songData then
+            repeat
+                if SongSelectOvervoltMode then
+                    SongSelectDifficulty = ((SongSelectDifficulty - 6) % 2) + 5
+                else
+                    SongSelectDifficulty = ((SongSelectDifficulty - 2) % 4) + 1
+                end
+            until table.index(selected.difficulties, SongDifficultyOrder[SongSelectDifficulty])
+        end
+        SongSelectDifficultyView:start(SongSelectDifficulty, "outExpo", 0.3)
+    end
+    if a == "overvolt" then
+        local nextSet = set == scene.disk.normalSongs and scene.disk.overvoltSongs or scene.disk.normalSongs
+        local choice = nextSet[selected.linkedTo or selected.identifier] or nextSet[1]
+        if nextSet == scene.disk.overvoltSongs then
+            SongSelectSetSelectedSong(choice.identifier, table.index(choice.difficulties, "overvolt") and "overvolt" or "hidden")
+        else
+            SongSelectSetSelectedSong(choice.identifier, "extreme")
+        end
+    end
+    if a == "confirm" then
+        ---@type SongData
+        local data = scene.selected.songData
+        local diff = SongDifficultyOrder[SongSelectDifficulty]
+        if not data:hasLevel(diff) then return end
+        if not scene.selected.unlocks[diff].passed then return end
+        
+        if preview then preview:stop() end
+        SceneManager.Transition("scenes/game", {songData = data, difficulty = diff})
+    end
+    if a == "show_more" then
+        scene.showMore = not scene.showMore
     end
 end
 
 function scene.update(dt)
-    -- local blendAmt = 1/((5/4) ^ 60)
-    -- local blend = blendAmt^dt
-    -- SongSelectOffsetView = blend*(SongSelectOffsetView - SongSelectOffsetViewTarget) + SongSelectOffsetViewTarget
     SongSelectOffsetView:update(dt)
     SongSelectDifficultyView:update(dt)
 end
-
-local function testLock(lock)
-    local global = lock.global or {}
-    local songs = lock.songs or {}
-    local requirements = {}
-    if global.charge then table.insert(requirements, {type = "Get " .. global.charge .. " total Charge (" .. math.floor(scene.totalCharge) .. "/" .. global.charge .. ")", value = global.charge, passed = scene.totalCharge >= global.charge}) end
-    if global.overcharge then table.insert(requirements, {type = "Get " .. global.overcharge .. " total Overcharge (" .. math.floor(scene.totalOvercharge) .. "/" .. global.overcharge .. ")", value = global.overcharge, passed = scene.totalOvercharge >= global.overcharge}) end
-    if global.xcharge then table.insert(requirements, {type = "Get " .. global.xcharge .. " total X-Charge (" .. math.floor(scene.totalXCharge) .. "/" .. global.xcharge .. ")", value = global.xcharge, passed = scene.totalXCharge >= global.xcharge}) end
-    local namesSorted = {}
-    for name,_ in pairs(songs) do
-        table.insert(namesSorted, name)
-    end
-    table.sort(namesSorted, function (a, b)
-        return (SongDisk.AllSongNames[a] or "ZZZZZZZZZZZZZZ") < (SongDisk.AllSongNames[b] or "ZZZZZZZZZZZZZZ")
-    end)
-    for _,name in pairs(namesSorted) do
-        local song = songs[name]
-        local savedRating = Save.Read("songs."..name) or {}
-        local savedRatingExists = Save.Read("songs."..name) ~= nil
-        local c,o,x = 0,0,0
-        for diff,save in pairs(savedRating) do
-            c = c + (save.charge or 0) * ChargeValues[diff].charge
-            o = o + (save.overcharge or 0) * ChargeValues[diff].charge
-            x = x + (c + o)/ChargeYield*XChargeYield
-        end
-        if song.completed ~= nil then table.insert(requirements, {type = "Complete \"" .. scene.songNames[name] .. "\" on any difficulty", song = name, value = song.completed, passed = savedRatingExists}) end
-        if song.charge then table.insert(requirements, {type = "Get " .. song.charge .. " Charge in \"" .. scene.songNames[name] .. '" (' .. math.floor(c) .. "/" .. song.charge .. ")", song = name, value = song.charge, passed = c >= song.charge}) end
-        if song.overcharge then table.insert(requirements, {type = "Get " .. song.overcharge .. " Overcharge in \"" .. scene.songNames[name] .. '" (' .. math.floor(o) .. "/" .. song.overcharge .. ")", song = name, value = song.overcharge, passed = o >= song.overcharge}) end
-        if song.xcharge then table.insert(requirements, {type = "Get " .. song.xcharge .. " X-Charge in \"" .. scene.songNames[name] .. '" (' .. math.floor(x) .. "/" .. song.xcharge .. ")", song = name, value = song.xcharge, passed = x >= song.xcharge}) end
-    end
-    local meets = true
-    for _,requirement in ipairs(requirements) do
-        if not requirement.passed then
-            meets = false
-            break
-        end
-    end
-    return requirements,meets,lock.hide and not meets
-end
-
-function scene.load(args)
-    scene.source = args.source or "songdiskselect"
-    scene.destination = args.destination or "game"
-
-    -- scene.campaigns = json.decode(love.filesystem.read("campaign/campaigns.json"))
-    SongSelectSelectedSong = SongSelectSelectedSong or 1
-    SongSelectSelectedSection = SongSelectSelectedSection or 1
-    ---@type Easer
-    SongSelectOffsetView = SongSelectOffsetView or Easer:new(0)
-    -- SongSelectOffsetViewTarget = SongSelectOffsetViewTarget or 0
-    SongSelectDifficulty = SongSelectDifficulty or 3
-    SongSelectDifficultyView = SongSelectDifficultyView or Easer:new(SongSelectDifficulty)
-    SongSelectOvervoltMode = SongSelectOvervoltMode or false
-    if (args.campaign or SongSelectCampaign) ~= SongSelectCampaign then
-        SongSelectSelectedSong = 1
-        SongSelectSelectedSection = 1
-        SongSelectOffsetView:set(0)
-        -- SongSelectOffsetViewTarget = 0
-        SongSelectOvervoltMode = false
-    end
-    SongSelectCampaign = args.campaign or SongSelectCampaign or "mainline"
-    local metrics = SongDisk.Load(SongSelectCampaign)
-    local chargeMetrics = SongDisk.GetChargeMetrics(SongSelectCampaign)
-    scene.campaign = SongDisk.Get(SongSelectCampaign)
-    scene.showMore = false
-    scene.totalCharge = chargeMetrics.totalCharge
-    scene.totalOvercharge = chargeMetrics.totalOvercharge
-    scene.totalXCharge = chargeMetrics.totalXCharge
-    scene.potentialCharge = chargeMetrics.potentialCharge
-    scene.potentialOvercharge = chargeMetrics.potentialOvercharge
-    scene.potentialXCharge = chargeMetrics.potentialXCharge
-    scene.positions = metrics.positions
-    scene.overvoltPositions = metrics.overvoltPositions
-    scene.positionsByName = metrics.positionsByName
-    scene.overvoltPositionsByName = metrics.overvoltPositionsByName
-    scene.songNames = SongDisk.AllSongNames
-    scene.songCount = metrics.songCount
-    -- local lastPosition = 0
-    -- local lastOVPosition = 0
-    -- for c,campaign in ipairs(scene.campaigns) do
-    --     for s,section in ipairs(campaign.sections) do
-    --         for S,song in ipairs(section.songs) do
-    --             scene.songCount = scene.songCount + 1
-    --             section.songs[S] = {
-    --                 name = song.song,
-    --                 difficulties = song.difficulties,
-    --                 lock = song.lock or {},
-    --                 songData = LoadSongData("songs/" .. song.song),
-    --                 cover = Assets.GetCover("songs/" .. song.song),
-    --             }
-    --             if section.songs[S].songData then
-    --                 section.songs[S].preview = Assets.Preview(section.songs[S].songData.songPath, section.songs[S].songData.songPreview)
-    --             end
-    --             scene.songNames[song.song] = (section.songs[S].songData or {}).name or song.song
-    --             for _,name in ipairs(song.difficulties) do
-    --                 if name == "overvolt" or name == "hidden" then
-    --                     scene.overvoltPositions[section.songs[S]] = lastOVPosition
-    --                     scene.overvoltPositionsByName[song.song] = lastOVPosition
-    --                     lastOVPosition = lastOVPosition + 1
-    --                 elseif not scene.positions[section.songs[S]] then
-    --                     scene.positions[section.songs[S]] = lastPosition
-    --                     scene.positionsByName[song.song] = lastPosition
-    --                     lastPosition = lastPosition + 1
-    --                 end
-    --                 scene.potentialCharge = scene.potentialCharge + 160*ChargeValues[name].charge
-    --                 scene.potentialOvercharge = scene.potentialOvercharge + 40*ChargeValues[name].charge
-    --                 scene.potentialXCharge = scene.potentialXCharge + 50*ChargeValues[name].xcharge
-    --                 local savedRating = Save.Read("songs."..song.song.."."..name)
-    --                 if savedRating then
-    --                     scene.totalCharge = scene.totalCharge + savedRating.charge*ChargeValues[name].charge
-    --                     scene.totalOvercharge = scene.totalOvercharge + savedRating.overcharge*ChargeValues[name].charge
-    --                     scene.totalXCharge = scene.totalXCharge + (savedRating.charge+savedRating.overcharge)/ChargeYield*XChargeYield*ChargeValues[name].xcharge
-    --                     local reRank, rePlus = GetRank(savedRating.accuracy)
-    --                     Save.Write("songs."..song.song.."."..name..".rank", reRank)
-    --                     Save.Write("songs."..song.song.."."..name..".plus", rePlus)
-    --                 end
-    --             end
-    --         end
-    --     end
-    -- end
-    SongSelectHasOvervolt = false
-    SongSelectOvervoltUnlocked = false
-    SongSelectHasNotOvervolt = false
-    for s,section in ipairs(scene.campaign.sections) do
-        for S,song in ipairs(section.songs) do
-            song.unlockConditions, song.isUnlocked, song.hide = testLock(song.lock or {})
-            for _,difficulty in ipairs(song.difficulties) do
-                if difficulty == "overvolt" or difficulty == "hidden" then
-                    if song.isUnlocked then
-                        SongSelectOvervoltUnlocked = true
-                    end
-                    SongSelectHasOvervolt = true
-                else
-                    SongSelectHasNotOvervolt = true
-                end
-            end
-        end
-    end
-    if not SongSelectHasNotOvervolt and SongSelectHasOvervolt then
-        SongSelectOvervoltMode = true
-    end
-    -- playSong(scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong])
-    finishSelection()
-    SceneManager.TransitionState.Pause = 1
-end
-
-function scene.keypressed(k)
-    if SceneManager.TransitioningIn() or SceneManager.TransitioningOut() then return end
-    if k == "backspace" then
-        local selected = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
-        local difficulty = SongSelectOvervoltMode and (table.index(SongDifficultyOrder, selected.difficulties[1]) or 5) or SongSelectDifficulty
-        local savedRating = Save.Read("songs."..(selected.scorePrefix or "")..selected.name.."."..SongDifficultyOrder[difficulty])
-        if savedRating and selected.isUnlocked then
-            askToDelete = (selected.scorePrefix or "")..selected.name
-            askToDeleteDiff = SongDifficultyOrder[difficulty]
-        end
-    end
-    if k == "f8" then
-        if preview then
-            preview:stop()
-            preview:setLooping(false)
-        end
-        SceneManager.Transition("scenes/neditor")
-    end
-end
-
-local songselectText = love.graphics.newImage("images/title/songselect.png")
 
 function scene.draw()
     local binds = {
@@ -393,11 +225,11 @@ function scene.draw()
         overvolt = HasGamepad and Save.Read("keybinds.overvolt")[2] or Save.Read("keybinds.overvolt")[1]
     }
 
-    local selected = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong]
+    local set = SongSelectOvervoltMode and scene.disk.overvoltSongs or scene.disk.normalSongs
+    local selected = set[SongSelectSelectedSong]
 
     local function drawSong(song)
-        if not (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[song] then return end
-        local pos = (SongSelectOvervoltMode and scene.overvoltPositions or scene.positions)[song] * 128
+        local pos = song.position * 128
         local x = 320 + pos - SongSelectOffsetView:get()
         if x < -64 or x >= 704 then return end
 
@@ -419,7 +251,7 @@ function scene.draw()
                 end
             end
         end
-        local savedRating = Save.Read("songs."..(song.scorePrefix or "")..song.name.."."..targetDiff)
+        local savedRating = Save.Read("songs."..(song.scorePrefix or "")..song.identifier.."."..targetDiff)
         if savedRating and savedRating.fullOvercharge then
             -- draw the overcharge outline
             for Y = -0.5, 5.5 do
@@ -431,18 +263,16 @@ function scene.draw()
             end
         end
 
-        local b = song.isUnlocked and 1 or 0.25
+        local b = song.unlocks[targetDiff].passed and 1 or 0.25
         love.graphics.setColor(0.5*b,0.5*b,0.5*b)
         if song == selected then
             love.graphics.setColor(1*b,1*b,1*b)
         end
-        if (song.songData or {}).coverAnimSpeed then
-            song.cover = Assets.GetAnimatedCover(song.songData.path, song.songData.coverAnimSpeed)
-        end
-        love.graphics.draw(song.hide and hiddenCover or song.cover, x, 280, 0, s*96/song.cover:getWidth(), s*96/song.cover:getHeight(), song.cover:getWidth()/2, song.cover:getHeight()/2)
+        song.cover = Assets.GetCover((song.songData or {}).path, (song.songData or {}).coverAnimSpeed)
+        love.graphics.draw(((song.lock or {}).hideUntilUnlocked and not song.unlocks[targetDiff].passed) and hiddenCover or song.cover, x, 280, 0, s*96/song.cover:getWidth(), s*96/song.cover:getHeight(), song.cover:getWidth()/2, song.cover:getHeight()/2)
         love.graphics.setColor(1,1,1)
 
-        if not song.isUnlocked then
+        if not song.unlocks[targetDiff].passed then
             love.graphics.draw(lockImage, x, 280, 0, s, s, 48, 48)
         end
     end
@@ -454,16 +284,18 @@ function scene.draw()
 
     DrawBoxHalfWidth(2, 6, 74, 6)
     local difficulty = SongSelectOvervoltMode and (table.index(SongDifficultyOrder, selected.difficulties[#selected.difficulties]) or 5) or SongSelectDifficulty
-    local savedRating = Save.Read("songs."..(selected.scorePrefix or "")..selected.name.."."..SongDifficultyOrder[difficulty])
-    if not selected.isUnlocked then
-        local numReqs = #selected.unlockConditions
+    local diffname = SongDifficultyOrder[difficulty]
+    local savedRating = Save.Read("songs."..(selected.scorePrefix or "")..selected.identifier.."."..SongDifficultyOrder[difficulty])
+    local unlocked = selected.unlocks[diffname].passed
+    if not unlocked then
+        local numReqs = #selected.unlocks[diffname].conditions
         local y = 152-((numReqs-1)*16)/2
-        for i,condition in ipairs(selected.unlockConditions) do
+        for i,condition in ipairs(selected.unlocks[diffname].conditions) do
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
             if condition.passed then
                 love.graphics.setColor(TerminalColors[ColorID.LIGHT_GREEN])
             end
-            love.graphics.printf(condition.type, 0, y+(i-1)*16, 640, "center")
+            love.graphics.printf(condition.display, 0, y+(i-1)*16, 640, "center")
         end
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
     elseif not savedRating then
@@ -516,7 +348,7 @@ function scene.draw()
         else
             local ratings = {}
             for _,diff in ipairs(selected.difficulties) do
-                ratings[diff] = Save.Read("songs."..(selected.scorePrefix or "")..selected.name.."."..diff) or {}
+                ratings[diff] = Save.Read("songs."..(selected.scorePrefix or "")..selected.identifier.."."..diff) or {}
             end
             local c,o,x = 0,0,0
             for diff,rating in pairs(ratings) do
@@ -554,13 +386,14 @@ function scene.draw()
 
     DrawBoxHalfWidth(2, 21, 74, 3)
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    local hide = (selected.lock or {}).hideUntilUnlocked and not unlocked
     local emblem = Assets.Emblem(selected.songData.emblem)
-    local emblemSize = selected.hide and 0 or (emblem and (emblem:getWidth() + 8) or 0)
-    local songName = selected.hide and "- NO DATA -" or ((selected.songData or {}).name or "Unrecognized Song")
-    love.graphics.print(songName, (640-(utf8.len(songName)*8 + emblemSize))/2 + emblemSize, 360 + (selected.hide and 8 or 0))
-    if emblem and not selected.hide then love.graphics.draw(emblem, (640-(utf8.len(songName)*8 + emblemSize))/2, 368, 0, 1, 1, 0, emblem:getHeight()/2) end
+    local emblemSize = hide and 0 or (emblem and (emblem:getWidth() + 8) or 0)
+    local songName = hide and "- NO DATA -" or ((selected.songData or {}).name or "Unrecognized Song")
+    love.graphics.print(songName, (640-(utf8.len(songName)*8 + emblemSize))/2 + emblemSize, 360 + (hide and 8 or 0))
+    if emblem and not hide then love.graphics.draw(emblem, (640-(utf8.len(songName)*8 + emblemSize))/2, 368, 0, 1, 1, 0, emblem:getHeight()/2) end
     love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
-    if not selected.hide then love.graphics.printf((selected.songData or {}).author or "???", 0, 376, 640, "center") end
+    if not hide then love.graphics.printf((selected.songData or {}).author or "???", 0, 376, 640, "center") end
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     local charter = "???"
     if selected.songData then
@@ -569,7 +402,7 @@ function scene.draw()
             charter = chart.charter or "???"
         end
     end
-    if selected.isUnlocked then
+    if unlocked then
         love.graphics.printf("CHART: " .. charter, 32, 360, 640, "left")
         love.graphics.printf("COVER: " .. ((selected.songData or {}).coverArtist or "???"), 32, 376, 640, "left")
         -- local difficultyName = SongDifficulty[difficulties[SongSelectDifficulty] or "easy"].name or scene.difficulty:upper()
@@ -579,7 +412,7 @@ function scene.draw()
         -- love.graphics.setColor(difficultyColor)
         -- love.graphics.print(difficultyName, 608 - (#difficultyName + 1 + #tostring(difficultyLevel) + 2) * 8, 360)
         ---@type SongData?
-        local data = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].songData
+        local data = selected.songData
         for _,diff in ipairs(selected.difficulties) do
             -- print(diff)
             local index = table.index(SongDifficultyOrder, diff)
@@ -609,13 +442,13 @@ function scene.draw()
     -- love.graphics.printf("Press F8 to create a new song in the editor", 32, 400, 576, "left")
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     love.graphics.printf(KeyLabel(binds.back) .. " - Exit", 32, 416, 576, "left")
-    local canPlay = selected.isUnlocked and (selected.songData and selected.songData:loadChart(SongDifficultyOrder[difficulty]) ~= nil)
+    local canPlay = unlocked and (selected.songData and selected.songData:loadChart(SongDifficultyOrder[difficulty]) ~= nil)
     if not canPlay then
         love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
     end
     love.graphics.printf(KeyLabel(binds.confirm) .. " - Play", 32, 416, 576, "right")
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    if SongSelectHasOvervolt and SongSelectHasNotOvervolt and SongSelectOvervoltUnlocked then
+    if SongSelectHasOvervolt and SongSelectHasNormal and SongSelectOvervoltUnlocked then
         if SongSelectOvervoltMode then
             love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
             love.graphics.printf("GO BACK", 32, 416, 576, "center")
@@ -631,10 +464,8 @@ function scene.draw()
     -- love.graphics.printf("Total Overcharge: " .. math.floor(scene.totalOvercharge) .. "¤ (" .. math.floor(scene.totalOvercharge / scene.potentialOvercharge * 100) .. "%)", 32, 400, 576, "right")
     -- love.graphics.printf("Total X-Charge: " .. math.floor(scene.totalXCharge) .. "¤ (" .. math.floor(scene.totalXCharge / scene.potentialXCharge * 100) .. "%)", 32, 416, 576, "center")
 
-    for _,section in ipairs(scene.campaign.sections) do
-        for i,song in ipairs(section.songs) do
-            drawSong(song)
-        end
+    for i,song in ipairs(set) do
+        drawSong(song)
     end
 
     if askToDelete then

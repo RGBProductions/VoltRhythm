@@ -59,6 +59,7 @@ function scene.load(args)
             fullOvercharge = scene.fullOvercharge
         })
     end
+    SongDisk.RecalculateScores()
 end
 
 function scene.update(dt)

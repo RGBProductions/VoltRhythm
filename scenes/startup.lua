@@ -14,6 +14,8 @@ local reading = {false,""}
 local lines = {}
 local loadedProfile = false
 
+local runCo = nil
+
 local opening = {
     {type = "line", text = "VOLTRPPGS INIT STARTED", duration = 0.01},
     {type = "line", text = Version.name .. " v" .. Version.version, duration = 0.01},
@@ -71,6 +73,7 @@ local opening = {
                     end
                 end
             end
+            coroutine.yield()
         end
         for name,_ in pairs(queue) do
             if not did[name] then
@@ -100,6 +103,7 @@ local opening = {
             NoteFont = NoteFonts[Save.Read("note_skin")] or NoteFonts.dots
             Input.ReadBinds()
         end
+        SongDisk.LoadAll()
     end}
 }
 
@@ -128,7 +132,8 @@ local function handle()
             table.insert(lines, {text = text or d.text, color = color or d.color or ColorID.WHITE})
         end
         if t == "run" then
-            d.func()
+            runCo = coroutine.create(d.func)
+            coroutine.resume(runCo)
         end
     end
 end
@@ -137,11 +142,16 @@ handle()
 
 function scene.update(dt)
     timer = timer + dt
-    if not accepting[1] and not reading[1] and timer >= ((opening[index] or {}).duration or 0) then
-        timer = 0
-        index = index + 1
-        if opening[index] then
-            handle()
+    if runCo and coroutine.status(runCo) ~= "dead" then
+        coroutine.resume(runCo)
+    else
+        runCo = nil
+        if not accepting[1] and not reading[1] and timer >= ((opening[index] or {}).duration or 0) then
+            timer = 0
+            index = index + 1
+            if opening[index] then
+                handle()
+            end
         end
     end
 end

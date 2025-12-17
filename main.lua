@@ -21,6 +21,7 @@ defaultCovers = {
 require "util"
 require "colors"
 require "chart"
+require "lock"
 require "songdisk"
 require "input"
 require "save"
@@ -408,8 +409,6 @@ function KeyLabel(v)
     end
     return mapped:upper()
 end
-
-SongDisk.Retrieve()
 
 function love.gamepadaxis(stick,axis,value)
     GamepadAxes[axis] = value

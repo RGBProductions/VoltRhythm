@@ -1,36 +1,31 @@
-[
-    {
-        "name": "DEMO DISK",
-        "sections": [
-            {
-                "name": "demo",
-                "songs": [
-                    {"song": "tutorial", "difficulties": ["easy"]},
+{
+    "name": "DEMO DISK",
+    "songs": [
+        {"song": "tutorial", "difficulties": ["easy"]},
 
-                    {"song": "fracturingcircuit", "difficulties": ["easy", "medium", "hard"]},
-                    {"song": "divinitydissonant", "difficulties": ["easy", "medium", "hard"]},
-                    {"song": "savefile", "difficulties": ["easy", "medium", "hard"]},
-                    
-                    {"song": "aetherat", "difficulties": ["extreme"], "lock": {
-                        "hide": true,
-                        "songs": {
-                            "fracturingcircuit": {"completed": true},
-                            "divinitydissonant": {"completed": true},
-                            "savefile": {"completed": true}
-                        },
-                        "global": {"overcharge": 50}
-                    }},
-                    
-                    {"song": "worstnightmare", "difficulties": ["overvolt"], "lock": {
-                        "songs": {
-                            "tutorial": {"completed": true}
-                        },
-                        "global": {
-                            "xcharge": 40
-                        }
-                    }}
+        {"song": "fracturingcircuit", "difficulties": ["easy", "medium", "hard"]},
+        {"song": "divinitydissonant", "difficulties": ["easy", "medium", "hard"]},
+        {"song": "savefile", "difficulties": ["easy", "medium", "hard"]},
+        
+        {"song": "aetherat", "difficulties": ["extreme"], "lock": {
+            "hideUntilUnlocked": true,
+            "conditions": {
+                "global": [
+                    {"type":"play_song","song":"fracturingcircuit"},
+                    {"type":"play_song","song":"divinitydissonant"},
+                    {"type":"play_song","song":"savefile"},
+                    {"type":"overcharge","amount":50}
                 ]
             }
-        ]
-    }
-]
+        }},
+        
+        {"song": "worstnightmare", "difficulties": ["overvolt"], "lock": {
+            "conditions": {
+                "overvolt": [
+                    {"type":"play_song","song":"tutorial"},
+                    {"type":"xcharge","amount":40}
+                ]
+            }
+        }}
+    ]
+}

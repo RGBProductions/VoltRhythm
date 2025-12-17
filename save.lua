@@ -138,7 +138,8 @@ function Save.GetProfileList()
     local saveProfile = Save.Profile
     for k,v in pairs(profiles) do
         Save.Profile = k
-        local scores = SongDisk.GetTotalProgress()
+        -- local scores = SongDisk.GetTotalProgress()
+        local scores = {totalCharge = 1, totalOvercharge = 1, totalXCharge = 1, potentialCharge = 1, potentialOvercharge = 1, potentialXCharge = 1, percentCompleted = 1}
         table.insert(list, {id = k, name = v.name, icon = v.icon, main_color = v.main_color, accent_color = v.accent_color, scores = scores, lastAccess = v.lastAccess or 0})
     end
     Save.Profile = saveProfile

@@ -8,11 +8,11 @@ function scene.load(args)
     SongDiskSelectIndex = SongDiskSelectIndex or 1
     CampaignView = CampaignView or 0
     CampaignViewTarget = CampaignViewTarget or 0
-    scene.campaign = SongDisk.GetByIndex(SongDiskSelectIndex)
-    scene.scores = SongDisk.GetScores(scene.campaign)
-    for i = 1, SongDisk.NumDisks do
-        local c = SongDisk.GetByIndex(i)
-        table.insert(options, {c.name,love.graphics.newImage(c.icon or "images/songdisk/default.png")})
+    SongDisk.RecalculateScores()
+    scene.disk = SongDisk.Disks[SongDiskSelectIndex]
+    scene.scores = scene.disk.metrics
+    for _,c in ipairs(SongDisk.Disks) do
+        table.insert(options, {c.name,c.icon})
     end
 end
 
@@ -34,15 +34,15 @@ end
 
 function scene.action(a)
     if a == "left" then
-        SongDiskSelectIndex = ((SongDiskSelectIndex-2) % SongDisk.NumDisks) + 1
-        scene.campaign = SongDisk.GetByIndex(SongDiskSelectIndex)
-        scene.scores = SongDisk.GetScores(scene.campaign)
+        SongDiskSelectIndex = ((SongDiskSelectIndex-2) % #SongDisk.Disks) + 1
+        scene.disk = SongDisk.Disks[SongDiskSelectIndex]
+        scene.scores = scene.disk.metrics
         CampaignViewTarget = CampaignViewTarget - 1
     end
     if a == "right" then
-        SongDiskSelectIndex = ((SongDiskSelectIndex) % SongDisk.NumDisks) + 1
-        scene.campaign = SongDisk.GetByIndex(SongDiskSelectIndex)
-        scene.scores = SongDisk.GetScores(scene.campaign)
+        SongDiskSelectIndex = ((SongDiskSelectIndex) % #SongDisk.Disks) + 1
+        scene.disk = SongDisk.Disks[SongDiskSelectIndex]
+        scene.scores = scene.disk.metrics
         CampaignViewTarget = CampaignViewTarget + 1
     end
     if a == "confirm" then
@@ -63,13 +63,13 @@ function scene.draw()
     DrawBoxHalfWidth(2, 1, 74, 3)
     love.graphics.draw(songdiskselectText, 320, 32, 0, 2, 2, songdiskselectText:getWidth()/2, 0)
 
-    if not scene.campaign.unscored then
-        local charge = scene.scores.totalCharge
-        local ocharge = scene.scores.totalOvercharge
-        local xcharge = scene.scores.totalXCharge
-        local chargep = scene.scores.totalCharge / math.max(1,scene.scores.potentialCharge)
-        local ochargep = scene.scores.totalOvercharge / math.max(1,scene.scores.potentialOvercharge)
-        local xchargep = scene.scores.totalXCharge / math.max(1,scene.scores.potentialXCharge)
+    if not scene.disk.unscored then
+        local charge = scene.scores.charge
+        local ocharge = scene.scores.overcharge
+        local xcharge = scene.scores.xcharge
+        local chargep = scene.scores.charge / math.max(1,scene.scores.totalCharge)
+        local ochargep = scene.scores.overcharge / math.max(1,scene.scores.totalOvercharge)
+        local xchargep = scene.scores.xcharge / math.max(1,scene.scores.totalXCharge)
 
         local chargeTxt = math.floor(charge) .. "¤"
         local ochargeTxt = math.floor(ocharge) .. "¤"

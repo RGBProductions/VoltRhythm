@@ -893,6 +893,8 @@ end
 ---@field levels {easy: number, medium: number, hard: number, extreme: number, overvolt: number}
 ---@field lyrics {easy: Lyrics?, medium: Lyrics?, hard: Lyrics?, extreme: Lyrics?, overvolt: Lyrics?, main: Lyrics?}
 ---@field emblem string?
+---@field linkedTo string?
+---@field keepPreview boolean?
 ---@field songPreview {[1]: number, [2]: number}
 ---@field coverAnimSpeed number?
 SongData = {}
@@ -903,7 +905,7 @@ SongData.__index = SongData
 function LoadSongData(path)
     local infoPath = path.."/info.json"
     if not love.filesystem.getInfo(infoPath) then return nil end
-    ---@type boolean, {name: string, author: string, bpm: number, song: string, songPreview: {[1]: number, [2]: number}, charts: {easy: chartdata?, medium: chartdata?, hard: chartdata?, extreme: chartdata?, overvolt: chartdata?}, coverArtist: string, coverAnimSpeed: number?, emblem: string?}
+    ---@type boolean, {name: string, author: string, bpm: number, song: string, songPreview: {[1]: number, [2]: number}, charts: {easy: chartdata?, medium: chartdata?, hard: chartdata?, extreme: chartdata?, overvolt: chartdata?}, coverArtist: string, coverAnimSpeed: number?, emblem: string?, linkedTo: string?, keepPreview: boolean?}
     local loadedInfo,songInfo = pcall(json.decode, love.filesystem.read(infoPath))
     if not loadedInfo then return nil end
 
@@ -915,11 +917,14 @@ function LoadSongData(path)
     songData.coverArtist = songInfo.coverArtist
     songData.bpm = songInfo.bpm
     songData.songPreview = songInfo.songPreview
+    songData.keepPreview = songInfo.keepPreview
 
     songData.song = songInfo.song
     songData.songPath = path.."/"..songInfo.song
 
     songData.coverAnimSpeed = songInfo.coverAnimSpeed
+
+    songData.linkedTo = songInfo.linkedTo
 
     songData.charts = songInfo.charts
     songData.levels = {}
@@ -1014,7 +1019,9 @@ function SongData:save(path)
         songPreview = self.songPreview,
         charts = charts,
         coverAnimSpeed = self.coverAnimSpeed,
-        emblem = self.emblem
+        emblem = self.emblem,
+        linkedTo = self.linkedTo,
+        keepPreview = self.keepPreview
     }))
     self.path = path
 end
