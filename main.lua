@@ -758,8 +758,11 @@ Discord.onReady(function(id, name, disc, avatar)
     print("Discord ready for " .. name)
 end)
 
-if SystemSettings.discord_rpc_level > RPCLevels.PLAYING then
+if SystemSettings.discord_rpc_level > RPCLevels.OFF then
     Discord.start()
+end
+
+if SystemSettings.discord_rpc_level > RPCLevels.PLAYING then
     Discord.setActivity("Not playing")
     Discord.updatePresence()
 end
