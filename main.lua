@@ -26,6 +26,7 @@ require "songdisk"
 require "input"
 require "save"
 require "easer"
+require "discord"
 json = require "json"
 texture = require "texture"
 
@@ -259,6 +260,7 @@ SystemSettings = {
     enable_background = true,
     pause_on_lost_focus = true,
     show_fps = false,
+    discord_rpc_level = RPCLevels.FULL,
     screen_effects = {
         screen_curvature = 0.5,
         scanlines = 0.5,
@@ -666,6 +668,8 @@ function love.update(dt)
     for axis,value in pairs(GamepadAxes) do
         GamepadLastAxes[axis] = value
     end
+
+    Discord.update()
 end
 
 function love.draw()
@@ -740,9 +744,22 @@ function love.focus(f)
     SceneManager.Focus(f)
 end
 
+DoNotSave = false
+
 function love.quit()
+    if DoNotSave then return end
     Save.Flush()
     love.filesystem.write("settings.json", json.encode(SystemSettings))
 end
 
 love.errorhandler = require "errorhandler"
+
+Discord.onReady(function(id, name, disc, avatar)
+    print("Discord ready for " .. name)
+end)
+
+if SystemSettings.discord_rpc_level > RPCLevels.PLAYING then
+    Discord.start()
+    Discord.setActivity("Not playing")
+    Discord.updatePresence()
+end

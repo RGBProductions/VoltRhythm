@@ -336,8 +336,32 @@ function HandleChartEffects()
 end
 
 local lastHeld = {false,false,false,false}
+local rpcUpdateTime = 0
+
+local function readableTime(s)
+    s = math.floor(math.max(0, s))
+    local m = tostring(math.floor(s/60))
+    s = tostring(s)
+    return m .. ":" .. ("0"):rep(2-#s)..s
+end
 
 function scene.update(dt)
+    rpcUpdateTime = rpcUpdateTime - dt
+    if rpcUpdateTime <= 0 then
+        local c = (Charge*100)/scene.chart.totalCharge
+        local chargeAmount = math.floor(c/100*ChargeYield)
+        if c ~= c then chargeAmount = 0 end
+        if SystemSettings.discord_rpc_level > RPCLevels.PLAYING then
+            if SystemSettings.discord_rpc_level == RPCLevels.FULL then
+                Discord.setActivity("Playing " .. ((scene.songData.spoiler or scene.chart.spoiler) and "a song" or scene.songData.name), SongDifficulty[scene.difficulty].name .. ((scene.songData.spoiler or scene.chart.spoiler) and "" or " " .. scene.songData:getLevel(scene.difficulty)) .. " - " .. chargeAmount .. " ¤ - " .. readableTime(scene.chart.time))
+            elseif SystemSettings.discord_rpc_level == RPCLevels.PARTIAL then
+                Discord.setActivity("Playing a song")
+            end
+            Discord.updatePresence()
+        end
+        rpcUpdateTime = 5
+    end
+
     if not WindowFocused and PauseTimer <= 0 and SystemSettings.pause_on_lost_focus then
         PauseGame()
     end
@@ -352,11 +376,10 @@ function scene.update(dt)
         end
         return
     end
-    scene.modifiers.speed = love.keyboard.isDown("lshift") and 16 or 1
-    EffectTimescale = scene.modifiers.speed
+    EffectTimescale = love.keyboard.isDown("lshift") and 16 or (scene.modifiers.speed or 1)
     -- Update chart time and scroll chart
     local lastTime = scene.chart.time
-    scene.chart.time = scene.chart.time + dt*(scene.modifiers.speed or 1)
+    scene.chart.time = scene.chart.time + dt*EffectTimescale
     if scene.chart.time > -scene.audioOffset then
         if scene.lastTime <= -scene.audioOffset then
             SongStarted = true
@@ -373,8 +396,8 @@ function scene.update(dt)
                 end
             end
         end
-        if scene.song then scene.song:setPitch(scene.modifiers.speed or 1) end
-        if scene.video then scene.video:getSource():setPitch(scene.modifiers.speed or 1) end
+        if scene.song then scene.song:setPitch(EffectTimescale) end
+        if scene.video then scene.video:getSource():setPitch(EffectTimescale) end
     end
 
     local lastBeatCount = scene.beatCount
@@ -396,7 +419,7 @@ function scene.update(dt)
         ViewOffsetFreeze = 0
     end
 
-    scene.lastTime = scene.lastTime + dt*(scene.modifiers.speed or 1)
+    scene.lastTime = scene.lastTime + dt*EffectTimescale
 
     for _,note in ipairs(scene.chart.notes) do
         if note.laneTarget then note.lane = note.laneTarget end

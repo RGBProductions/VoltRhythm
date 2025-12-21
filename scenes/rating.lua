@@ -60,6 +60,11 @@ function scene.load(args)
         })
     end
     SongDisk.RecalculateScores()
+
+    if SystemSettings.discord_rpc_level == RPCLevels.FULL then
+        Discord.setActivity("Finished " .. scene.songData.name, SongDifficulty[scene.difficulty].name .. " " .. scene.songData:getLevel(scene.difficulty) .. " - " .. scene.charge+scene.overcharge .. " ¤")
+        Discord.updatePresence()
+    end
 end
 
 function scene.update(dt)
@@ -257,6 +262,13 @@ function scene.draw()
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     DrawBoxHalfWidth(2, 1, 74, 3)
     love.graphics.draw(resultsText, 320, 32, 0, 2, 2, resultsText:getWidth()/2, 0)
+end
+
+function scene.unload()
+    if SystemSettings.discord_rpc_level > RPCLevels.PLAYING then
+        Discord.setActivity("Not playing")
+        Discord.updatePresence()
+    end
 end
 
 return scene

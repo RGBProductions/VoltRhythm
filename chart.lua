@@ -596,7 +596,7 @@ EffectTypes = {
         end,
         editor = function(self,container)
             local showIn = DialogToggle:new(0,0,container.width,16,"HIDE")
-            showIn.active = self.data.keep_line
+            showIn.active = self.data.hide
             table.insert(container.contents, showIn)
             return function(effect)
                 effect.data.hide = showIn.active or effect.data.hide
@@ -610,7 +610,7 @@ EffectTypes = {
         end,
         editor = function(self,container)
             local showIn = DialogToggle:new(0,0,container.width,16,"REDUCE")
-            showIn.active = self.data.keep_line
+            showIn.active = self.data.reduced
             table.insert(container.contents, showIn)
             return function(effect)
                 effect.data.reduced = showIn.active or effect.data.reduced
@@ -765,7 +765,21 @@ EffectTypes = {
                 end
             end
         end
-    }
+    },
+    autoplay = {
+        readable = "SET AUTOPLAY",
+        apply = function(self)
+            Autoplay = self.data.autoplay
+        end,
+        editor = function(self,container)
+            local autoIn = DialogToggle:new(0,0,container.width,16,"AUTOPLAY")
+            autoIn.active = self.data.autoplay
+            table.insert(container.contents, autoIn)
+            return function(effect)
+                effect.data.autoplay = autoIn.active or effect.data.autoplay
+            end
+        end
+    },
 }
 
 Note = {}
@@ -897,6 +911,7 @@ end
 ---@field keepPreview boolean?
 ---@field songPreview {[1]: number, [2]: number}
 ---@field coverAnimSpeed number?
+---@field spoiler boolean?
 SongData = {}
 SongData.__index = SongData
 
@@ -905,7 +920,7 @@ SongData.__index = SongData
 function LoadSongData(path)
     local infoPath = path.."/info.json"
     if not love.filesystem.getInfo(infoPath) then return nil end
-    ---@type boolean, {name: string, author: string, bpm: number, song: string, songPreview: {[1]: number, [2]: number}, charts: {easy: chartdata?, medium: chartdata?, hard: chartdata?, extreme: chartdata?, overvolt: chartdata?}, coverArtist: string, coverAnimSpeed: number?, emblem: string?, linkedTo: string?, keepPreview: boolean?}
+    ---@type boolean, {name: string, author: string, bpm: number, song: string, songPreview: {[1]: number, [2]: number}, charts: {easy: chartdata?, medium: chartdata?, hard: chartdata?, extreme: chartdata?, overvolt: chartdata?}, coverArtist: string, coverAnimSpeed: number?, emblem: string?, linkedTo: string?, keepPreview: boolean?, spoiler?: boolean}
     local loadedInfo,songInfo = pcall(json.decode, love.filesystem.read(infoPath))
     if not loadedInfo then return nil end
 
@@ -925,6 +940,7 @@ function LoadSongData(path)
     songData.coverAnimSpeed = songInfo.coverAnimSpeed
 
     songData.linkedTo = songInfo.linkedTo
+    songData.spoiler = songInfo.spoiler
 
     songData.charts = songInfo.charts
     songData.levels = {}
@@ -1021,7 +1037,8 @@ function SongData:save(path)
         coverAnimSpeed = self.coverAnimSpeed,
         emblem = self.emblem,
         linkedTo = self.linkedTo,
-        keepPreview = self.keepPreview
+        keepPreview = self.keepPreview,
+        spoiler = self.spoiler
     }))
     self.path = path
 end
@@ -1053,6 +1070,7 @@ end
 ---@field name string
 ---@field charter string
 ---@field hideDifficulty boolean
+---@field spoiler boolean?
 Chart = {}
 Chart.__index = Chart
 
@@ -1092,6 +1110,8 @@ function Chart:new(data)
     chart.charter = data.charter or "Charter"
 
     chart.hideDifficulty = data.hideDifficulty
+
+    chart.spoiler = data.spoiler
 
     return chart
 end
@@ -1184,7 +1204,8 @@ function Chart:save(path)
         effects = effects,
         bpmChanges = self.bpmChanges,
         charter = self.charter,
-        hideDifficulty = self.hideDifficulty
+        hideDifficulty = self.hideDifficulty,
+        spoiler = self.spoiler
     }))
 end
 

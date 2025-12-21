@@ -17,6 +17,17 @@ local placementModes = {
 
 local notes = {"normal", "swap", "merge", "mine", "warning"}
 
+local function updateDiscord()
+    if SystemSettings.discord_rpc_level > RPCLevels.PLAYING then
+        if SystemSettings.discord_rpc_level == RPCLevels.FULL and scene.songData then
+            Discord.setActivity("Editing " .. scene.songData.name .. " by " .. scene.songData.author, scene.chart == nil and "No chart loaded" or (SongDifficulty[scene.difficulty].name .. " - " .. (scene.songData:getLevel(scene.difficulty) or "?")))
+        else
+            Discord.setActivity("In chart editor")
+        end
+        Discord.updatePresence()
+    end
+end
+
 local function getDirectorySeparator()
 	if love.system.getOS() == "Windows" then
 		return "\\"
@@ -81,6 +92,9 @@ local function readChart(name)
     scene.chartTimeTemp = 0
     hoistHistory(songData.path, songData.name)
     if scene.chart then scene.lastRating = scene.chart:getDifficulty() end
+                    
+    updateDiscord()
+    
     return true
 end
 
@@ -734,6 +748,8 @@ local editorMenu = {
                         local levelInput = DialogInput:new(96,48*(i-1),32,16,"LVL",4,nil,function(self)
                             scene.songData.levels[difficulty] = tonumber(self.content) or self.content
                             scene.songData.charts[difficulty].level = tonumber(self.content) or self.content
+                    
+                            updateDiscord()
                         end)
                         levelInput.content = tostring(level)
 
@@ -748,6 +764,9 @@ local editorMenu = {
                             scene.difficulty = difficulty
                             scene.chart = scene.songData:loadChart(difficulty)
                             if scene.chart then scene.lastRating = scene.chart:getDifficulty() end
+                    
+                            updateDiscord()
+
                             table.remove(scene.dialogs, 1)
                         end)
                         removeButton = DialogButton:new(184,48*(i-1),16,16,"-",function()
@@ -765,6 +784,8 @@ local editorMenu = {
                                         if scene.difficulty == difficulty then
                                             scene.difficulty = nil
                                             scene.chart = nil
+                    
+                                            updateDiscord()
                                         end
                                         table.remove(dialog.contents, table.index(dialog.contents, removeButton))
                                         table.remove(dialog.contents, table.index(dialog.contents, editButton))
@@ -1232,6 +1253,8 @@ function scene.load(args)
             }
         })
     end
+
+    updateDiscord()
 end
 
 function scene.update(dt)

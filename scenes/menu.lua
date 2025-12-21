@@ -43,6 +43,11 @@ function scene.load()
         ColorTransitionTable[colorIndexes[3]],
         ColorTransitionTable[colorIndexes[4]]
     }
+
+    if SystemSettings.discord_rpc_level > RPCLevels.PLAYING then
+        Discord.setActivity("Not playing")
+        Discord.updatePresence()
+    end
 end
 
 function scene.update(dt)
@@ -111,10 +116,10 @@ function scene.draw()
             local _,label1Wrapped = Font:getWrap(label1, (width-10)*8)
             local _,label2Wrapped = Font:getWrap(label2[1], (width-10)*8)
             local _,label3Wrapped = Font:getWrap(label2[2] or "", (width-10)*8)
-            love.graphics.printf(label1Wrapped[1], math.floor((x-16)/8)*8, y, 112, "center")
+            if label1Wrapped[1] then love.graphics.printf(label1Wrapped[1], math.floor((x-16)/8)*8, y, 112, "center") end
             love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
-            love.graphics.printf(label2Wrapped[1], math.floor((x-16)/8)*8, y+16, 112, "center")
-            love.graphics.printf(label3Wrapped[1], math.floor((x-16)/8)*8, y+32, 112, "center")
+            if label2Wrapped[1] then love.graphics.printf(label2Wrapped[1], math.floor((x-16)/8)*8, y+16, 112, "center") end
+            if label3Wrapped[1] then love.graphics.printf(label3Wrapped[1], math.floor((x-16)/8)*8, y+32, 112, "center") end
         end
     end
 

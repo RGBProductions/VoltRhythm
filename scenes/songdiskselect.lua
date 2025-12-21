@@ -14,6 +14,11 @@ function scene.load(args)
     for _,c in ipairs(SongDisk.Disks) do
         table.insert(options, {c.name,c.icon})
     end
+
+    if SystemSettings.discord_rpc_level > RPCLevels.PLAYING then
+        Discord.setActivity("Not playing")
+        Discord.updatePresence()
+    end
 end
 
 function scene.update(dt)

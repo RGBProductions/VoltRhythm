@@ -61,6 +61,11 @@ function scene.load(args)
     else
         ProfilesView = ProfilesViewTarget
     end
+
+    if SystemSettings.discord_rpc_level > RPCLevels.PLAYING then
+        Discord.setActivity("Not playing")
+        Discord.updatePresence()
+    end
 end
 
 function scene.draw()

@@ -6,6 +6,10 @@ local rebindTime = 0
 local hitsound = love.audio.newSource("sounds/hit.ogg", "stream")
 local soundprev = love.audio.newSource("sounds/menunav.ogg", "stream")
 
+local askToDelete = false
+local askToDeleteScores = false
+local confirmTimer = 0
+
 SettingsChart = SettingsChart or {
     Note:new(TimeBPM(0, 60), 0, 0, "normal", {}),
     Note:new(TimeBPM(2, 60), 1, 0, "normal", {}),
@@ -47,7 +51,6 @@ SettingsChart = SettingsChart or {
 }
 
 local root = {
-    label = "SETTINGS",
     type = "menu",
     options = {
         {
@@ -613,12 +616,82 @@ local root = {
                     end
                 }
             }
+        },
+        {
+            label = "MISC",
+            type = "menu",
+            options = {
+                {
+                    label = "DISCORD RPC",
+                    type = "number",
+                    min = RPCLevels.OFF,
+                    max = RPCLevels.FULL,
+                    step = 1,
+                    text = function(value)
+                        if value == RPCLevels.OFF then return "OFF" end
+                        if value == RPCLevels.PLAYING then return "PLAYING" end
+                        if value == RPCLevels.PARTIAL then return "PARTIAL" end
+                        if value == RPCLevels.FULL then return "FULL" end
+                        return "UNKNOWN"
+                    end,
+                    read = function()
+                        return SystemSettings.discord_rpc_level
+                    end,
+                    write = function(value)
+                        SystemSettings.discord_rpc_level = value
+                        if value == RPCLevels.OFF then
+                            Discord.stop()
+                        else
+                            if not Discord.running then
+                                Discord.start()
+                            end
+                            if SystemSettings.discord_rpc_level > RPCLevels.PLAYING then
+                                Discord.setActivity("Not playing")
+                            else
+                                Discord.setActivity()
+                            end
+                            Discord.updatePresence()
+                        end
+                    end
+                },
+                {
+                    label = "OPEN SAVE FOLDER",
+                    type = "action",
+                    run = function()
+                    love.system.openURL("file://"..love.filesystem.getSaveDirectory())
+                    end
+                },
+                {
+                    label = "DELETE ALL SCORES",
+                    danger = true,
+                    type = "action",
+                    run = function()
+                        askToDeleteScores = true
+                        confirmTimer = 0
+                    end
+                },
+                {
+                    label = "DELETE ALL DATA",
+                    danger = true,
+                    type = "action",
+                    run = function()
+                        askToDelete = true
+                        confirmTimer = 0
+                    end
+                }
+            }
         }
     }
 }
 
 function scene.action(a)
     if a == "back" then
+        if askToDelete or askToDeleteScores then
+            askToDelete = false
+            askToDeleteScores = false
+            return
+        end
+
         if #SettingsStack > 0 then
             local pop = table.remove(SettingsStack, #SettingsStack)
             SettingsCurrent = pop[1]
@@ -658,6 +731,31 @@ function scene.action(a)
         end
 
         if a == "confirm" then
+            if askToDelete then
+                if confirmTimer >= 3 then
+                    local function deleteAll(dir)
+                        for _,itm in ipairs(love.filesystem.getDirectoryItems(dir)) do
+                            if love.filesystem.getInfo(dir.."/"..itm).type == "directory" then
+                                deleteAll(dir.."/"..itm)
+                            end
+                            love.filesystem.remove(dir.."/"..itm)
+                        end
+                    end
+                    deleteAll("")
+                    DoNotSave = true
+                    love.event.quit("restart")
+                end
+                return
+            end
+
+            if askToDeleteScores then
+                if confirmTimer >= 3 then
+                    Save.Write("songs", {})
+                    askToDeleteScores = false
+                end
+                return
+            end
+            
             -- menus, toggles, and keys use this
             if t == "menu" then
                 table.insert(SettingsStack, {SettingsCurrent,SettingsSelection})
@@ -775,6 +873,8 @@ end
 local beatCount = 0
 
 function scene.update(dt)
+    if askToDelete or askToDeleteScores then confirmTimer = confirmTimer + dt end
+
     if rebinding and rebindTime > 0 then
         rebindTime = rebindTime - dt
         if rebindTime <= 0 then
@@ -911,13 +1011,29 @@ end
 local settingsText = love.graphics.newImage("images/title/settings.png")
 
 function scene.draw()
+    local binds = {
+        back = HasGamepad and Save.Read("keybinds.back")[2] or Save.Read("keybinds.back")[1],
+        confirm = HasGamepad and Save.Read("keybinds.confirm")[2] or Save.Read("keybinds.confirm")[1]
+    }
+
+    local labelStack = {}
+    for _,itm in ipairs(SettingsStack) do
+        if itm[1].label then
+            table.insert(labelStack, itm[1].label)
+        end
+    end
+    if SettingsCurrent.label then
+        table.insert(labelStack, SettingsCurrent.label)
+    end
+
     local menuX = SettingsCurrent.x or 0
+    local menuY = 0
     local y = SettingsView-2
     for i,option in ipairs(SettingsCurrent.options) do
         if option.type == "key" then
             -- special behavior...
             local values = {option.read(1),option.read(2)}
-            local itmY = (i-y)*80
+            local itmY = (i-y)*80+menuY
             local itmX = (640-128)/2+menuX
             love.graphics.setColor(TerminalColors[SettingsSelection == i-1 and ColorID.WHITE or ColorID.DARK_GRAY])
             love.graphics.printf(option.label or "", itmX-144, itmY+16, 128, "center")
@@ -935,7 +1051,7 @@ function scene.draw()
             if type(option.enable) == "function" then
                 enabled = option.enable()
             end
-            love.graphics.setColor(TerminalColors[SettingsSelection == i-1 and ColorID.WHITE or ColorID.DARK_GRAY])
+            love.graphics.setColor(TerminalColors[option.danger and (SettingsSelection == i-1 and ColorID.LIGHT_RED or ColorID.RED) or (SettingsSelection == i-1 and ColorID.WHITE or ColorID.DARK_GRAY)])
             local text = ""
             local value
             if option.type ~= "menu" and option.type ~= "label" and option.type ~= "action" then
@@ -951,7 +1067,7 @@ function scene.draw()
             if not enabled then
                 text = "- DISABLED -"
             end
-            local itmY = (i-y)*80
+            local itmY = (i-y)*80+menuY
             local itmX = (640-256)/2+menuX
             DrawBoxHalfWidth(itmX/8-1, itmY/16-1, 256/8, 3)
             love.graphics.printf(option.label or "", itmX, itmY+((option.type == "menu" or option.type == "action") and 16 or 0), 256, "center")
@@ -959,11 +1075,11 @@ function scene.draw()
                 love.graphics.setColor(TerminalColors[tonumber(text) or 1])
                 love.graphics.rectangle("fill", itmX+(256-16)/2, itmY+32, 16, 16)
             else
-                love.graphics.setColor(TerminalColors[SettingsSelection == i-1 and ColorID.LIGHT_GRAY or ColorID.DARK_GRAY])
+                love.graphics.setColor(TerminalColors[option.danger and (SettingsSelection == i-1 and ColorID.LIGHT_RED or ColorID.RED) or (SettingsSelection == i-1 and ColorID.LIGHT_GRAY or ColorID.DARK_GRAY)])
                 love.graphics.printf(tostring(text), itmX, itmY+32, 256, "center")
             end
             if option.type == "number" or option.type == "color" then
-                love.graphics.setColor(TerminalColors[SettingsSelection == i-1 and ColorID.WHITE or ColorID.DARK_GRAY])
+                love.graphics.setColor(TerminalColors[option.danger and (SettingsSelection == i-1 and ColorID.LIGHT_RED or ColorID.RED) or (SettingsSelection == i-1 and ColorID.WHITE or ColorID.DARK_GRAY)])
                 if value > (option.min or -math.huge) then love.graphics.print("◁", itmX+28, itmY+16) end
                 if value < (option.max or math.huge) then love.graphics.print("▷", itmX+220, itmY+16) end
             end
@@ -972,18 +1088,20 @@ function scene.draw()
 
     if SettingsCurrent.showChart then
         -- Chart
+        menuY = menuY + 32
+
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        DrawBoxHalfWidth(chartX, 7, 15, 16)
+        DrawBoxHalfWidth(chartX, 7 + menuY/16, 15, 16)
 
         love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
         for i = 1, 3 do
             local x = chartX+(i-1)*4 + 1
-            love.graphics.print(("   ┊\n"):rep(16), x*8, 8*16)
+            love.graphics.print(("   ┊\n"):rep(16), x*8, 8*16 + menuY)
         end
         do
             local drawPos = (8)+(15)
             if drawPos >= 8 and drawPos <= 25 then
-                love.graphics.print("┈┈┈"..("╬┈┈┈"):rep(4-1), (chartX+1)*8, drawPos*16-16)
+                love.graphics.print("┈┈┈"..("╬┈┈┈"):rep(4-1), (chartX+1)*8, drawPos*16-16 + menuY)
             end
         end
         -- End Chart
@@ -994,7 +1112,7 @@ function scene.draw()
             if v > 0 then
                 local drawPos = (8)+(15)
                 love.graphics.setColor(TerminalColors[NoteColors[((i-1)%(#NoteColors))+1][v+1]])
-                love.graphics.print("███", x*8 + AnaglyphSide*0.75, drawPos*16-16)
+                love.graphics.print("███", x*8 + AnaglyphSide*0.75, drawPos*16-16 + menuY)
             end
         end
         
@@ -1004,7 +1122,7 @@ function scene.draw()
                 local t = NoteTypes[note.type]
                 if t then
                     love.graphics.setFont(NoteFont)
-                    t.draw(note, chartTime, Save.Read("scroll_speed"), 8, nil, chartX+2, false)
+                    t.draw(note, chartTime, Save.Read("scroll_speed"), 8 + menuY/16, nil, chartX+2, false)
                     love.graphics.setFont(Font)
                 end
             end
@@ -1012,13 +1130,54 @@ function scene.draw()
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
         for _,particle in ipairs(Particles) do
             love.graphics.setColor(TerminalColors[particle.color])
-            love.graphics.print(particle.char, particle.x-4, particle.y-8)
+            love.graphics.print(particle.char, particle.x-4, particle.y-8 + menuY)
         end
     end
 
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     DrawBoxHalfWidth(2, 1, 74, 3)
     love.graphics.draw(settingsText, 320, 32, 0, 2, 2, settingsText:getWidth()/2, 0)
+
+    if #labelStack > 0 then
+        DrawBoxHalfWidth(2, 6, 74, 1)
+        love.graphics.printf(table.concat(labelStack, " / "), 0, 112, 640, "center")
+    end
+
+    if askToDelete then
+        love.graphics.setColor(0,0,0,0.75)
+        love.graphics.rectangle("fill", 0, 0, 640, 480)
+        love.graphics.setColor(TerminalColors[ColorID.WHITE])
+        local w = 32
+        local h = 10
+        local x = 40-w/2-1
+        local Y = 15-h/2-1
+        love.graphics.setColor(0,0,0,0.75)
+        love.graphics.rectangle("fill", 0, 0, 640, 480)
+        love.graphics.setColor(1,1,1)
+        DrawBoxHalfWidth(x, Y, w, h)
+        love.graphics.printf("ARE YOU SURE YOU WANT TO DELETE ALL OF YOUR VOLTRHYTHM DATA?\n\nTHIS IS IRREVERSIBLE!!!\n\nVOLTRHYTHM WILL RESTART AFTER ALL DATA IS DELETED.", x*8+16, Y*16+16, w*8-16, "center")
+        love.graphics.printf(KeyLabel(binds.back) .. " - No", x*8+16, (Y+h)*16, w*8-16, "left")
+        love.graphics.setColor(TerminalColors[confirmTimer >= 3 and ColorID.LIGHT_RED or ColorID.DARK_GRAY])
+        love.graphics.printf(KeyLabel(binds.confirm) .. " - Yes", x*8+16, (Y+h)*16, w*8-16, "right")
+    end
+
+    if askToDeleteScores then
+        love.graphics.setColor(0,0,0,0.75)
+        love.graphics.rectangle("fill", 0, 0, 640, 480)
+        love.graphics.setColor(TerminalColors[ColorID.WHITE])
+        local w = 32
+        local h = 8
+        local x = 40-w/2-1
+        local Y = 15-h/2-1
+        love.graphics.setColor(0,0,0,0.75)
+        love.graphics.rectangle("fill", 0, 0, 640, 480)
+        love.graphics.setColor(1,1,1)
+        DrawBoxHalfWidth(x, Y, w, h)
+        love.graphics.printf("ARE YOU SURE YOU WANT TO DELETE ALL OF YOUR PROFILE'S SCORES?\n\nTHIS IS IRREVERSIBLE!!!", x*8+16, Y*16+16, w*8-16, "center")
+        love.graphics.printf(KeyLabel(binds.back) .. " - No", x*8+16, (Y+h)*16, w*8-16, "left")
+        love.graphics.setColor(TerminalColors[confirmTimer >= 3 and ColorID.LIGHT_RED or ColorID.DARK_GRAY])
+        love.graphics.printf(KeyLabel(binds.confirm) .. " - Yes", x*8+16, (Y+h)*16, w*8-16, "right")
+    end
 end
 
 return scene

@@ -124,7 +124,7 @@ function scene.load(args)
     scene.disk = SongDisk.Disks[SongSelectCampaign]
     scene.chargeMetrics = scene.disk.metrics
 
-    scene.source = args.source or "menu"
+    scene.source = args.source or "songdiskselect"
     scene.destination = args.destination or "game"
 
     for _,song in ipairs(scene.disk.allSongs) do
@@ -146,6 +146,15 @@ function scene.load(args)
     SongSelectOvervoltUnlocked = true
 
     SongSelectSetSelectedSong(scene.selected.identifier, SongDifficultyOrder[SongSelectDifficulty])
+
+    if SystemSettings.discord_rpc_level > RPCLevels.PLAYING then
+        if SystemSettings.discord_rpc_level == RPCLevels.FULL then
+            Discord.setActivity("Selecting a song", "Viewing disk " .. scene.disk.name)
+        elseif SystemSettings.discord_rpc_level == RPCLevels.PARTIAL then
+            Discord.setActivity("Selecting a song")
+        end
+        Discord.updatePresence()
+    end
 end
 
 function scene.action(a)

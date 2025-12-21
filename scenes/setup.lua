@@ -71,6 +71,11 @@ function scene.load(args)
 
     love.keyboard.setKeyRepeat(true)
     love.keyboard.setTextInput(scene.state == 0)
+    
+    if SystemSettings.discord_rpc_level > RPCLevels.PLAYING then
+        Discord.setActivity("Setting up")
+        Discord.updatePresence()
+    end
 end
 
 function scene.gamepadpressed(s, b)
