@@ -643,6 +643,9 @@ local root = {
                     min = RPCLevels.OFF,
                     max = RPCLevels.FULL,
                     step = 1,
+                    enable = function()
+                        return Discord.hasRPC()
+                    end,
                     text = function(value)
                         if value == RPCLevels.OFF then return "OFF" end
                         if value == RPCLevels.PLAYING then return "PLAYING" end
@@ -1096,8 +1099,8 @@ function scene.draw()
             end
             if option.type == "number" or option.type == "color" then
                 love.graphics.setColor(TerminalColors[option.danger and (SettingsSelection == i-1 and ColorID.LIGHT_RED or ColorID.RED) or (SettingsSelection == i-1 and ColorID.WHITE or ColorID.DARK_GRAY)])
-                if value > (option.min or -math.huge) then love.graphics.print("◁", itmX+28, itmY+16) end
-                if value < (option.max or math.huge) then love.graphics.print("▷", itmX+220, itmY+16) end
+                if value > (option.min or -math.huge) and enabled then love.graphics.print("◁", itmX+28, itmY+16) end
+                if value < (option.max or math.huge) and enabled then love.graphics.print("▷", itmX+220, itmY+16) end
             end
         end
     end

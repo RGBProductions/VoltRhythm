@@ -19,6 +19,10 @@ RPCLevels = {
 
 local presence = {}
 
+function Discord.hasRPC()
+    return discord ~= nil
+end
+
 function Discord.updatePresence()
     if not discord then return end
     discord.updatePresence(presence)
