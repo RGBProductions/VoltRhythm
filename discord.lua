@@ -6,6 +6,7 @@ if not s then
 end
 
 Discord = {
+    registered = false,
     running = false
 }
 
@@ -51,7 +52,13 @@ function Discord.start()
     if not discord then return end
     if Discord.running then return end
     Discord.running = true
-    discord.initialize("1444766632064061520", true)
+    local id = "1444766632064061520"
+    local appimage = os.getenv("APPIMAGE")
+    if appimage and not Discord.registered then
+        discord.register(id, '"' .. appimage:gsub('"','\\"') .. '"')
+    end
+    Discord.registered = true
+    discord.initialize(id, appimage == nil)
     presence.largeImageKey = "icon"
     presence.largeImageText = "VoltRhythm"
 end

@@ -52,6 +52,8 @@ void Discord_Initialize(const char* applicationId,
                         int autoRegister,
                         const char* optionalSteamId);
 
+void Discord_Register(const char* applicationId, const char* command);
+
 void Discord_Shutdown(void);
 
 void Discord_RunCallbacks(void);
@@ -161,6 +163,10 @@ function discordRPC.initialize(applicationId, autoRegister, optionalSteamId)
 
     discordRPClib.Discord_Initialize(applicationId, eventHandlers,
         autoRegister and 1 or 0, optionalSteamId)
+end
+
+function discordRPC.register(applicationId, command)
+    discordRPClib.Discord_Register(applicationId, command)
 end
 
 function discordRPC.shutdown()
