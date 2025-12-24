@@ -255,6 +255,7 @@ SystemSettings = {
     song_volume = 0.75,
     sound_volume = 1,
     audio_offset = 0,
+    video_offset = 0,
     enable_chart_effects = true,
     enable_screen_effects = true,
     enable_background = true,

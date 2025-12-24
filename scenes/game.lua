@@ -849,7 +849,7 @@ function scene.draw()
             if t and type(t.draw) == "function" then
                 love.graphics.setFont(NoteFont)
                 love.graphics.setColor(NoteBrightness,NoteBrightness,NoteBrightness,1)
-                t.draw(note,scene.chart.time,(ScrollSpeed*ScrollSpeedMod)*NoteSpeedMods[note.lane+1][1],nil,nil,((80-(scene.chart.lanes*4-1))/2)+1)
+                t.draw(note,scene.chart.time - SystemSettings.video_offset,(ScrollSpeed*ScrollSpeedMod)*NoteSpeedMods[note.lane+1][1],nil,nil,((80-(scene.chart.lanes*4-1))/2)+1)
                 love.graphics.setFont(Font)
             end
         end

@@ -108,6 +108,22 @@ local root = {
                     end
                 },
                 {
+                    label = "VIDEO OFFSET",
+                    type = "number",
+                    min = -math.huge,
+                    max = math.huge,
+                    step = 5,
+                    text = function(value)
+                        return value .. "ms"
+                    end,
+                    read = function()
+                        return SystemSettings.video_offset*1000
+                    end,
+                    write = function(value)
+                        SystemSettings.video_offset = value/1000
+                    end
+                },
+                {
                     label = "ADJUST SCREEN FX",
                     type = "menu",
                     options = {
@@ -330,7 +346,7 @@ local root = {
                     end
                 },
                 {
-                    label = "OFFSET",
+                    label = "AUDIO OFFSET",
                     type = "number",
                     min = -math.huge,
                     max = math.huge,
