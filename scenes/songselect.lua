@@ -217,6 +217,8 @@ function scene.action(a)
         if not scene.selected.unlocks[diff].passed then return end
         
         if preview then preview:stop() end
+        Autoplay = love.keyboard.isDown("lshift")
+        Showcase = Autoplay and love.keyboard.isDown("lctrl")
         SceneManager.Transition("scenes/" .. scene.destination, {songData = data, difficulty = diff})
     end
     if a == "show_more" then

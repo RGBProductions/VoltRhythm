@@ -30,6 +30,7 @@ function scene.load(args)
     scene.textScrollDirection = -1
     -- TODO: Build a more flexible condition-checking system for complex flow between scenes
     scene.next = args.next or {path = "songselect", args = {}}
+    scene.next.args.result = {charge = scene.charge, overcharge = scene.overcharge, accuracy = scene.accuracy}
     if Assets.Source(scene.chart.song) then
         Assets.Source(scene.chart.song):stop()
     end
