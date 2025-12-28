@@ -338,3 +338,53 @@ function DialogFileInput:filedropped(x,y,file)
     end
     return false
 end
+
+
+
+DialogEasing = {}
+DialogEasing.__index = DialogEasing
+
+---@param method easingmethod
+function DialogEasing:new(x,y,width,height,method,duration)
+    local display = setmetatable({},DialogEasing)
+
+    display.x = x
+    display.y = y
+    display.width = width
+    display.height = height
+    display.method = method
+    display.duration = duration or 1
+
+    return display
+end
+
+function DialogEasing:draw(x,y)
+    love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    love.graphics.setLineWidth(2)
+    love.graphics.setLineStyle("rough")
+    local h = self.height - 24
+    DrawBoxHalfWidth((self.x+x)/8-1, (self.y+y)/16-1, self.width/8, self.height/16)
+    if not EasingMethods[self.method] then
+        love.graphics.printf("- NO EASING -", self.x+x, self.y+y+(self.height-16)/2, self.width, "center")
+        return
+    end
+    love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
+    love.graphics.line(self.x+x, self.y+y, self.x+self.width+x, self.y+y)
+    love.graphics.line(self.x+x, self.y+y+h, self.x+self.width+x, self.y+y+h)
+    love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    local method = EasingMethods[self.method]
+    for X = 0, 15 do
+        local t1 = X/16
+        local t2 = (X+1)/16
+        local v1 = method(t1, 0, 1, 1)
+        local v2 = method(t2, 0, 1, 1)
+        love.graphics.line((X/16)*self.width+self.x+x, self.y+y+h*(1-v1), ((X+1)/16)*self.width+self.x+x, self.y+y+h*(1-v2))
+    end
+    local t = (love.timer.getTime() % self.duration) / self.duration
+    local X = method(t, 0, 1, 1)
+    love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
+    love.graphics.line(t*self.width+self.x+x, self.y+y, t*self.width+self.x+x, self.y+y+h)
+    love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    love.graphics.circle("fill", t*self.width+self.x+x, self.y+y+h*(1-X), 4)
+    love.graphics.circle("fill", X*(self.width-16)+self.x+x+8, self.y+y+h+16, 8)
+end

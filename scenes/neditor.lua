@@ -187,6 +187,113 @@ local function fileDialog(type)
     table.insert(scene.dialogs, dialog)
 end
 
+local function easingMethodDialog(onSelected)
+    local setPage
+    local dialog = {
+        title = "EASING FUNCTION",
+        width = 32,
+        height = 24,
+        contents = {
+            DialogButton:new(196, 320, 96, 16, "CANCEL", function ()
+                table.remove(scene.dialogs, 1)
+            end),
+            DialogButton:new(456, 16, 32, 16, "UP", function ()
+                setPage(0)
+            end),
+            DialogButton:new(456, 256, 32, 16, "DN", function ()
+                setPage(1)
+            end)
+        }
+    }
+    local container = DialogContainer:new(0,0,64,16)
+    table.insert(dialog.contents, container)
+    local methods = {
+        "none",      "linear",     nil,            nil,
+        "inQuad",    "outQuad",    "inOutQuad",    "outInQuad",
+        "inCubic",   "outCubic",   "inOutCubic",   "outInCubic",
+        "inQuart",   "outQuart",   "inOutQuart",   "outInQuart",
+        "inQuint",   "outQuint",   "inOutQuint",   "outInQuint",
+        "inSine",    "outSine",    "inOutSine",    "outInSine",
+        "inExpo",    "outExpo",    "inOutExpo",    "outInExpo",
+        "inCirc",    "outCirc",    "inOutCirc",    "outInCirc",
+        "inElastic", "outElastic", "inOutElastic", "outInElastic",
+        "inBack",    "outBack",    "inOutBack",    "outInBack",
+        "inBounce",  "outBounce",  "inOutBounce",  "outInBounce"
+    }
+    setPage = function(n)
+        container.contents = {}
+        local by = n*6
+        for y = by+1, math.min(by+6, #methods/4) do
+            for x = 1, 4 do
+                ---@type string?
+                local method = methods[(y-1)*4+x]
+                local result = method
+                if method then
+                    if method == "none" then
+                        result = nil
+                    end
+                    table.insert(container.contents, DialogButton:new((x-1)*112, (y-1-by)*48+16, 96, 16, method:upper(), function()
+                        if type(onSelected) == "function" then onSelected(result) end
+                        table.remove(scene.dialogs, 1)
+                    end))
+                end
+            end
+        end
+    end
+    setPage(0)
+    table.insert(scene.dialogs, 1, dialog)
+end
+
+function EasingDialog(effect)
+    local method = effect.data.easeMethod
+    local duration = effect.data.easeDuration or 1
+    local display = DialogEasing:new(0, 0, 240, 64, method)
+    display.duration = duration
+    local methodButton
+    methodButton = DialogButton:new(264, 16, 96, 16, (method or "none"):upper(), function ()
+        easingMethodDialog(function(result)
+            method = result
+            display.method = method
+            methodButton.label = (method or "none"):upper()
+        end)
+    end)
+    local durationIn = DialogInput:new(264, 48, 96, 16, "DURATION", 8, nil, function(self)
+        self.content = self.content:lower()
+        local multiplier = 1
+        if self.content:sub(-1,-1) == "b" then
+            multiplier = TimeBPM(4, scene.chart.bpm)
+            self.content = self.content:sub(1,-2)
+        end
+        duration = (tonumber(self.content) or 0) * multiplier
+        display.duration = duration
+        self.content = tostring(math.floor(duration*10000)/10000)
+    end)
+    durationIn.content = tostring(display.duration or 1)
+    local dialog = {
+        title = "EFFECT EASING",
+        width = 24,
+        height = 10,
+        contents = {
+            display,
+            methodButton,
+            durationIn,
+            DialogButton:new(168+32, 96, 64, 16, "CANCEL", function ()
+                table.remove(scene.dialogs, 1)
+            end),
+            DialogButton:new(72+32, 96, 64, 16, "APPLY", function ()
+                effect.data.easeMethod = method
+                if effect.data.easeMethod then
+                    effect.data.easeDuration = duration
+                else
+                    effect.data.easeDuration = nil
+                end
+                table.remove(scene.dialogs, 1)
+            end)
+        }
+    }
+    table.insert(scene.dialogs, 1, dialog)
+end
+
 local function effectPlacementDialog(effect, editing)
     local copy = table.merge({}, effect)
     local container = DialogContainer:new(0,64,304,304,{})
@@ -1682,7 +1789,8 @@ function scene.draw()
             else
                 lastEffectPos = samePos
             end
-            local drawPos = chartPos+chartHeight-(effect.time - scene.chartTimeTemp)*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local pos = effect.time - scene.chartTimeTemp
+            local drawPos = chartPos+chartHeight-pos*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
             local actualPos = drawPos*8
             if actualPos < 0 then
                 break
@@ -1690,6 +1798,17 @@ function scene.draw()
             local x = effectPos[lastEffectPos] or 0
             local txt = "¤"
             local w = 8
+            if effect.data.easeMethod or effect.data.smoothing then
+                local duration = (effect.data.smoothing and (math.log(1 / 0.004846, effect.data.smoothing)) or (effect.data.easeDuration or 1))
+                local cells = duration * math.abs(speed)
+                for i = 0.5, cells do
+                    local barPos = pos+i/speed
+                    local extPos = chartPos+chartHeight-barPos*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+                    if extPos >= chartPos and extPos-(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1) < chartPos+(chartHeight-1) then
+                        love.graphics.printf("┊", chartX*8+136 + (x*12) - w, math.floor(extPos*16-8-0), w, "left")
+                    end
+                end
+            end
             love.graphics.printf(txt, chartX*8+136 + (x*12) - w, drawPos*16-24, w, "left")
             effectPos[lastEffectPos] = x + 1
         end

@@ -1,4 +1,4 @@
-local methods = require "easing"
+EasingMethods = require "easing"
 
 ---@alias easingmethod "linear"|"inQuad"|"outQuad"|"inOutQuad"|"outInQuad"|"inCubic"|"outCubic"|"inOutCubic"|"outInCubic"|"inQuart"|"outQuart"|"inOutQuart"|"outInQuart"|"inQuint"|"outQuint"|"inOutQuint"|"outInQuint"|"inSine"|"outSine"|"inOutSine"|"outInSine"|"inExpo"|"outExpo"|"inOutExpo"|"outInExpo"|"inCirc"|"outCirc"|"inOutCirc"|"outInCirc"|"inElastic"|"outElastic"|"inOutElastic"|"outInElastic"|"inBack"|"outBack"|"inOutBack"|"outInBack"|"inBounce"|"outBounce"|"inOutBounce"|"outInBounce"
 
@@ -37,7 +37,7 @@ end
 function Easer:get()
     if self.time == self.duration then return self.target end
     if self.time == 0 then return self.base end
-    local method = methods[self.method or "linear"] or methods.linear
+    local method = EasingMethods[self.method or "linear"] or EasingMethods.linear
     return method(self.time, self.base, self.target - self.base, self.duration)
 end
 
