@@ -55,6 +55,43 @@ end
 
 local filesource = love.filesystem.getSource()
 
+local function aabb(x1,y1,w1,h1, x2,y2,w2,h2)
+    return
+        x1 <= x2+w2 and
+        x2 <= x1+w1 and
+        y1 <= y2+h2 and
+        y2 <= y1+h1
+end
+
+local function findOverlaps()
+    scene.overlaps = {}
+    if not scene.chart then return end
+    for _,note in ipairs(scene.chart.notes) do
+        if note.type ~= "warning" then
+            local A1,B1 = math.min(note.lane, note.lane+(note.extra.dir or 0)),math.max(note.lane, note.lane+(note.extra.dir or 0))
+            if note.type == "swap" then
+                A1,B1 = note.lane, note.lane
+            end
+            local C1,D1 = note.time-0.01,note.time+(note.length or 0)+0.01
+
+            for _,other in ipairs(scene.chart.notes) do
+                if other ~= note and other.type ~= "warning" then
+                    local A2,B2 = math.min(other.lane, other.lane+(other.extra.dir or 0)),math.max(other.lane, other.lane+(other.extra.dir or 0))
+                    if other.type == "swap" then
+                        A2,B2 = other.lane, other.lane
+                    end
+                    local C2,D2 = other.time-0.01,other.time+(other.length or 0)+0.01
+
+                    if aabb(A1,C1,B1-A1,D1-C1, A2,C2,B2-A2,D2-C2) then
+                        scene.overlaps[note] = true
+                        scene.overlaps[other] = true
+                    end
+                end
+            end
+        end
+    end
+end
+
 local function writeChart(name)
     local oSongPath = scene.songData.songPath
     local oPath = scene.songData.path
@@ -92,9 +129,8 @@ local function readChart(name)
     scene.chartTimeTemp = 0
     hoistHistory(songData.path, songData.name)
     if scene.chart then scene.lastRating = scene.chart:getDifficulty() end
-                    
+    findOverlaps()
     updateDiscord()
-    
     return true
 end
 
@@ -1362,6 +1398,7 @@ function scene.load(args)
     end
 
     updateDiscord()
+    findOverlaps()
 end
 
 function scene.update(dt)
@@ -1588,6 +1625,7 @@ function scene.keypressed(k)
         end
         scene.selectedNotes = {}
         scene.lastRating = scene.chart:getDifficulty()
+        findOverlaps()
     end
     if k == "v" and love.keyboard.isDown("lctrl") then
         -- Paste
@@ -1606,6 +1644,7 @@ function scene.keypressed(k)
             table.insert(scene.selectedNotes, newNote)
         end
         scene.lastRating = scene.chart:getDifficulty()
+        findOverlaps()
     end
     if k == "delete" then
         for _,note in ipairs(scene.selectedNotes) do
@@ -1613,6 +1652,7 @@ function scene.keypressed(k)
         end
         scene.selectedNotes = {}
         scene.lastRating = scene.chart:getDifficulty()
+        findOverlaps()
     end
     if k == "a" and love.keyboard.isDown("lctrl") then
         scene.selectedNotes = {}
@@ -1761,6 +1801,25 @@ function scene.draw()
                     local drawPos1 = chartPos+chartHeight-pos1*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
                     local pos2 = D-scene.chartTimeTemp
                     local drawPos2 = chartPos+chartHeight-pos2*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+                    local a = (chartX+A*4)*8-4
+                    local b = (chartX+B*4)*8+12
+                    love.graphics.rectangle("fill", a, drawPos2*16-24, math.abs(b-a), math.abs((drawPos2*16)-(drawPos1*16))+16)
+                end
+                if scene.overlaps[note] then
+                    love.graphics.setColor(1,0,0,0.25)
+
+                    local A,B = math.min(note.lane, note.lane+(note.extra.dir or 0)),math.max(note.lane, note.lane+(note.extra.dir or 0))
+                    if note.type == "swap" then
+                        A = note.lane-(note.extra.dir or 0)
+                        B = A
+                    end
+        
+                    local C,D = note.time,note.time+note.length
+
+                    local pos1 = C-scene.chartTimeTemp
+                    local drawPos1 = chartPos+chartHeight-pos1*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+                    local pos2 = D-scene.chartTimeTemp
+                    local drawPos2 = chartPos+chartHeight-pos2*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
                     local a = (chartX+A*4)*8-4
                     local b = (chartX+B*4)*8+12
                     love.graphics.rectangle("fill", a, drawPos2*16-24, math.abs(b-a), math.abs((drawPos2*16)-(drawPos1*16))+16)
@@ -2065,6 +2124,7 @@ function scene.mousepressed(x,y,b,t,p)
                             table.insert(Particles, {x = x, y = y, vx = (love.math.random()*2-1)*64, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = love.math.random(1,16), char = "¤"})
                         end
                         scene.lastRating = scene.chart:getDifficulty()
+                        findOverlaps()
                     end
                 end
                 if scene.placementMode == placementModes.bpm then
@@ -2208,18 +2268,11 @@ function scene.mousepressed(x,y,b,t,p)
                     table.insert(Particles, {x = x, y = y, vx = (love.math.random()*2-1)*64, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = ColorID.RED, char = "¤"})
                 end
                 scene.lastRating = scene.chart:getDifficulty()
+                findOverlaps()
                 break
             end
         end
     end
-end
-
-local function aabb(x1,y1,w1,h1, x2,y2,w2,h2)
-    return
-        x1 <= x2+w2 and
-        x2 <= x1+w1 and
-        y1 <= y2+h2 and
-        y2 <= y1+h1
 end
 
 function scene.mousereleased(x,y,b)
@@ -2231,6 +2284,10 @@ function scene.mousereleased(x,y,b)
             note.type = "normal"
             note.extra.dir = nil
         end
+        findOverlaps()
+    end
+    if scene.selection.dragging then
+        findOverlaps()
     end
     scene.placement.placing = false
     if scene.scrollbarGrab then
