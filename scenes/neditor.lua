@@ -1817,9 +1817,9 @@ function scene.draw()
                     local C,D = note.time,note.time+note.length
 
                     local pos1 = C-scene.chartTimeTemp
-                    local drawPos1 = chartPos+chartHeight-pos1*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+                    local drawPos1 = chartPos+chartHeight-pos1*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
                     local pos2 = D-scene.chartTimeTemp
-                    local drawPos2 = chartPos+chartHeight-pos2*speed+((ViewOffset or 0)+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+                    local drawPos2 = chartPos+chartHeight-pos2*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
                     local a = (chartX+A*4)*8-4
                     local b = (chartX+B*4)*8+12
                     love.graphics.rectangle("fill", a, drawPos2*16-24, math.abs(b-a), math.abs((drawPos2*16)-(drawPos1*16))+16)
