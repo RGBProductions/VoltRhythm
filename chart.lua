@@ -1140,7 +1140,7 @@ function Chart:new(data)
 
     chart.spoiler = data.spoiler
 
-    chart.version = data.version or {name = Version.name, version = Version.version, code = 1}
+    chart.version = data.version or {code = 1}
     chart.isOld = chart.version.code < Version.chart_version
     chart.isNew = chart.version.code > Version.chart_version
 

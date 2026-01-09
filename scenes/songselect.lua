@@ -533,7 +533,7 @@ function scene.draw()
         love.graphics.setColor(1,1,1)
         DrawBoxHalfWidth(x, 8.5, w, 11)
         love.graphics.printf("VERSION MISMATCH", 0, 152, 640, "center")
-        love.graphics.printf("This chart was made for a" .. (versionWarning.old and "n older" or (versionWarning.new and " newer" or " different")) .. " version of VoltRhythm!\n\nChart version: " .. versionWarning.version.name .. " v" .. versionWarning.version.version .. "\nGame version: " .. Version.name .. " v" .. Version.version .. "\n\nThis chart may not work correctly!", x*8+16, 184, w*8-16, "center")
+        love.graphics.printf("This chart was made for a" .. (versionWarning.old and "n older" or (versionWarning.new and " newer" or " different")) .. " version of VoltRhythm!\n\nChart version: " .. ((versionWarning.version.name ~= nil and versionWarning.version.version ~= nil) and (versionWarning.version.name .. " v" .. versionWarning.version.version) or "Unknown") .. "\nGame version: " .. Version.name .. " v" .. Version.version .. "\n\nThis chart may not work correctly!", x*8+16, 184, w*8-16, "center")
         love.graphics.printf(KeyLabel(binds.back) .. " - Go Back", x*8+16, 312, w*8-16, "left")
         love.graphics.printf(KeyLabel(binds.confirm) .. " - Play Anyway", x*8+16, 312, w*8-16, "right")
     end
