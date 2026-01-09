@@ -11,6 +11,8 @@ hiddenAmbience:setLooping(true)
 local askToDelete = nil
 local askToDeleteDiff = nil
 
+local versionWarning = nil
+
 local overvoltWarning = false
 local shouldOvervoltWarning = love.filesystem.getInfo("hideovwarning") == nil
 
@@ -72,6 +74,31 @@ function scene.action(a)
         if a == "back" then
             askToDelete = nil
             askToDeleteDiff = nil
+        end
+        return
+    end
+    if versionWarning then
+        if a == "confirm" then
+            versionWarning = nil
+            if scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].isUnlocked then
+                local diffs = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].difficulties
+                local difficulty = SongSelectOvervoltMode and (table.index(SongDifficultyOrder, diffs[#diffs]) or 5) or SongSelectDifficulty
+                ---@type SongData?
+                local songData = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].songData
+                local scorePrefix = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].scorePrefix
+                if songData and songData:loadChart(SongDifficultyOrder[difficulty]) ~= nil then
+                    if preview then
+                        preview:stop()
+                        preview:setLooping(false)
+                    end
+                    Autoplay = love.keyboard.isDown("lshift")
+                    Showcase = love.keyboard.isDown("lctrl") and Autoplay
+                    SceneManager.Transition("scenes/" .. scene.destination, {songData = songData, scorePrefix = scorePrefix, difficulty = SongDifficultyOrder[difficulty]})
+                end
+            end
+        end
+        if a == "back" then
+            versionWarning = nil
         end
         return
     end
@@ -178,14 +205,21 @@ function scene.action(a)
             ---@type SongData?
             local songData = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].songData
             local scorePrefix = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].scorePrefix
-            if songData and songData:loadChart(SongDifficultyOrder[difficulty]) ~= nil then
-                if preview then
-                    preview:stop()
-                    preview:setLooping(false)
+            if songData then
+                local chart = songData:loadChart(SongDifficultyOrder[difficulty])
+                if chart ~= nil then
+                    if chart.isOld or chart.isNew or chart.version.name ~= Version.name then
+                        versionWarning = {old = chart.isOld, new = chart.isNew, client = chart.version.name ~= Version.name, version = chart.version}
+                    else
+                        if preview then
+                            preview:stop()
+                            preview:setLooping(false)
+                        end
+                        Autoplay = love.keyboard.isDown("lshift")
+                        Showcase = love.keyboard.isDown("lctrl") and Autoplay
+                        SceneManager.Transition("scenes/" .. scene.destination, {songData = songData, scorePrefix = scorePrefix, difficulty = SongDifficultyOrder[difficulty]})
+                    end
                 end
-                Autoplay = love.keyboard.isDown("lshift")
-                Showcase = love.keyboard.isDown("lctrl") and Autoplay
-                SceneManager.Transition("scenes/" .. scene.destination, {songData = songData, scorePrefix = scorePrefix, difficulty = SongDifficultyOrder[difficulty]})
             end
         end
     end
@@ -640,6 +674,19 @@ function scene.draw()
         love.graphics.printf("FOR YOUR SAFETY...", 0, 152, 640, "center")
         love.graphics.printf("OVERVOLT charts are SEVERELY overcharted by design. Please be careful playing these charts.\n\nIf at any point you feel excessive pain in your hands, discontinue play immediately.", x*8+16, 184, w*8-16, "center")
         love.graphics.printf(KeyLabel(binds.back) .. " - Dismiss", x*8+16, 312, w*8-16, "center")
+    end
+
+    if versionWarning then
+        local w = 48
+        local x = 40-w/2-1
+        love.graphics.setColor(0,0,0,0.75)
+        love.graphics.rectangle("fill", 0, 0, 640, 480)
+        love.graphics.setColor(1,1,1)
+        DrawBoxHalfWidth(x, 8.5, w, 11)
+        love.graphics.printf("VERSION MISMATCH", 0, 152, 640, "center")
+        love.graphics.printf("This chart was made for a" .. (versionWarning.old and "n older" or (versionWarning.new and " newer" or " different")) .. " version of VoltRhythm!\n\nChart version: " .. versionWarning.version.name .. " v" .. versionWarning.version.version .. "\nGame version: " .. Version.name .. " v" .. Version.version .. "\n\nThis chart may not work correctly!", x*8+16, 184, w*8-16, "center")
+        love.graphics.printf(KeyLabel(binds.back) .. " - Go Back", x*8+16, 312, w*8-16, "left")
+        love.graphics.printf(KeyLabel(binds.confirm) .. " - Play Anyway", x*8+16, 312, w*8-16, "right")
     end
 end
 

@@ -1030,6 +1030,9 @@ function SongData:getCharter(difficulty)
 end
 
 ---@class Chart
+---@field version {name: string, version: string, code: integer}
+---@field isOld boolean
+---@field isNew boolean
 ---@field song string
 ---@field video string
 ---@field background string
@@ -1082,6 +1085,10 @@ function Chart:new(data)
     chart.charter = data.charter or "Charter"
 
     chart.hideDifficulty = data.hideDifficulty
+
+    chart.version = data.version or {name = Version.name, version = Version.version, code = 1}
+    chart.isOld = chart.version.code < Version.chart_version
+    chart.isNew = chart.version.code > Version.chart_version
 
     return chart
 end
@@ -1174,7 +1181,8 @@ function Chart:save(path)
         effects = effects,
         bpmChanges = self.bpmChanges,
         charter = self.charter,
-        hideDifficulty = self.hideDifficulty
+        hideDifficulty = self.hideDifficulty,
+        version = self.version
     }))
 end
 
