@@ -182,6 +182,13 @@ ChargeValues = {
     }
 }
 
+function ReadableTime(s)
+    s = math.floor(math.max(0, s))
+    local m = tostring(math.floor(s/60))
+    s = tostring(s % 60)
+    return m .. ":" .. ("0"):rep(2-#s)..s
+end
+
 function TimeBPM(t,bpm)
     return 15*t/bpm
 end

@@ -404,10 +404,17 @@ function scene.draw()
     local emblem = Assets.Emblem(selected.songData.emblem)
     local emblemSize = hide and 0 or (emblem and (emblem:getWidth() + 8) or 0)
     local songName = hide and "- NO DATA -" or ((selected.songData or {}).name or "Unrecognized Song")
-    love.graphics.print(songName, (640-(utf8.len(songName)*8 + emblemSize))/2 + emblemSize, 360 + (hide and 8 or 0))
-    if emblem and not hide then love.graphics.draw(emblem, (640-(utf8.len(songName)*8 + emblemSize))/2, 368, 0, 1, 1, 0, emblem:getHeight()/2) end
+    love.graphics.print(songName, (640-(utf8.len(songName)*8 + emblemSize))/2 + emblemSize, 352 + (hide and 16 or 0))
+    if emblem and not hide then love.graphics.draw(emblem, (640-(utf8.len(songName)*8 + emblemSize))/2, 360, 0, 1, 1, 0, emblem:getHeight()/2) end
     love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
-    if not hide then love.graphics.printf((selected.songData or {}).author or "???", 0, 376, 640, "center") end
+    if not hide then
+        love.graphics.printf((selected.songData or {}).author or "???", 0, 368, 640, "center")
+        local source = Assets.Source((selected.songData or {}).songPath)
+        if source then
+            local time = ReadableTime(source:getDuration("seconds"))
+            love.graphics.printf(((selected.songData or {}).bpm or "?") .. " BPM - " .. time, 0, 384, 640, "center")
+        end
+    end
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     local charter = "???"
     if selected.songData then

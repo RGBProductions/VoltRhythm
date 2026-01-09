@@ -338,13 +338,6 @@ end
 local lastHeld = {false,false,false,false}
 local rpcUpdateTime = 0
 
-local function readableTime(s)
-    s = math.floor(math.max(0, s))
-    local m = tostring(math.floor(s/60))
-    s = tostring(s)
-    return m .. ":" .. ("0"):rep(2-#s)..s
-end
-
 function scene.update(dt)
     rpcUpdateTime = rpcUpdateTime - dt
     if rpcUpdateTime <= 0 then
@@ -353,7 +346,7 @@ function scene.update(dt)
         if c ~= c then chargeAmount = 0 end
         if SystemSettings.discord_rpc_level > RPCLevels.PLAYING then
             if SystemSettings.discord_rpc_level == RPCLevels.FULL then
-                Discord.setActivity("Playing " .. ((scene.songData.spoiler or scene.chart.spoiler) and "a song" or scene.songData.name), SongDifficulty[scene.difficulty].name .. ((scene.songData.spoiler or scene.chart.spoiler) and "" or " " .. scene.songData:getLevel(scene.difficulty)) .. " - " .. chargeAmount .. " ¤ - " .. readableTime(scene.chart.time))
+                Discord.setActivity("Playing " .. ((scene.songData.spoiler or scene.chart.spoiler) and "a song" or scene.songData.name), SongDifficulty[scene.difficulty].name .. ((scene.songData.spoiler or scene.chart.spoiler) and "" or " " .. scene.songData:getLevel(scene.difficulty)) .. " - " .. chargeAmount .. " ¤ - " .. ReadableTime(scene.chart.time))
             elseif SystemSettings.discord_rpc_level == RPCLevels.PARTIAL then
                 Discord.setActivity("Playing a song")
             end
