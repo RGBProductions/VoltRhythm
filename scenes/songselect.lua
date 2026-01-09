@@ -14,6 +14,8 @@ local songselectText = love.graphics.newImage("images/title/songselect.png")
 local askToDelete = nil
 local askToDeleteDiff = nil
 
+local versionWarning = nil
+
 local overvoltWarning = false
 local shouldOvervoltWarning = love.filesystem.getInfo("hideovwarning") == nil
 
@@ -165,6 +167,10 @@ function scene.action(a)
             overvoltWarning = false
             return
         end
+        if versionWarning then
+            versionWarning = nil
+            return
+        end
         if preview then preview:stop() end
         SceneManager.Transition("scenes/" .. scene.source)
     end
@@ -215,11 +221,16 @@ function scene.action(a)
         local diff = SongDifficultyOrder[SongSelectDifficulty]
         if not data:hasLevel(diff) then return end
         if not scene.selected.unlocks[diff].passed then return end
-        
-        if preview then preview:stop() end
-        Autoplay = love.keyboard.isDown("lshift")
-        Showcase = Autoplay and love.keyboard.isDown("lctrl")
-        SceneManager.Transition("scenes/" .. scene.destination, {songData = data, difficulty = diff})
+        local chart = data:loadChart(diff)
+        if chart ~= nil and (chart.isOld or chart.isNew or chart.version.name ~= Version.name) and not versionWarning then
+            versionWarning = {old = chart.isOld, new = chart.isNew, client = chart.version.name ~= Version.name, version = chart.version}
+        else
+            versionWarning = nil
+            if preview then preview:stop() end
+            Autoplay = love.keyboard.isDown("lshift")
+            Showcase = Autoplay and love.keyboard.isDown("lctrl")
+            SceneManager.Transition("scenes/" .. scene.destination, {songData = data, difficulty = diff})
+        end
     end
     if a == "show_more" then
         scene.showMore = not scene.showMore
@@ -512,6 +523,19 @@ function scene.draw()
         love.graphics.printf("FOR YOUR SAFETY...", 0, 152, 640, "center")
         love.graphics.printf("OVERVOLT charts are SEVERELY overcharted by design. Please be careful playing these charts.\n\nIf at any point you feel excessive pain in your hands, discontinue play immediately.", x*8+16, 184, w*8-16, "center")
         love.graphics.printf(KeyLabel(binds.back) .. " - Dismiss", x*8+16, 312, w*8-16, "center")
+    end
+
+    if versionWarning then
+        local w = 48
+        local x = 40-w/2-1
+        love.graphics.setColor(0,0,0,0.75)
+        love.graphics.rectangle("fill", 0, 0, 640, 480)
+        love.graphics.setColor(1,1,1)
+        DrawBoxHalfWidth(x, 8.5, w, 11)
+        love.graphics.printf("VERSION MISMATCH", 0, 152, 640, "center")
+        love.graphics.printf("This chart was made for a" .. (versionWarning.old and "n older" or (versionWarning.new and " newer" or " different")) .. " version of VoltRhythm!\n\nChart version: " .. versionWarning.version.name .. " v" .. versionWarning.version.version .. "\nGame version: " .. Version.name .. " v" .. Version.version .. "\n\nThis chart may not work correctly!", x*8+16, 184, w*8-16, "center")
+        love.graphics.printf(KeyLabel(binds.back) .. " - Go Back", x*8+16, 312, w*8-16, "left")
+        love.graphics.printf(KeyLabel(binds.confirm) .. " - Play Anyway", x*8+16, 312, w*8-16, "right")
     end
 end
 
