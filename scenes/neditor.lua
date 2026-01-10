@@ -300,7 +300,7 @@ function EasingDialog(effect)
         self.content = self.content:lower()
         local multiplier = 1
         if self.content:sub(-1,-1) == "b" then
-            multiplier = TimeBPM(4, scene.chart.bpm)
+            multiplier = SixteenthsToSeconds(4, scene.chart.bpm)
             self.content = self.content:sub(1,-2)
         end
         duration = (tonumber(self.content) or 0) * multiplier
@@ -1745,7 +1745,8 @@ function scene.draw()
         while currentTime <= scene.chartTimeTemp+1/zoom do
             do
                 local pos = currentTime - scene.chartTimeTemp
-                local drawPos = chartPos+chartHeight-pos*speed - 1
+
+                local drawPos = GetNoteCellY(pos, speed, 1, 0, chartPos, chartHeight)-1
                 if drawPos >= chartPos and drawPos < chartPos+chartHeight then
                     love.graphics.setColor(TerminalColors[numSteps%(4*zoom) == 0 and ColorID.LIGHT_GRAY or ColorID.DARK_GRAY])
                     love.graphics.print("┈┈┈╬┈┈┈╬┈┈┈╬┈┈┈", (80-(scene.chart.lanes*4-1))/2 * 8, drawPos*16-8)
@@ -1757,12 +1758,12 @@ function scene.draw()
                 end
             end
 
-            local step = TimeBPM(1/zoom,currentBPM)
+            local step = SixteenthsToSeconds(1/zoom,currentBPM)
             local bpmChange = (bpmChanges[nextBPMChange] or {time = math.huge, bpm = currentBPM})
             if currentTime+step - bpmChange.time >= -0.001 then
-                local pos = WhichSixteenth(bpmChange.time-lastBPMTime, currentBPM*zoom)
+                local pos = SecondsToSixteenths(bpmChange.time-lastBPMTime, currentBPM*zoom)
                 local nextBeatAt = math.ceil((1 - (pos % 1)) % 1)
-                currentTime = currentTime + TimeBPM(nextBeatAt,currentBPM*zoom)
+                currentTime = currentTime + SixteenthsToSeconds(nextBeatAt,currentBPM*zoom)
                 currentBPM = bpmChange.bpm
                 lastBPMTime = bpmChange.time
                 nextBPMChange = nextBPMChange + 1
@@ -1777,7 +1778,7 @@ function scene.draw()
 
         do
             local pos = 0
-            local drawPos = chartPos+chartHeight-pos*speed - 1
+            local drawPos = GetNoteCellY(pos, speed, 1, 0, chartPos, chartHeight)-1
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
             love.graphics.print("┈┈┈╬┈┈┈╬┈┈┈╬┈┈┈", (80-(scene.chart.lanes*4-1))/2 * 8, drawPos*16-8)
         end
@@ -1834,7 +1835,7 @@ function scene.draw()
         love.graphics.setFont(Font)
         love.graphics.setColor(TerminalColors[ColorID.CYAN])
         for _,change in ipairs(bpmChanges) do
-            local drawPos = chartPos+chartHeight-(change.time - scene.chartTimeTemp)*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local drawPos = GetNoteCellY(change.time - scene.chartTimeTemp, speed, 1, 0, chartPos, chartHeight)
             local txt = change.bpm .. " BPM ▷"
             local w = 8*#txt
             love.graphics.printf(txt, chartX*8-24 - w, drawPos*16-24, w, "right")
@@ -1852,7 +1853,7 @@ function scene.draw()
                 lastEffectPos = samePos
             end
             local pos = effect.time - scene.chartTimeTemp
-            local drawPos = chartPos+chartHeight-pos*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local drawPos = GetNoteCellY(pos, speed, 1, 0, chartPos, chartHeight)
             local actualPos = drawPos*8
             if actualPos < 0 then
                 break
@@ -1910,7 +1911,7 @@ function scene.draw()
         love.graphics.setFont(Font)
         love.graphics.setColor(TerminalColors[ColorID.CYAN])
         if scene.placementMode == placementModes.bpm then
-            local drawPos = chartPos+chartHeight-(scene.lastNoteTime - scene.chartTimeTemp)*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local drawPos = GetNoteCellY(scene.lastNoteTime - scene.chartTimeTemp, speed, 1, 0, chartPos, chartHeight)
             local txt = "▷"
             local w = 8*#txt
             love.graphics.printf(txt, chartX*8-24 - w, drawPos*16-24, w, "right")
@@ -1943,7 +1944,7 @@ function scene.draw()
             else
                 lastEffectPos = samePos
             end
-            local drawPos = chartPos+chartHeight-(scene.lastNoteTime - scene.chartTimeTemp)*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local drawPos = GetNoteCellY(scene.lastNoteTime - scene.chartTimeTemp, speed, 1, 0, chartPos, chartHeight)
             local txt = "¤"
             local w = 8
             love.graphics.printf(txt, chartX*8+136 + (effectPos[lastEffectPos] or 0)*12 - w, drawPos*16-24, w, "right")
@@ -2159,7 +2160,7 @@ function scene.mousepressed(x,y,b,t,p)
             elseif not scene.scrollbarGrab then
                 local effectPos = {}
                 for i,effect in ipairs(scene.chart.effects or {}) do
-                    local drawPos = chartPos+chartHeight-(effect.time - scene.chartTimeTemp)*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+                    local drawPos = GetNoteCellY(effect.time - scene.chartTimeTemp, speed, 1, 0, chartPos, chartHeight)
                     local samePos = math.floor(drawPos*2)
                     local eX = effectPos[samePos] or 0
                     local txt = "¤"
@@ -2219,7 +2220,7 @@ function scene.mousepressed(x,y,b,t,p)
         local chartHeight = 16
         local speed = 25
         for i,change in ipairs(scene.chart.bpmChanges or {}) do
-            local drawPos = chartPos+chartHeight-(change.time - scene.chartTimeTemp)*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local drawPos = GetNoteCellY(change.time - scene.chartTimeTemp, speed, 1, 0, chartPos, chartHeight)
             local txt = change.bpm .. " BPM ▷"
             local w = 8*#txt
             
@@ -2236,7 +2237,7 @@ function scene.mousepressed(x,y,b,t,p)
 
         local effectPos = {}
         for i,effect in ipairs(scene.chart.effects or {}) do
-            local drawPos = chartPos+chartHeight-(effect.time - scene.chartTimeTemp)*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
+            local drawPos = GetNoteCellY(effect.time - scene.chartTimeTemp, speed, 1, 0, chartPos, chartHeight)
             local samePos = math.floor(drawPos*2)
             local eX = effectPos[samePos] or 0
             local txt = "¤"

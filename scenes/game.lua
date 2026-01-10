@@ -52,7 +52,7 @@ function scene.load(args)
         scene.difficulty = args.difficulty
         scene.chart = scene.songData:loadChart(args.difficulty or "easy")
         if scene.chart then
-            scene.chart.time = TimeBPM(-16,scene.chart.bpm)
+            scene.chart.time = SixteenthsToSeconds(-16,scene.chart.bpm)
         end
     end
     scene.masquerade = args.masquerade or scene.difficulty or "hidden"
@@ -77,7 +77,7 @@ function scene.load(args)
     scene.bpmChangeTime = 0
     scene.bpmChangeBeats = 0
     scene.bpm = scene.chart.bpm
-    scene.beatCount = WhichSixteenth(scene.chart.time - scene.bpmChangeTime, scene.bpm) / 4 + scene.bpmChangeBeats
+    scene.beatCount = SecondsToSixteenths(scene.chart.time - scene.bpmChangeTime, scene.bpm) / 4 + scene.bpmChangeBeats
     local colorIndexes = Save.Read("note_colors") or {ColorID.LIGHT_RED, ColorID.YELLOW, ColorID.LIGHT_GREEN, ColorID.LIGHT_BLUE}
     NoteColors = {
         ColorTransitionTable[colorIndexes[1]],
@@ -209,7 +209,7 @@ local function notePress(laneIndex)
                         accuracy = 0 -- 100%
                         local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
                         for _=1, 4 do
-                            local drawPos = (5)+(15)+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed*ScrollSpeedMod)
+                            local drawPos = GetNoteCellY(0, ScrollSpeed*ScrollSpeedMod, 1, ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0, 5, 15)
                             table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
                         end
                     end
@@ -397,12 +397,12 @@ function scene.update(dt)
     for _,bpmChange in ipairs(scene.chart.bpmChanges) do
         if scene.chart.time >= bpmChange.time and lastTime < bpmChange.time then
             -- Cross bpm change!
-            scene.bpmChangeBeats = WhichSixteenth(bpmChange.time - scene.bpmChangeTime, scene.bpm) / 4 + scene.bpmChangeBeats
+            scene.bpmChangeBeats = SecondsToSixteenths(bpmChange.time - scene.bpmChangeTime, scene.bpm) / 4 + scene.bpmChangeBeats
             scene.bpmChangeTime = bpmChange.time
             scene.bpm = bpmChange.bpm
         end
     end
-    scene.beatCount = WhichSixteenth(scene.chart.time - scene.bpmChangeTime, scene.bpm) / 4 + scene.bpmChangeBeats
+    scene.beatCount = SecondsToSixteenths(scene.chart.time - scene.bpmChangeTime, scene.bpm) / 4 + scene.bpmChangeBeats
 
     -- Freeze notes in place and move judgement line instead
     local diff = scene.chart.time - lastTime
@@ -480,7 +480,7 @@ function scene.update(dt)
                                     RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                                     local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
                                     for _=1, 4 do
-                                        local drawPos = (5)+(15)+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed*ScrollSpeedMod)
+                                        local drawPos = GetNoteCellY(0, ScrollSpeed*ScrollSpeedMod, 1, ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0, 5, 15)
                                         table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
                                     end
                                     Accuracy = Accuracy + 1
@@ -518,7 +518,7 @@ function scene.update(dt)
                             if (lastBeatCount % 0.5) > (scene.beatCount % 0.5) then
                                 local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
                                 for _=1, 4 do
-                                    local drawPos = (5)+(15)+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed*ScrollSpeedMod)
+                                    local drawPos = GetNoteCellY(0, ScrollSpeed*ScrollSpeedMod, 1, ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0, 5, 15)
                                     table.insert(Particles, {id = "holdgrind", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*32, vy = -(love.math.random()*2)*64, life = (love.math.random()*0.5+0.5)*0.25, color = NoteColors[note.lane+1][3], char = "¤"})
                                 end
                             end
@@ -818,20 +818,19 @@ function scene.draw()
     local jlBrightness = math.max(BoardBrightness,NoteBrightness)
     love.graphics.setColor(r3*jlBrightness,g3*jlBrightness,b3*jlBrightness,a3)
     do
-        local drawPos = (5)+(15)+(ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0)*(ScrollSpeed*ScrollSpeedMod)
+        local drawPos = GetNoteCellY(0, ScrollSpeed*ScrollSpeedMod, 1, ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0, 5, 15)
         if drawPos >= 5 and drawPos <= 20 then
             love.graphics.print("┈┈┈"..("╬┈┈┈"):rep(scene.chart.lanes-1), ((80-(scene.chart.lanes*4-1))/2 - 1+(1-1)*4 + 1)*8, drawPos*16-16)
-        end
-    end
 
-    -- Hit areas
-    for i = 1, scene.chart.lanes do
-        local x = (80-(scene.chart.lanes*4-1))/2 - 1+(i-1)*4 + 1
-        local v = math.ceil(math.min(1,PressAmounts[i])+HitAmounts[i]*2)
-        if v > 0 then
-            local drawPos = (5)+(15)+(ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0)*(ScrollSpeed*ScrollSpeedMod)
-            love.graphics.setColor(TerminalColors[NoteColors[((i-1)%(#NoteColors))+1][v+1]])
-            love.graphics.print("███", x*8 + AnaglyphSide*0.75, drawPos*16-16)
+            -- Hit areas
+            for i = 1, scene.chart.lanes do
+                local x = (80-(scene.chart.lanes*4-1))/2 - 1+(i-1)*4 + 1
+                local v = math.ceil(math.min(1,PressAmounts[i])+HitAmounts[i]*2)
+                if v > 0 then
+                    love.graphics.setColor(TerminalColors[NoteColors[((i-1)%(#NoteColors))+1][v+1]])
+                    love.graphics.print("███", x*8 + AnaglyphSide*0.75, drawPos*16-16)
+                end
+            end
         end
     end
 
@@ -842,7 +841,7 @@ function scene.draw()
             if t and type(t.draw) == "function" then
                 love.graphics.setFont(NoteFont)
                 love.graphics.setColor(NoteBrightness,NoteBrightness,NoteBrightness,1)
-                t.draw(note,scene.chart.time - SystemSettings.video_offset,(ScrollSpeed*ScrollSpeedMod)*NoteSpeedMods[note.lane+1][1],nil,nil,((80-(scene.chart.lanes*4-1))/2)+1)
+                t.draw(note,scene.chart.time - SystemSettings.video_offset,(ScrollSpeed*ScrollSpeedMod),nil,nil,((80-(scene.chart.lanes*4-1))/2)+1)
                 love.graphics.setFont(Font)
             end
         end

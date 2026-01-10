@@ -94,7 +94,7 @@ function scene.action(a)
         scene.chart:resetAllNotes()
         scene.chart:sort()
         scene.chart:recalculateCharge()
-        scene.chart.time = TimeBPM(-16,scene.chart.bpm)
+        scene.chart.time = SixteenthsToSeconds(-16,scene.chart.bpm)
         SceneManager.Transition("scenes/game", {songData = scene.songData, difficulty = scene.difficulty, next = scene.next})
     end
     if a == "back" then

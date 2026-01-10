@@ -28,3 +28,25 @@ function table.merge(a,b)
     end
     return a
 end
+
+function ReadableTime(s)
+    s = math.floor(math.max(0, s))
+    local m = tostring(math.floor(s/60))
+    s = tostring(s % 60)
+    return m .. ":" .. ("0"):rep(2-#s)..s
+end
+
+function SixteenthsToSeconds(t,bpm)
+    return 15*t/bpm
+end
+
+function SecondsToSixteenths(t,bpm)
+    return bpm*t/15
+end
+
+function GetNoteCellY(time, speed, laneMod, offset, chartY, chartHeight, upscroll)
+    if upscroll then
+        return chartY + 2 + (time * laneMod + offset) * speed
+    end
+    return chartY + chartHeight - (time * laneMod + offset) * speed
+end

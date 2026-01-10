@@ -11,43 +11,43 @@ local askToDeleteScores = false
 local confirmTimer = 0
 
 SettingsChart = SettingsChart or {
-    Note:new(TimeBPM(0, 60), 0, 0, "normal", {}),
-    Note:new(TimeBPM(2, 60), 1, 0, "normal", {}),
-    Note:new(TimeBPM(4, 60), 2, 0, "normal", {}),
-    Note:new(TimeBPM(6, 60), 3, 0, "normal", {}),
-    Note:new(TimeBPM(8, 60), 0, TimeBPM(1,60), "normal", {}),
-    Note:new(TimeBPM(10, 60), 2, TimeBPM(1,60), "normal", {}),
-    Note:new(TimeBPM(12, 60), 1, TimeBPM(1,60), "normal", {}),
-    Note:new(TimeBPM(14, 60), 3, TimeBPM(1,60), "normal", {}),
-    Note:new(TimeBPM(16, 60), 0, 0, "swap", {dir = -1}),
-    Note:new(TimeBPM(18, 60), 3, 0, "swap", {dir = 1}),
-    Note:new(TimeBPM(20, 60), 1, TimeBPM(1,60), "swap", {dir = -1}),
-    Note:new(TimeBPM(22, 60), 2, TimeBPM(1,60), "swap", {dir = 1}),
-    Note:new(TimeBPM(24, 60), 0, 0, "merge", {dir = 1}),
-    Note:new(TimeBPM(24, 60), 3, 0, "mine", {}),
-    Note:new(TimeBPM(26, 60), 1, 0, "merge", {dir = 1}),
-    Note:new(TimeBPM(28, 60), 2, 0, "merge", {dir = 1}),
-    Note:new(TimeBPM(28, 60), 0, 0, "mine", {}),
-    Note:new(TimeBPM(30, 60), 1, 0, "merge", {dir = 1}),
+    Note:new(SixteenthsToSeconds(0, 60), 0, 0, "normal", {}),
+    Note:new(SixteenthsToSeconds(2, 60), 1, 0, "normal", {}),
+    Note:new(SixteenthsToSeconds(4, 60), 2, 0, "normal", {}),
+    Note:new(SixteenthsToSeconds(6, 60), 3, 0, "normal", {}),
+    Note:new(SixteenthsToSeconds(8, 60), 0, SixteenthsToSeconds(1,60), "normal", {}),
+    Note:new(SixteenthsToSeconds(10, 60), 2, SixteenthsToSeconds(1,60), "normal", {}),
+    Note:new(SixteenthsToSeconds(12, 60), 1, SixteenthsToSeconds(1,60), "normal", {}),
+    Note:new(SixteenthsToSeconds(14, 60), 3, SixteenthsToSeconds(1,60), "normal", {}),
+    Note:new(SixteenthsToSeconds(16, 60), 0, 0, "swap", {dir = -1}),
+    Note:new(SixteenthsToSeconds(18, 60), 3, 0, "swap", {dir = 1}),
+    Note:new(SixteenthsToSeconds(20, 60), 1, SixteenthsToSeconds(1,60), "swap", {dir = -1}),
+    Note:new(SixteenthsToSeconds(22, 60), 2, SixteenthsToSeconds(1,60), "swap", {dir = 1}),
+    Note:new(SixteenthsToSeconds(24, 60), 0, 0, "merge", {dir = 1}),
+    Note:new(SixteenthsToSeconds(24, 60), 3, 0, "mine", {}),
+    Note:new(SixteenthsToSeconds(26, 60), 1, 0, "merge", {dir = 1}),
+    Note:new(SixteenthsToSeconds(28, 60), 2, 0, "merge", {dir = 1}),
+    Note:new(SixteenthsToSeconds(28, 60), 0, 0, "mine", {}),
+    Note:new(SixteenthsToSeconds(30, 60), 1, 0, "merge", {dir = 1}),
     -- LOOP #1
-    Note:new(TimeBPM(32+0, 60), 0, 0, "normal", {}),
-    Note:new(TimeBPM(32+2, 60), 1, 0, "normal", {}),
-    Note:new(TimeBPM(32+4, 60), 2, 0, "normal", {}),
-    Note:new(TimeBPM(32+6, 60), 3, 0, "normal", {}),
-    Note:new(TimeBPM(32+8, 60), 0, TimeBPM(1,60), "normal", {}),
-    Note:new(TimeBPM(32+10, 60), 2, TimeBPM(1,60), "normal", {}),
-    Note:new(TimeBPM(32+12, 60), 1, TimeBPM(1,60), "normal", {}),
-    Note:new(TimeBPM(32+14, 60), 3, TimeBPM(1,60), "normal", {}),
-    Note:new(TimeBPM(32+16, 60), 0, 0, "swap", {dir = -1}),
-    Note:new(TimeBPM(32+18, 60), 3, 0, "swap", {dir = 1}),
-    Note:new(TimeBPM(32+20, 60), 1, TimeBPM(1,60), "swap", {dir = -1}),
-    Note:new(TimeBPM(32+22, 60), 2, TimeBPM(1,60), "swap", {dir = 1}),
-    Note:new(TimeBPM(32+24, 60), 0, 0, "merge", {dir = 1}),
-    Note:new(TimeBPM(32+24, 60), 3, 0, "mine", {}),
-    Note:new(TimeBPM(32+26, 60), 1, 0, "merge", {dir = 1}),
-    Note:new(TimeBPM(32+28, 60), 2, 0, "merge", {dir = 1}),
-    Note:new(TimeBPM(32+28, 60), 0, 0, "mine", {}),
-    Note:new(TimeBPM(32+30, 60), 1, 0, "merge", {dir = 1})
+    Note:new(SixteenthsToSeconds(32+0, 60), 0, 0, "normal", {}),
+    Note:new(SixteenthsToSeconds(32+2, 60), 1, 0, "normal", {}),
+    Note:new(SixteenthsToSeconds(32+4, 60), 2, 0, "normal", {}),
+    Note:new(SixteenthsToSeconds(32+6, 60), 3, 0, "normal", {}),
+    Note:new(SixteenthsToSeconds(32+8, 60), 0, SixteenthsToSeconds(1,60), "normal", {}),
+    Note:new(SixteenthsToSeconds(32+10, 60), 2, SixteenthsToSeconds(1,60), "normal", {}),
+    Note:new(SixteenthsToSeconds(32+12, 60), 1, SixteenthsToSeconds(1,60), "normal", {}),
+    Note:new(SixteenthsToSeconds(32+14, 60), 3, SixteenthsToSeconds(1,60), "normal", {}),
+    Note:new(SixteenthsToSeconds(32+16, 60), 0, 0, "swap", {dir = -1}),
+    Note:new(SixteenthsToSeconds(32+18, 60), 3, 0, "swap", {dir = 1}),
+    Note:new(SixteenthsToSeconds(32+20, 60), 1, SixteenthsToSeconds(1,60), "swap", {dir = -1}),
+    Note:new(SixteenthsToSeconds(32+22, 60), 2, SixteenthsToSeconds(1,60), "swap", {dir = 1}),
+    Note:new(SixteenthsToSeconds(32+24, 60), 0, 0, "merge", {dir = 1}),
+    Note:new(SixteenthsToSeconds(32+24, 60), 3, 0, "mine", {}),
+    Note:new(SixteenthsToSeconds(32+26, 60), 1, 0, "merge", {dir = 1}),
+    Note:new(SixteenthsToSeconds(32+28, 60), 2, 0, "merge", {dir = 1}),
+    Note:new(SixteenthsToSeconds(32+28, 60), 0, 0, "mine", {}),
+    Note:new(SixteenthsToSeconds(32+30, 60), 1, 0, "merge", {dir = 1})
 }
 
 local root = {
@@ -902,8 +902,8 @@ function scene.update(dt)
     end
 
     chartTime = chartTime + dt
-    if chartTime >= TimeBPM(32,60) then
-        chartTime = chartTime - TimeBPM(32,60)
+    if chartTime >= SixteenthsToSeconds(32,60) then
+        chartTime = chartTime - SixteenthsToSeconds(32,60)
         for _,note in ipairs(SettingsChart) do
             note.destroyed = false
             note.heldFor = nil
