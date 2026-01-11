@@ -299,6 +299,7 @@ TearingModifier = Easer:new(0)
 BloomStrengthModifier = Easer:new(1)
 ZoomBlurStrengthModifier = Easer:new(0)
 SaturationModifier = Easer:new(1)
+NoteSpeedMods = {}
 
 ViewOffset = Easer:new(0)
 

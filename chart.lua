@@ -1094,7 +1094,6 @@ end
 ---@field bpmChanges table
 ---@field time number
 ---@field lanes integer
----@field name string
 ---@field charter string
 ---@field hideDifficulty boolean
 ---@field spoiler boolean?
@@ -1131,7 +1130,6 @@ function Chart:new(data)
         chart.totalCharge = chart.totalCharge + 1 + (note.length or 0)
     end
 
-    chart.name = data.name or "Chart"
     chart.lanes = data.lanes or 4
 
     chart.charter = data.charter or "Charter"
@@ -1224,7 +1222,6 @@ function Chart:save(path)
         table.insert(effects, {time = effect.time, type = effect.type, data = effect.data})
     end
     love.filesystem.write(path, json.encode({
-        name = self.name,
         lanes = self.lanes,
         song = self.song:sub(#getPathOf(self.song)+2, -1),
         video = self.video,

@@ -335,7 +335,7 @@ end
 
 local function effectPlacementDialog(effect, editing)
     local copy = table.merge({}, effect)
-    local container = DialogContainer:new(0,64,304,304,{})
+    local container = DialogContainer:new(0,96,304,304,{})
     local typeButton
     local apply = function(self) end
     local function set(effectType)
@@ -405,30 +405,35 @@ local function effectPlacementDialog(effect, editing)
         setscroll(scroll)
         table.insert(scene.dialogs, 1, dialog)
     end)
-    -- local typeInput = DialogInput:new(0, 0, 304, 16, "EFFECT TYPE", 35, nil, function(self)
-    --     set(self.content)
-    -- end)
+    local timeInput = DialogInput:new(0, 32, 304, 16, "EFFECT TIME", 35, nil, function(self)
+        copy.time = tonumber(self.content) or 0
+        self.content = tostring(copy.time)
+    end)
     local data = copy.data
     set(effectType)
+    timeInput.content = tostring(copy.time)
     local pos = 0
     local dataElements = {}
     local dialog = {
         title = (editing and "EDITING" or "PLACING") .. " EFFECT",
         width = 20,
-        height = 20,
+        height = 22,
         contents = {
             typeButton,
-            DialogLabel:new(0, 32, 304, "EFFECT DATA", "center"),
+            timeInput,
+            DialogLabel:new(0, 64, 304, "EFFECT DATA", "center"),
             container,
-            DialogButton:new(216, 256, 64, 16, "CANCEL", function ()
+            DialogButton:new(216, 288, 64, 16, "CANCEL", function ()
                 table.remove(scene.dialogs, 1)
             end),
-            DialogButton:new(120, 256, 64, 16, "NUDGE", function ()
+            DialogButton:new(120, 288, 64, 16, "NUDGE", function ()
                 effect.time = effect.time + 0.001
                 copy.time = copy.time + 0.001
+                timeInput.content = tostring(copy.time)
             end),
-            DialogButton:new(24, 256, 64, 16, editing and "APPLY" or "PLACE", function ()
+            DialogButton:new(24, 288, 64, 16, editing and "APPLY" or "PLACE", function ()
                 effect.type = effectType
+                effect.time = copy.time
                 if type(apply) == "function" then
                     apply(effect)
                 end
@@ -1089,6 +1094,57 @@ local editorMenu = {
                         table.remove(scene.dialogs, 1)
                     end))
                     table.insert(scene.dialogs, dialog)
+                    return true
+                end
+            },
+            {
+                id = "edit.delete_effects",
+                type = "action",
+                label = "CLEAR EFFECTS",
+                onclick = function()
+                    local dialog = {
+                        title = "CLEAR EFFECTS",
+                        width = 16,
+                        height = 9,
+                        contents = {
+                            DialogLabel:new(0, 16, 240, "ARE YOU SURE?\nTHIS CANNOT BE UNDONE!", "center"),
+                            DialogButton:new(136, 80, 64, 16, "CANCEL", function ()
+                                table.remove(scene.dialogs, 1)
+                            end),
+                            DialogButton:new(40, 80, 64, 16, "CLEAR", function ()
+                                scene.chart.effects = {}
+                                table.remove(scene.dialogs, 1)
+                            end)
+                        }
+                    }
+                    table.insert(scene.dialogs, 1, dialog)
+                    return true
+                end
+            },
+            {
+                id = "edit.clear_chart",
+                type = "action",
+                label = "CLEAR CHART",
+                onclick = function()
+                    local dialog = {
+                        title = "CLEAR CHART",
+                        width = 16,
+                        height = 9,
+                        contents = {
+                            DialogLabel:new(0, 16, 240, "THIS WILL REMOVE ALL NOTES, EFFECTS, AND BPM CHANGES!\nTHIS CANNOT BE UNDONE!", "center"),
+                            DialogButton:new(136, 80, 64, 16, "CANCEL", function ()
+                                table.remove(scene.dialogs, 1)
+                            end),
+                            DialogButton:new(40, 80, 64, 16, "CLEAR", function ()
+                                scene.chart.effects = {}
+                                scene.chart.notes = {}
+                                scene.chart.bpmChanges = {}
+
+                                table.remove(scene.dialogs, 1)
+                            end)
+                        }
+                    }
+                    table.insert(scene.dialogs, 1, dialog)
                     return true
                 end
             }
