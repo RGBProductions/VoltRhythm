@@ -35,7 +35,6 @@ Version = (require "version")()
 ChargeYield = 200
 XChargeYield = 50
 TimingWindow = 0.2
-OverchargeWindow = 0.125
 
 EffectTimescale = 1
 WindowFocused = true
@@ -51,7 +50,7 @@ NoteRatings = {
             end
         end,
         sampleColor = function() return OverchargeColors[love.math.random(1,#OverchargeColors)] end,
-        min = 0.9,
+        min = 1 - (40 / 200),
         max = math.huge
     },
     {
@@ -61,8 +60,8 @@ NoteRatings = {
             love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
         end,
         sampleColor = function() return ColorID.YELLOW end,
-        min = 0.8,
-        max = 0.9
+        min = 1 - (75 / 200),
+        max = 1 - (40 / 200)
     },
     {
         draw = function(ox,oy,center)
@@ -71,8 +70,8 @@ NoteRatings = {
             love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
         end,
         sampleColor = function() return ColorID.GOLD end,
-        min = 0.6,
-        max = 0.8
+        min = 1 - (110 / 200),
+        max = 1 - (75 / 200)
     },
     {
         draw = function(ox,oy,center)
@@ -81,8 +80,8 @@ NoteRatings = {
             love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
         end,
         sampleColor = function() return ColorID.GREEN end,
-        min = 0.4,
-        max = 0.6
+        min = 1 - (145 / 200),
+        max = 1 - (110 / 200)
     },
     {
         draw = function(ox,oy,center)
@@ -91,8 +90,8 @@ NoteRatings = {
             love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
         end,
         sampleColor = function() return ColorID.LIGHT_GRAY end,
-        min = 0.15,
-        max = 0.4
+        min = 1 - (180 / 200),
+        max = 1 - (145 / 200)
     },
     {
         draw = function(ox,oy,center)
@@ -101,8 +100,8 @@ NoteRatings = {
             love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
         end,
         sampleColor = function() return ColorID.RED end,
-        min = 0,
-        max = 0.15
+        min = -math.huge,
+        max = 1 - (180 / 200)
     }
 }
 

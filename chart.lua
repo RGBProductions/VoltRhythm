@@ -55,9 +55,7 @@ NoteTypes = {
         hit = function(self,time,lane)
             local pos = self.time-time
             if math.abs(pos) <= TimingWindow and lane == self.lane and not self.destroyed and not self.holding then
-                local t = OverchargeWindow
-                local accuracy = (math.abs(pos)/TimingWindow)
-                accuracy = math.max(0,math.min(1,(1/(1-t))*accuracy - ((1/(1-t))-1)))
+                local accuracy = math.max(0, math.min(1, math.abs(pos)/TimingWindow))
                 return true, accuracy, true
             end
             return false
@@ -113,9 +111,7 @@ NoteTypes = {
         hit = function(self,time,lane)
             local pos = self.time-time
             if math.abs(pos) <= TimingWindow and lane == self.lane and not self.destroyed and not self.holding then
-                local t = OverchargeWindow
-                local accuracy = (math.abs(pos)/TimingWindow)
-                accuracy = math.max(0,math.min(1,(1/(1-t))*accuracy - ((1/(1-t))-1)))
+                local accuracy = math.max(0, math.min(1, math.abs(pos)/TimingWindow))
                 return true, accuracy, true
             end
             return false
@@ -160,9 +156,7 @@ NoteTypes = {
             local pos = self.time-time
             local min,max = math.min(self.lane+self.extra.dir, self.lane), math.max(self.lane+self.extra.dir, self.lane)
             if math.abs(pos) <= TimingWindow and (lane >= min and lane <= max) and not self.destroyed and not self.holding then
-                local t = OverchargeWindow
-                local accuracy = (math.abs(pos)/TimingWindow)
-                accuracy = math.max(0,math.min(1,(1/(1-t))*accuracy - ((1/(1-t))-1)))
+                local accuracy = math.max(0, math.min(1, math.abs(pos)/TimingWindow))
                 if not self.laneAccuracies then
                     self.laneAccuracies = {}
                 end
