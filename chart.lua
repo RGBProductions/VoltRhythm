@@ -185,6 +185,7 @@ NoteTypes = {
                         Charge = Charge + 1
                         RatingCounts[rating] = RatingCounts[rating] + 1
                         Combo = Combo + 1
+                        HitAmounts[i+1] = 1
                     end
                 end
                 return true, avgAccuracy/amount, true
