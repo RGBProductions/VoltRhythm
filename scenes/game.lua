@@ -34,6 +34,117 @@ function GetRating(accValue)
     return #NoteRatings
 end
 
+FullComboAnimation = {
+    playing = false,
+    timer = 0,
+    particleTimer = 0
+}
+
+function DrawFC()
+    if not FullComboAnimation.playing then return end
+    local bracketSymbol = FullComboAnimation.timer < 0.5 and "[]" or (FullComboAnimation.timer < 0.6 and "==" or (FullComboAnimation.timer < 0.7 and "--"))
+    local showBrackets = FullComboAnimation.timer < 0.7
+    local dist = (FullComboAnimation.timer^2 / 0.4) * 10
+    local textAmount = math.floor(math.max(0, math.min(10, dist)))
+    local text = "FULL COMBO"
+    if textAmount > 0 then
+        love.graphics.setColor(TerminalColors[ColorID.MAGENTA])
+        local t = math.floor(textAmount/2)
+        local startX = 320-8*t
+        local startI = 5 - t + 1
+        local endI = 5 + t
+        for i = startI, endI do
+            love.graphics.print(text:sub(i,i), startX+(i-startI)*8, 232)
+        end
+    end
+    love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    if showBrackets then
+        love.graphics.print(bracketSymbol:sub(1,1), 320-math.floor(math.floor(dist)/2+1)*8-8, 232)
+        love.graphics.print(bracketSymbol:sub(2,2), 320+math.floor(math.floor(dist)/2+1)*8, 232)
+    end
+end
+
+function UpdateFC(dt)
+    dt = dt * 1.5
+    if FullComboAnimation.playing then
+        FullComboAnimation.timer = FullComboAnimation.timer + dt
+
+        if FullComboAnimation.timer >= 0.5 and FullComboAnimation.particleTimer <= 0 then
+            FullComboAnimation.particleTimer = FullComboAnimation.particleTimer + dt
+            for _ = 1, 16 do
+                local a = love.math.random()*math.pi*2
+                local x, y = math.sin(a), math.cos(a)
+                x = x / math.max(math.abs(x), math.abs(y))
+                y = y / math.max(math.abs(x), math.abs(y))
+                local v = (love.math.random()*0.5+0.5)*64
+                table.insert(Particles, {id = "fcanim", x = 320+x*5*8, y = 240+y*8, vx = x*v, vy = y*v, life = 0.5 * (love.math.random() * 0.5 + 0.5), color = ColorID.MAGENTA, char = "¤"})
+            end
+        end
+    end
+end
+
+FullOverchargeAnimation = {
+    playing = false,
+    timer = 0,
+    particleTimer = 0
+}
+
+function DrawFO()
+    if not FullOverchargeAnimation.playing then return end
+    local bracketSymbol = FullOverchargeAnimation.timer < 0.5 and "[]" or (FullOverchargeAnimation.timer < 0.6 and "==" or (FullOverchargeAnimation.timer < 0.7 and "--"))
+    local showBrackets = FullOverchargeAnimation.timer < 0.7
+    local dist = (FullOverchargeAnimation.timer^2 / 0.4) * 15
+    local textAmount = math.floor(math.max(0, math.min(15, dist)))
+    local text = "FULL OVERCHARGE"
+    if textAmount > 0 then
+        local t = math.floor(textAmount/2)
+        local startX = 320-8*t-4
+        local startI = 8 - t
+        local endI = 8 + t
+        for i = startI, endI do
+            local chunkColor = (math.floor(-love.timer.getTime()*#OverchargeColors)+i-1)%#OverchargeColors
+            love.graphics.setColor(TerminalColors[OverchargeColors[chunkColor+1]])
+            love.graphics.print(text:sub(i,i), startX+(i-startI)*8, 232)
+        end
+    end
+    love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    if showBrackets then
+        love.graphics.print(bracketSymbol:sub(1,1), 320-math.floor(math.floor(dist)/2+1)*8-8, 232)
+        love.graphics.print(bracketSymbol:sub(2,2), 320+math.floor(math.floor(dist)/2+1)*8, 232)
+    end
+end
+
+function UpdateFO(dt)
+    dt = dt * 1.5
+    if FullOverchargeAnimation.playing then
+        FullOverchargeAnimation.timer = FullOverchargeAnimation.timer + dt
+
+        if FullOverchargeAnimation.timer >= 0.4 and FullOverchargeAnimation.timer <= 0.7 then
+            FullOverchargeAnimation.particleTimer = FullOverchargeAnimation.particleTimer - dt
+            while FullOverchargeAnimation.particleTimer <= 0 do
+                FullOverchargeAnimation.particleTimer = FullOverchargeAnimation.particleTimer + 0.1
+                for _ = 1, 16 do
+                    local a = love.math.random()*math.pi*2
+                    local x, y = math.sin(a), math.cos(a)
+                    x = x / math.max(math.abs(x), math.abs(y))
+                    y = y / math.max(math.abs(x), math.abs(y))
+                    local v = (love.math.random()*0.5+0.5)*64
+                    table.insert(Particles, {id = "foanim", x = 320+x*5*8, y = 240+y*8, vx = x*v, vy = y*v, life = 0.5 * (love.math.random() * 0.5 + 0.5), color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
+                end
+            end
+        end
+    end
+end
+
+function TryPlayFCOrFO()
+    if scene.notesDestroyed < #scene.chart.notes then return end
+    if FullOvercharge then
+        FullOverchargeAnimation.playing = true
+    elseif ComboBreaks == 0 then
+        FullComboAnimation.playing = true
+    end
+end
+
 ---@param args {songData: SongData, scorePrefix: string?, difficulty: string, modifiers: table, isEditor?: boolean, forced?: boolean, masquerade?: string, chargeGate?: number, next?: {path: string, args?: table}}
 function scene.load(args)
     scene.next = args.next
@@ -71,13 +182,13 @@ function scene.load(args)
         scene.chart:resetAllNotes()
     end
     scene.modifiers = args.modifiers or {}
-    scene.chartName = "UNRAVELING STASIS"
     scene.chargeGate = args.chargeGate or 0.8
     scene.audioOffset = Showcase and 0 or SystemSettings.audio_offset or 0
     scene.bpmChangeTime = 0
     scene.bpmChangeBeats = 0
     scene.bpm = scene.chart.bpm
     scene.beatCount = SecondsToSixteenths(scene.chart.time - scene.bpmChangeTime, scene.bpm) / 4 + scene.bpmChangeBeats
+    scene.notesDestroyed = 0
     local colorIndexes = Save.Read("note_colors") or {ColorID.LIGHT_RED, ColorID.YELLOW, ColorID.LIGHT_GREEN, ColorID.LIGHT_BLUE}
     NoteColors = {
         ColorTransitionTable[colorIndexes[1]],
@@ -226,7 +337,11 @@ local function notePress(laneIndex)
                         table.insert(Particles, {id = "chargeup", x = x, y = 24*16+8, vx = love.math.random()*32, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = (c < 80 and ColorID.YELLOW) or (OverchargeColors[love.math.random(1,#OverchargeColors)]), char = "¤"})
                     end
                     if note.length <= 0 then
-                        note.destroyed = true
+                        if not note.destroyed then
+                            note.destroyed = true
+                            scene.notesDestroyed = scene.notesDestroyed + 1
+                            TryPlayFCOrFO()
+                        end
                     else
                         note.holding = true
                         note.heldFor = 0
@@ -369,6 +484,8 @@ function scene.update(dt)
         end
         return
     end
+    UpdateFC(dt)
+    UpdateFO(dt)
     EffectTimescale = love.keyboard.isDown("lshift") and 16 or (scene.modifiers.speed or 1)
     -- Update chart time and scroll chart
     local lastTime = scene.chart.time
@@ -498,6 +615,8 @@ function scene.update(dt)
                                 if note.length <= 0 then
                                     if not note.destroyed then
                                         note.destroyed = true
+                                        scene.notesDestroyed = scene.notesDestroyed + 1
+                                        TryPlayFCOrFO()
                                         i = i - 1
                                     end
                                 else
@@ -526,6 +645,8 @@ function scene.update(dt)
                             if note.heldFor >= note.length then
                                 if not note.destroyed then
                                     note.destroyed = true
+                                    scene.notesDestroyed = scene.notesDestroyed + 1
+                                    TryPlayFCOrFO()
                                     i = i - 1
                                 end
                             end
@@ -546,6 +667,8 @@ function scene.update(dt)
                         if note.length <= 0 then
                             if not note.destroyed then
                                 note.destroyed = true
+                                scene.notesDestroyed = scene.notesDestroyed + 1
+                                TryPlayFCOrFO()
                                 i = i - 1
                             end
                             Hits = Hits + 1
@@ -567,6 +690,8 @@ function scene.update(dt)
                                 end
                                 if not note.destroyed then
                                     note.destroyed = true
+                                    scene.notesDestroyed = scene.notesDestroyed + 1
+                                    TryPlayFCOrFO()
                                     i = i - 1
                                 end
                             else
@@ -583,6 +708,8 @@ function scene.update(dt)
                                         end
                                         if not note.destroyed then
                                             note.destroyed = true
+                                            scene.notesDestroyed = scene.notesDestroyed + 1
+                                            TryPlayFCOrFO()
                                             i = i - 1
                                         end
                                     else
@@ -883,6 +1010,9 @@ function scene.draw()
     -- a shader can be added here
     love.graphics.setColor(1,1,1)
     love.graphics.draw(GameDisplay)
+    
+    DrawFC()
+    DrawFO()
 
     if Paused or PauseTimer > 0 then
         love.graphics.setColor(0,0,0,0.75)
