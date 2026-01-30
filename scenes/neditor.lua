@@ -1046,11 +1046,13 @@ local editorMenu = {
                     }
                     local y = 16
                     for i,difficulty in ipairs(difficulties) do
-                        local numEffects = #((scene.songData:loadChart(difficulty) or {}).effects or {})
-                        local hasDifficulty = scene.songData:hasLevel(difficulty) and numEffects > 0 and difficulty ~= scene.difficulty
+                        local chart = scene.songData:loadChart(difficulty) or {}
+                        local numEffects = #(chart.effects or {})
+                        local numNotes = #(chart.notes or {})
+                        local hasDifficulty = scene.songData:hasLevel(difficulty) and (numNotes > 0 or numEffects > 0) and difficulty ~= scene.difficulty
                         if hasDifficulty then
                             local difficultyLabel = DialogDifficulty:new(32,y,128,difficulty,nil,"left")
-                            local numLabel = DialogLabel:new(32, y, 160, numEffects .. " EFFECT" .. (numEffects ~= 1 and "S" or ""), "right")
+                            local numLabel = DialogLabel:new(32, y, 160, numNotes .. " NOTE" .. (numNotes ~= 1 and "S" or ""), "right")
                             table.insert(dialog.contents, DialogButton:new(16,y,192,16,"",function()
                                 local savedialog = {
                                     title = "COPY CHART FROM " .. difficulty:upper(),
