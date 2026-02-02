@@ -36,6 +36,29 @@ local function getDirectorySeparator()
 	end
 end
 
+local function protectedAction(label, action)
+    if EditorDirty then
+        local dialog = {
+            title = "CHANGES NOT SAVED",
+            width = 16,
+            height = 9,
+            contents = {
+                DialogLabel:new(0, 16, 240, "YOUR CHART HAS UNSAVED CHANGES! ARE YOU SURE?", "center"),
+                DialogButton:new(136, 80, 64, 16, "CANCEL", function ()
+                    table.remove(scene.dialogs, 1)
+                end),
+                DialogButton:new(40, 80, 64, 16, label, function ()
+                    action()
+                    table.remove(scene.dialogs, 1)
+                end)
+            }
+        }
+        table.insert(scene.dialogs, 1, dialog)
+    else
+        action()
+    end
+end
+
 local buildRecentMenu
 
 local function hoistHistory(path,name)
@@ -82,6 +105,10 @@ local function findOverlaps()
                     end
                     local C2,D2 = other.time-0.01,other.time+(other.length or 0)+0.01
 
+                    if C2 >= D1 + 0.5 then
+                        break
+                    end
+
                     if aabb(A1,C1,B1-A1,D1-C1, A2,C2,B2-A2,D2-C2) then
                         scene.overlaps[note] = true
                         scene.overlaps[other] = true
@@ -117,6 +144,7 @@ local function writeChart(name)
         end
     end
     hoistHistory(scene.songData.path, scene.songData.name)
+    EditorDirty = false
     print("Wrote chart to " .. scene.songData.path)
 end
 
@@ -134,6 +162,7 @@ local function readChart(name)
     if scene.chart then scene.lastRating = scene.chart:getDifficulty() end
     findOverlaps()
     updateDiscord()
+    EditorDirty = false
     return true
 end
 
@@ -187,12 +216,12 @@ local function fileDialog(type)
                     end
                 end
                 if type == "r" then
-                    shutoffMusic()
-                    if not readChart(filenameInput.content) then
-                        
-                    else
-                        table.remove(scene.dialogs, 1)
-                    end
+                    protectedAction("OPEN", function()
+                        shutoffMusic()
+                        if readChart(filenameInput.content) then
+                            table.remove(scene.dialogs, 1)
+                        end
+                    end)
                 end
             end),
             DialogBox:new(4,0,488,200),
@@ -432,16 +461,12 @@ local function effectPlacementDialog(effect, editing)
                 timeInput.content = tostring(copy.time)
             end),
             DialogButton:new(24, 288, 64, 16, editing and "APPLY" or "PLACE", function ()
+                EditorDirty = true
                 effect.type = effectType
                 effect.time = copy.time
                 if type(apply) == "function" then
                     apply(effect)
                 end
-                -- effect.data = {}
-                -- for _,item in ipairs(dataElements) do
-                --     local v = item.value.content
-                --     effect.data[item.key.content] = tonumber(v) or v
-                -- end
                 if not editing then
                     local final = {time = copy.time, type = effect.type, data = effect.data}
                     table.insert(scene.chart.effects, final)
@@ -451,43 +476,6 @@ local function effectPlacementDialog(effect, editing)
             end)
         }
     }
-    -- local function addDataElement(k,v) end
-    -- local addButton = DialogButton:new(264,pos+64,32,16,"+",function(self)
-    --     addDataElement("","")
-    -- end)
-    -- addDataElement = function(k,v)
-    --     addButton.y = addButton.y + 48
-    --     local i = #dataElements+1
-    --     local key = DialogInput:new(0,pos+64,128,16,"KEY", 16, nil, nil)
-    --     local equals = DialogLabel:new(132, pos+64, 8, "=", "center")
-    --     local value = DialogInput:new(144,pos+64,96,16,"VALUE", 12, nil, nil)
-    --     local remove = DialogButton:new(264,pos+64,32,16,"-",function(self)
-    --         table.remove(dataElements,i)
-    --         table.remove(dialog.contents, table.index(dialog.contents, key))
-    --         table.remove(dialog.contents, table.index(dialog.contents, equals))
-    --         table.remove(dialog.contents, table.index(dialog.contents, value))
-    --         table.remove(dialog.contents, table.index(dialog.contents, self))
-    --         for j = i, #dataElements do
-    --             dataElements[j].key.y = dataElements[j].key.y - 48
-    --             dataElements[j].equals.y = dataElements[j].equals.y - 48
-    --             dataElements[j].value.y = dataElements[j].value.y - 48
-    --             dataElements[j].remove.y = dataElements[j].remove.y - 48
-    --         end
-    --         addButton.y = addButton.y - 48
-    --         pos = pos - 48
-    --     end)
-    --     key.content = k
-    --     value.content = tostring(v)
-    --     table.insert(dialog.contents, key)
-    --     table.insert(dialog.contents, equals)
-    --     table.insert(dialog.contents, value)
-    --     table.insert(dialog.contents, remove)
-    --     dataElements[i] = { key = key, equals = equals, value = value, remove = remove }
-    --     pos = pos + 48
-    -- end
-    -- for k,v in pairs(data) do
-    --     addDataElement(k,v)
-    -- end
     table.insert(scene.dialogs, 1, dialog)
 end
 
@@ -571,6 +559,7 @@ local function metadataDialog()
             previewEndInput,
             playPreviewButton,
             DialogButton:new(152, 256, 64, 16, "CLOSE", function ()
+                EditorDirty = true
                 stopPreview()
                 table.remove(scene.dialogs, 1)
             end)
@@ -591,6 +580,7 @@ local function groupDialog()
                 table.remove(scene.dialogs, 1)
             end),
             DialogButton:new(40, 80, 64, 16, "GROUP", function ()
+                EditorDirty = true
                 for _,note in ipairs(scene.selectedNotes) do
                     note.extra.group = groupnameInput.content
                 end
@@ -614,10 +604,6 @@ local function notePropertiesDialog(note)
         copy.type = noteType
         typeButton.label = noteType
         container.contents = {}
-        local t = NoteTypes[noteType] or {}
-        -- if type(t.editor) == "function" then
-        --     apply = t.editor(copy, container)
-        -- end
     end
 
     local noteType = copy.type or "NOTE TYPE"
@@ -691,13 +677,13 @@ local function notePropertiesDialog(note)
         height = 20,
         contents = {
             typeButton,
-            -- DialogLabel:new(0, 32, 304, "EFFECT DATA", "center"),
             timeInput,
             container,
             DialogButton:new(216, 256, 64, 16, "CANCEL", function ()
                 table.remove(scene.dialogs, 1)
             end),
             DialogButton:new(24, 256, 64, 16, "APPLY", function ()
+                EditorDirty = true
                 note.type = noteType
                 if type(apply) == "function" then
                     apply(note)
@@ -708,6 +694,17 @@ local function notePropertiesDialog(note)
         }
     }
     table.insert(scene.dialogs, 1, dialog)
+end
+
+local function exitEditor()
+    protectedAction("EXIT", function()
+        EditorDirty = false
+        shutoffMusic()
+        SavedEditorTime = nil
+        SavedEditorZoom = nil
+        SceneManager.Transition("scenes/menu")
+        SetCursor()
+    end)
 end
 
 local editorMenu = {
@@ -748,32 +745,35 @@ local editorMenu = {
                             end),
                             DialogButton:new(104, 208, 64, 16, "CREATE", function ()
                                 if songInput.file == nil then return end
-                                if love.filesystem.getInfo("editor_chart") then
-                                    for _,item in ipairs(love.filesystem.getDirectoryItems("editor_chart")) do
-                                        love.filesystem.remove("editor_chart/"..item)
+                                protectedAction("CREATE", function()
+                                    EditorDirty = true
+                                    if love.filesystem.getInfo("editor_chart") then
+                                        for _,item in ipairs(love.filesystem.getDirectoryItems("editor_chart")) do
+                                            love.filesystem.remove("editor_chart/"..item)
+                                        end
                                     end
-                                end
-								
-                                local splitName = songInput.filename:split(getDirectorySeparator())
-                                love.filesystem.createDirectory("editor_chart")
-                                if coverInput.file ~= nil then
-                                    love.filesystem.write("editor_chart/cover.png", coverInput.file:read())
-                                end
-                                love.filesystem.write("editor_chart/" .. splitName[#splitName], songInput.file:read())
-                                love.filesystem.write("editor_chart/info.json", json.encode({
-                                    name = nameInput.content,
-                                    author = authorInput.content,
-                                    coverArtist = artistInput.content,
-                                    song = splitName[#splitName],
-                                    bpm = tonumber(bpmInput.content),
-                                    charts = {}
-                                }))
-                                local songData = LoadSongData("editor_chart")
-                                scene.songData = songData
-                                scene.difficulty = "hard"
-                                scene.chart = scene.songData:loadChart(scene.difficulty)
-                                Assets.EraseCover("editor_chart")
-                                table.remove(scene.dialogs, 1)
+                                    
+                                    local splitName = songInput.filename:split(getDirectorySeparator())
+                                    love.filesystem.createDirectory("editor_chart")
+                                    if coverInput.file ~= nil then
+                                        love.filesystem.write("editor_chart/cover.png", coverInput.file:read())
+                                    end
+                                    love.filesystem.write("editor_chart/" .. splitName[#splitName], songInput.file:read())
+                                    love.filesystem.write("editor_chart/info.json", json.encode({
+                                        name = nameInput.content,
+                                        author = authorInput.content,
+                                        coverArtist = artistInput.content,
+                                        song = splitName[#splitName],
+                                        bpm = tonumber(bpmInput.content),
+                                        charts = {}
+                                    }))
+                                    local songData = LoadSongData("editor_chart")
+                                    scene.songData = songData
+                                    scene.difficulty = "hard"
+                                    scene.chart = scene.songData:loadChart(scene.difficulty)
+                                    Assets.EraseCover("editor_chart")
+                                    table.remove(scene.dialogs, 1)
+                                end)
                             end)
                         }
                     }
@@ -842,11 +842,7 @@ local editorMenu = {
                 type = "action",
                 label = "EXIT",
                 onclick = function()
-                    shutoffMusic()
-                    SavedEditorTime = nil
-                    SavedEditorZoom = nil
-                    SceneManager.Transition("scenes/menu")
-                    SetCursor()
+                    exitEditor()
                     return true
                 end
             },
@@ -863,7 +859,6 @@ local editorMenu = {
                 type = "action",
                 label = "METADATA",
                 onclick = function()
-                    -- print("edit song metadata")
                     if not scene.songData then return true end
                     metadataDialog()
                     return true
@@ -897,6 +892,7 @@ local editorMenu = {
                         local difficultyLabel = DialogDifficulty:new(16,48*(i-1),128,difficulty,nil,"left")
 
                         local levelInput = DialogInput:new(96,48*(i-1),32,16,"LVL",4,nil,function(self)
+                            EditorDirty = true
                             scene.songData.levels[difficulty] = tonumber(self.content) or self.content
                             scene.songData.charts[difficulty].level = tonumber(self.content) or self.content
                     
@@ -931,6 +927,7 @@ local editorMenu = {
                                         table.remove(scene.dialogs, 1)
                                     end),
                                     DialogButton:new(40, 80, 64, 16, "REMOVE", function ()
+                                        EditorDirty = true
                                         scene.songData:removeChart(difficulty)
                                         if scene.difficulty == difficulty then
                                             scene.difficulty = nil
@@ -951,6 +948,7 @@ local editorMenu = {
                             table.insert(scene.dialogs, 1, removedialog)
                         end)
                         addButton = DialogButton:new(184,48*(i-1),16,16,"+",function()
+                            EditorDirty = true
                             local chart = scene.songData:newChart(difficulty, difficultyBaseLevels[difficulty])
                             levelInput.content = tostring(scene.songData:getLevel(difficulty))
                             table.remove(dialog.contents, table.index(dialog.contents, addButton))
@@ -1008,6 +1006,7 @@ local editorMenu = {
                                             table.remove(scene.dialogs, 1)
                                         end),
                                         DialogButton:new(40, 96, 64, 16, "COPY", function ()
+                                            EditorDirty = true
                                             scene.chart.effects = table.merge({}, scene.songData:loadChart(difficulty).effects)
                                             table.remove(scene.dialogs, 1)
                                             table.remove(scene.dialogs, 1)
@@ -1064,6 +1063,7 @@ local editorMenu = {
                                             table.remove(scene.dialogs, 1)
                                         end),
                                         DialogButton:new(40, 96, 64, 16, "COPY", function ()
+                                            EditorDirty = true
                                             local other = scene.songData:loadChart(difficulty)
                                             if other then
                                                 scene.chart.notes = table.merge({}, other.notes)
@@ -1114,6 +1114,7 @@ local editorMenu = {
                                 table.remove(scene.dialogs, 1)
                             end),
                             DialogButton:new(40, 80, 64, 16, "CLEAR", function ()
+                                EditorDirty = true
                                 scene.chart.effects = {}
                                 table.remove(scene.dialogs, 1)
                             end)
@@ -1138,6 +1139,7 @@ local editorMenu = {
                                 table.remove(scene.dialogs, 1)
                             end),
                             DialogButton:new(40, 80, 64, 16, "CLEAR", function ()
+                                EditorDirty = true
                                 scene.chart.effects = {}
                                 scene.chart.notes = {}
                                 scene.chart.bpmChanges = {}
@@ -1350,8 +1352,10 @@ buildRecentMenu = function()
             label = itm.name,
             type = "action",
             onclick = function()
-                shutoffMusic()
-                readChart(id)
+                protectedAction("OPEN", function()
+                    shutoffMusic()
+                    readChart(id)
+                end)
                 return true
             end
         })
@@ -1608,14 +1612,16 @@ local function fullCopy(a,b)
 end
 
 function scene.directorydropped(path)
-    love.filesystem.mount(path, "temp_import")
-    local splitPath = path:split("/")
-    local name = splitPath[#splitPath]
-    love.filesystem.createDirectory("editor_save/"..name)
-    fullCopy("temp_import", "editor_save/"..name)
-    love.filesystem.unmount(path)
-    shutoffMusic()
-    readChart(name)
+    protectedAction("IMPORT", function()
+        love.filesystem.mount(path, "temp_import")
+        local splitPath = path:split("/")
+        local name = splitPath[#splitPath]
+        love.filesystem.createDirectory("editor_save/"..name)
+        fullCopy("temp_import", "editor_save/"..name)
+        love.filesystem.unmount(path)
+        shutoffMusic()
+        readChart(name)
+    end)
 end
 
 function scene.wheelmoved(x,y)
@@ -1627,12 +1633,8 @@ function scene.wheelmoved(x,y)
 end
 
 function scene.action(a)
-    if a == "back" then
-        shutoffMusic()
-        SavedEditorTime = nil
-        SavedEditorZoom = nil
-        SceneManager.Transition("scenes/menu")
-        SetCursor()
+    if a == "back" and HasGamepad then
+        exitEditor()
     end
 end
 
@@ -1680,6 +1682,7 @@ function scene.keypressed(k)
     end
     if k == "x" and love.keyboard.isDown("lctrl") then
         -- Cut
+        EditorDirty = true
         scene.clipboard = scene.selectedNotes
         for _,note in ipairs(scene.selectedNotes) do
             table.remove(scene.chart.notes, table.index(scene.chart.notes, note))
@@ -1690,6 +1693,7 @@ function scene.keypressed(k)
     end
     if k == "v" and love.keyboard.isDown("lctrl") then
         -- Paste
+        EditorDirty = true
         scene.selectedNotes = {}
         local baseX,baseY = math.huge,math.huge
         for _,note in ipairs(scene.clipboard) do
@@ -1708,6 +1712,7 @@ function scene.keypressed(k)
         findOverlaps()
     end
     if k == "delete" then
+        EditorDirty = true
         for _,note in ipairs(scene.selectedNotes) do
             table.remove(scene.chart.notes, table.index(scene.chart.notes, note))
         end
@@ -2057,6 +2062,11 @@ function scene.draw()
     if scene.difficulty then
         local level = scene.songData:getLevel(scene.difficulty)
         love.graphics.printf(scene.songData.name, 0, 400, 568, "right")
+        if EditorDirty then
+            love.graphics.setColor(TerminalColors[ColorID.LIGHT_RED])
+            love.graphics.print("*", 568-Font:getWidth(scene.songData.name)-16, 400)
+            love.graphics.setColor(TerminalColors[ColorID.WHITE])
+        end
         PrintDifficulty(568, 416, scene.difficulty or "easy", level or 0, "right")
 
         local cover = Assets.GetCover(scene.songData.path, scene.songData.coverAnimSpeed)
@@ -2171,6 +2181,7 @@ function scene.mousepressed(x,y,b,t,p)
             local speed = 25
             if scene.placementMode ~= placementModes.select then
                 if scene.placementMode < placementModes.bpm then
+                    EditorDirty = true
                     if scene.lastNoteLane >= 0 and scene.lastNoteLane <= 3 then
                         local noteType = notes[scene.placementMode]
                         scene.placement.placing = true
@@ -2205,6 +2216,7 @@ function scene.mousepressed(x,y,b,t,p)
                                 table.remove(scene.dialogs, 1)
                             end),
                             DialogButton:new(40, 80, 64, 16, "PLACE", function ()
+                                EditorDirty = true
                                 table.insert(scene.chart.bpmChanges, {time = time, bpm = tonumber(bpmInput.content)})
                                 table.remove(scene.dialogs, 1)
                                 scene.chart:sort()
@@ -2245,7 +2257,6 @@ function scene.mousepressed(x,y,b,t,p)
                     local C,D = note.time-0.05,note.time+note.length+0.05
                     if (scene.lastNoteLane >= A and scene.lastNoteLane <= B) and (scene.lastNoteTime >= C and scene.lastNoteTime <= D) then
                         if p == 2 then
-                            -- TODO: Note properties dialog
                             if #scene.selectedNotes == 1 then
                                 notePropertiesDialog(note)
                             else
@@ -2284,6 +2295,7 @@ function scene.mousepressed(x,y,b,t,p)
             
             local X,Y = chartX*8-24 - w, drawPos*16-24
             if x >= X and x < X+w and y >= Y-16 and y < Y+16+16 then
+                EditorDirty = true
                 table.remove(scene.chart.bpmChanges or {}, i)
                 for _=1,8 do
                     table.insert(Particles, {x = x, y = y, vx = (love.math.random()*2-1)*64, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = ColorID.RED, char = "¤"})
@@ -2304,6 +2316,7 @@ function scene.mousepressed(x,y,b,t,p)
             
             local X,Y = chartX*8+136 + (eX*12) - w, drawPos*16-24
             if x >= X and x < X+w and y >= Y-8 and y < Y+16+8 then
+                EditorDirty = true
                 table.remove(scene.chart.effects or {}, i)
                 for _=1,8 do
                     table.insert(Particles, {x = x, y = y, vx = (love.math.random()*2-1)*64, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = ColorID.RED, char = "¤"})
@@ -2325,6 +2338,7 @@ function scene.mousepressed(x,y,b,t,p)
 
             local C,D = math.min(note.time, note.time+length)-0.05, math.max(note.time, note.time+length)+0.05
             if (scene.lastNoteLane >= A and scene.lastNoteLane <= B) and (scene.lastNoteTime >= C and scene.lastNoteTime <= D) then
+                EditorDirty = true
                 table.remove(scene.chart.notes, i)
                 for _=1,8 do
                     table.insert(Particles, {x = x, y = y, vx = (love.math.random()*2-1)*64, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = ColorID.RED, char = "¤"})
@@ -2339,6 +2353,7 @@ end
 
 function scene.mousereleased(x,y,b)
     if scene.placement.placing then
+        EditorDirty = true
         local noteType = scene.placement.type
         local note = scene.placement.note
         if note and noteType == "merge" and note.extra.dir == 0 then
@@ -2349,6 +2364,7 @@ function scene.mousereleased(x,y,b)
         findOverlaps()
     end
     if scene.selection.dragging then
+        EditorDirty = true
         findOverlaps()
     end
     scene.placement.placing = false
