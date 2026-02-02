@@ -606,15 +606,15 @@ local function notePropertiesDialog(note)
         container.contents = {}
     end
 
-    local noteType = copy.type or "NOTE TYPE"
+    local noteType = copy.type or "none"
     typeButton = DialogButton:new(0, 0, 304, 16, "NOTE TYPE", function()
         local buttons = {}
         local names = {}
         for name,_ in pairs(NoteTypes) do
-            table.insert(names, {_.readable or name,name})
+            table.insert(names, name)
         end
         table.sort(names,function (a, b)
-            return a[1] < b[1]
+            return a < b
         end)
         local optionContainer = DialogContainer:new(0,0,304,240,{})
         local scroll = 0
@@ -638,10 +638,8 @@ local function notePropertiesDialog(note)
             }
         }
         local pos = 0
-        for _,val in pairs(names) do
-            local name = val[2]
-            local readable = val[1]
-            local button = DialogButton:new(16, 48*pos, 272, 16, readable, function ()
+        for _,name in pairs(names) do
+            local button = DialogButton:new(16, 48*pos, 272, 16, name, function ()
                 noteType = name
                 set(noteType)
                 table.remove(scene.dialogs, 1)
@@ -664,7 +662,8 @@ local function notePropertiesDialog(note)
         table.insert(scene.dialogs, 1, dialog)
     end)
     local timeInput = DialogInput:new(0, 48, 304, 16, "NOTE TIME", 24, nil, function(self)
-        print(self.content)
+        copy.time = tonumber(self.content) or copy.time
+        self.content = tostring(copy.time)
     end)
     timeInput.content = tostring(copy.time)
     local data = copy.data
@@ -684,7 +683,9 @@ local function notePropertiesDialog(note)
             end),
             DialogButton:new(24, 256, 64, 16, "APPLY", function ()
                 EditorDirty = true
-                note.type = noteType
+                note.type = copy.type
+                note.time = copy.time
+                note.extra = copy.extra
                 if type(apply) == "function" then
                     apply(note)
                 end
