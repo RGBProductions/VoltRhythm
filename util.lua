@@ -1,3 +1,11 @@
+utf8 = require "utf8"
+
+function utf8.sub(txt, i, j)
+    local o1 = (utf8.offset(txt,i) or (#txt))
+    local o2 = (utf8.offset(txt,j+1) or (#txt+1))-1
+    return txt:sub(o1,o2)
+end
+
 function string.split(inputstr, sep)
     if sep == nil then
         sep = "%s"

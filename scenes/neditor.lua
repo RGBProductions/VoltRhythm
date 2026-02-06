@@ -1,5 +1,3 @@
-local utf8 = require "utf8"
-
 require "dialogs"
 
 local scene = {}
@@ -1455,7 +1453,7 @@ function scene.load(args)
             width = 16,
             height = 14,
             contents = {
-                DialogLabel:new(0, 0, 240, "Hey, you!\nIt appears you are using a gamepad. Currently, the editor does not support gamepad input.\n\nYou may press " .. KeyLabel(Save.Read("keybinds.back")[2]) .. " to exit the editor and continue playing.", "center"),
+                DialogLabel:new(0, 0, 240, "Hey, you!\nIt appears you are using a gamepad. Currently, the editor does not support gamepad input.\n\nYou may press " .. KeyLabel(Save.Keybind("back")[2]) .. " to exit the editor and continue playing.", "center"),
                 DialogButton:new(88, 160, 64, 16, "OK", function ()
                     table.remove(scene.dialogs, 1)
                 end)

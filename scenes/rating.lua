@@ -1,11 +1,3 @@
-local utf8 = require "utf8"
-
-function utf8.sub(txt, i, j)
-    local o1 = (utf8.offset(txt,i) or (#txt))
-    local o2 = (utf8.offset(txt,j+1) or (#txt+1))-1
-    return txt:sub(o1,o2)
-end
-
 local scene = {}
 
 local resultsText = love.graphics.newImage("images/title/results.png")
@@ -110,10 +102,10 @@ end
 
 function scene.draw()
     local binds = {
-        back = HasGamepad and Save.Read("keybinds.back")[2] or Save.Read("keybinds.back")[1],
-        confirm = HasGamepad and Save.Read("keybinds.confirm")[2] or Save.Read("keybinds.confirm")[1],
-        show_more = HasGamepad and Save.Read("keybinds.show_more")[2] or Save.Read("keybinds.show_more")[1],
-        restart = HasGamepad and Save.Read("keybinds.restart")[2] or Save.Read("keybinds.restart")[1]
+        back = HasGamepad and Save.Keybind("back")[2] or Save.Keybind("back")[1],
+        confirm = HasGamepad and Save.Keybind("confirm")[2] or Save.Keybind("confirm")[1],
+        show_more = HasGamepad and Save.Keybind("show_more")[2] or Save.Keybind("show_more")[1],
+        restart = HasGamepad and Save.Keybind("restart")[2] or Save.Keybind("restart")[1]
     }
 
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
@@ -130,47 +122,47 @@ function scene.draw()
         local comboString = tostring(MaxCombo)
 
         love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
-        love.graphics.printf("PLAY SCORE", 48, 160 + 16*0, 160, "center")
+        DrawText(Localize("score_raw"), 48, 160 + 16*0, 160, "center")
 
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        love.graphics.print("CHARGE", 48, 160 + 16*1)
-        love.graphics.print("OVERCHARGE", 48, 160 + 16*2)
-        love.graphics.print("TOTAL CHARGE", 48, 160 + 16*3)
-        love.graphics.print(chargeString, 48+8*(20-utf8.len(chargeString)), 160 + 16*1)
-        love.graphics.print(overchargeString, 48+8*(20-utf8.len(overchargeString)), 160 + 16*2)
-        love.graphics.print(totalChargeString, 48+8*(20-utf8.len(totalChargeString)), 160 + 16*3)
+        DrawText(Localize("score_charge"), 48, 160 + 16*1)
+        DrawText(Localize("score_overcharge"), 48, 160 + 16*2)
+        DrawText(Localize("score_charge_total"), 48, 160 + 16*3)
+        DrawText(chargeString, 48+8*(20-utf8.len(chargeString)), 160 + 16*1)
+        DrawText(overchargeString, 48+8*(20-utf8.len(overchargeString)), 160 + 16*2)
+        DrawText(totalChargeString, 48+8*(20-utf8.len(totalChargeString)), 160 + 16*3)
 
-        love.graphics.print("X-CHARGE", 48, 160 + 16*5)
-        love.graphics.print(xchargeString, 48+8*(20-utf8.len(xchargeString)), 160 + 16*5)
+        DrawText(Localize("score_xcharge"), 48, 160 + 16*5)
+        DrawText(xchargeString, 48+8*(20-utf8.len(xchargeString)), 160 + 16*5)
 
-        love.graphics.print("AVG OFFSET", 48, 160 + 16*7)
-        love.graphics.print("MAX COMBO", 48, 160 + 16*8)
-        love.graphics.print(offsetString, 48+8*(20-utf8.len(offsetString)), 160 + 16*7)
-        love.graphics.print(comboString, 48+8*(20-utf8.len(comboString)), 160 + 16*8)
+        DrawText(Localize("score_offset"), 48, 160 + 16*7)
+        DrawText(Localize("score_combo"), 48, 160 + 16*8)
+        DrawText(offsetString, 48+8*(20-utf8.len(offsetString)), 160 + 16*7)
+        DrawText(comboString, 48+8*(20-utf8.len(comboString)), 160 + 16*8)
     else
         local chargeString = math.floor(scene.charge*ChargeValues[scene.difficulty].charge).."¤"
         local overchargeString = "+"..math.floor(scene.overcharge*ChargeValues[scene.difficulty].charge).."¤"
         local totalChargeString = math.floor((scene.charge+scene.overcharge)*ChargeValues[scene.difficulty].charge).."¤"
         local accuracyString = math.floor(Accuracy/math.max(Hits,1)*100*100)/100 .. "%"
 
-        love.graphics.print("CHARGE", 48, 160 + 16*0)
-        love.graphics.print("OVERCHARGE", 48, 160 + 16*1)
-        love.graphics.print("TOTAL CHARGE", 48, 160 + 16*2)
-        love.graphics.print("ACCURACY", 48, 160 + 16*3)
-        love.graphics.print(chargeString, 48+8*(20-utf8.len(chargeString)), 160 + 16*0)
-        love.graphics.print(overchargeString, 48+8*(20-utf8.len(overchargeString)), 160 + 16*1)
-        love.graphics.print(totalChargeString, 48+8*(20-utf8.len(totalChargeString)), 160 + 16*2)
-        love.graphics.print(accuracyString, 48+8*(20-utf8.len(accuracyString)), 160 + 16*3)
+        DrawText(Localize("score_charge"), 48, 160 + 16*0)
+        DrawText(Localize("score_overcharge"), 48, 160 + 16*1)
+        DrawText(Localize("score_charge_total"), 48, 160 + 16*2)
+        DrawText(Localize("score_acc"), 48, 160 + 16*3)
+        DrawText(chargeString, 48+8*(20-utf8.len(chargeString)), 160 + 16*0)
+        DrawText(overchargeString, 48+8*(20-utf8.len(overchargeString)), 160 + 16*1)
+        DrawText(totalChargeString, 48+8*(20-utf8.len(totalChargeString)), 160 + 16*2)
+        DrawText(accuracyString, 48+8*(20-utf8.len(accuracyString)), 160 + 16*3)
         
         for i,rating in ipairs(NoteRatings) do
             local x,y = 48, 160+(i+4)*16
             local countString = tostring(scene.ratings[i])
             NoteRatings[i].draw(x,y,false)
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
-            love.graphics.print(countString, 48+8*(20-utf8.len(countString)), y)
+            DrawText(countString, 48+8*(20-utf8.len(countString)), y)
         end
     end
-    love.graphics.printf(KeyLabel(binds.show_more) .. " - " .. (scene.showMore and "Back" or "More"), 48, 352, 160, "center")
+    DrawText(Localize(scene.showMore and "nav_back" or "nav_more"):format(KeyLabel(binds.show_more)), 48, 352, 160, "center")
 
     local songName = scene.songData.name
     local artistName = scene.songData.author
@@ -181,57 +173,64 @@ function scene.draw()
     love.graphics.setColor(1,1,1)
     love.graphics.draw(scene.cover, 272, 192, 0, 96/scene.cover:getWidth(), 96/scene.cover:getHeight())
     -- love.graphics.setColor(difficultyColor)
-    -- love.graphics.print(difficulty, 232+8*(22-#combinedDifficultyString)/2, 192)
+    -- DrawText(difficulty, 232+8*(22-#combinedDifficultyString)/2, 192)
     PrintDifficulty(232+88, 160, scene.difficulty or "easy", level, "center")
     -- love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    -- love.graphics.print(tostring(level), 232+8*((22-#combinedDifficultyString)/2 + #difficulty+1), 192)
+    -- DrawText(tostring(level), 232+8*((22-#combinedDifficultyString)/2 + #difficulty+1), 192)
 
     local startText = 1+math.floor(scene.textScroll)
     local endText = math.min(utf8.len(songName), 20)+math.floor(scene.textScroll)
     local displaySongName = utf8.sub(songName, startText, endText)
-    love.graphics.print(displaySongName, 232+8*(22-utf8.len(displaySongName))/2, 288 + 16*1)
+    DrawText(displaySongName, 232+8*(22-utf8.len(displaySongName))/2, 288 + 16*1)
 
     love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
-    love.graphics.print(artistName, 232+8*(22-#artistName)/2, 288 + 16*2)
+    DrawText(artistName, 232+8*(22-#artistName)/2, 288 + 16*2)
 
     love.graphics.setColor(1,1,1)
     love.graphics.draw(Ranks[scene.rank].image, 448, 184, 0, 4)
     if scene.plus then love.graphics.draw(Plus, 448, 184, 0, 4) end
-    local rankText = "RANK"
-    love.graphics.print(rankText, 424+8*(22-#rankText)/2, 160)
+    local rankText = Localize("score_rank")
+    DrawText(rankText, 424, 160, 176, "center")
     if scene.fullOvercharge then
-        local foText = "FULL OVERCHARGE"
-        for i = 1, #foText do
+        -- local foText = "FULL OVERCHARGE"
+        local foText = Localize("score_max")
+        for i = 1, utf8.len(foText) do
             local chunkColor = (math.floor(-love.timer.getTime()*#OverchargeColors)+i-1)%#OverchargeColors
             love.graphics.setColor(TerminalColors[OverchargeColors[chunkColor+1]])
-            love.graphics.print(foText:sub(i,i), 424+8*(22-#foText)/2+(i-1)*8, 320)
+            DrawText(utf8.sub(foText,i,i), 424+(176-Font:getWidth(foText))/2+Font:getWidth(utf8.sub(foText,1,i-1)), 320)
         end
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
     elseif scene.fullCombo then
-        local fcText = "FULL COMBO"
+        -- local fcText = "FULL COMBO"
+        local fcText = Localize("score_fc")
         love.graphics.setColor(TerminalColors[ColorID.MAGENTA])
-        love.graphics.print(fcText, 424+8*(22-#fcText)/2, 320)
+        DrawText(fcText, 424, 320, 176, "center")
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
     elseif scene.charge < scene.chargeGate*ChargeYield then
-        local uvText = "UNDERVOLTED..."
+        -- local uvText = "UNDERVOLTED..."
+        local uvText = Localize("score_fail")
         love.graphics.setColor(TerminalColors[ColorID.RED])
-        love.graphics.print(uvText, 424+8*(22-#uvText)/2, 320)
+        DrawText(uvText, 424, 320, 176, "center")
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
     end
 
     if Autoplay then
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        DrawBoxHalfWidth(32,22,14,1)
-        local autoText = Showcase and "SHOWCASE" or "AUTOPLAY"
-        love.graphics.print(autoText, 232+8*(22-#autoText)/2, 368)
+        -- DrawBoxHalfWidth(32,22,14,1)
+        local autoText = Localize(Showcase and "game_showcase" or "game_autoplay")
+        DrawBoxHalfWidth(((640-Font:getWidth(autoText))/2-16)/8,22,Font:getWidth(autoText)/8+2,1)
+        DrawText(autoText, 0, 368, 640, "center")
     elseif scene.newBest then
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        DrawBoxHalfWidth(32,22,14,1)
-        local nrText = "NEW RECORD!!"
+        local nrText = Localize("results_new_record")
+        local x = (640-Font:getWidth(nrText))/2
+        DrawBoxHalfWidth((x-16)/8,22,Font:getWidth(nrText)/8+2,1)
         for i = 1, #nrText do
             local chunkColor = (math.floor(-love.timer.getTime()*#OverchargeColors)+i-1)%#OverchargeColors
+            local c = utf8.sub(nrText,i,i)
             love.graphics.setColor(TerminalColors[OverchargeColors[chunkColor+1]])
-            love.graphics.print(nrText:sub(i,i), 232+8*(22-#nrText)/2+(i-1)*8, 368)
+            DrawText(c, x, 368)
+            x = x + Font:getWidth(c)
         end
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
     end
@@ -241,24 +240,24 @@ function scene.draw()
     local c = math.floor(Charge/scene.chart.totalCharge*100)
     if scene.chargeGate > 0 and scene.chargeGate < 1 then
         local gateX = (15+math.floor(50*scene.chargeGate))
-        love.graphics.print("┬\n\n┴", gateX*8, 6*16)
+        DrawText("┬\n\n┴", gateX*8, 6*16)
     end
-    love.graphics.print("┬\n\n┴", 55*8, 6*16)
+    DrawText("┬\n\n┴", 55*8, 6*16)
     love.graphics.setColor(TerminalColors[(c < 40 and 5) or (c < 80 and 15) or 11])
-    love.graphics.print(("█"):rep(math.min(41,c/2)), 15*8, 7*16)
+    DrawText(("█"):rep(math.min(41,c/2)), 15*8, 7*16)
     -- OVERCHARGE
     if c == c then
         local ocChunks = math.min(10,math.max(0,c/2-41))
         for i = 1, ocChunks do
             local chunkColor = (math.floor(-love.timer.getTime()*#OverchargeColors)+i-1)%#OverchargeColors
             love.graphics.setColor(TerminalColors[OverchargeColors[chunkColor+1]])
-            love.graphics.print("█", (55+i)*8, 7*16)
+            DrawText("█", (55+i)*8, 7*16)
         end
     end
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    love.graphics.printf(KeyLabel(binds.back) .. " - Exit", 32, 400, 576, "left")
-    love.graphics.printf(KeyLabel(binds.restart) .. " - Retry", 32, 400, 576, "center")
-    love.graphics.printf(KeyLabel(binds.confirm) .. " - Continue", 32, 400, 576, "right")
+    DrawText(Localize("nav_exit"):format(KeyLabel(binds.back)), 32, 400, 576, "left")
+    DrawText(Localize("nav_retry"):format(KeyLabel(binds.restart)), 32, 400, 576, "center")
+    DrawText(Localize("nav_continue"):format(KeyLabel(binds.confirm)), 32, 400, 576, "right")
 
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     DrawBoxHalfWidth(2, 1, 74, 3)

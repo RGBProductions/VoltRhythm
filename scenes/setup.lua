@@ -1,13 +1,5 @@
 local scene = {}
 
-local utf8 = require "utf8"
-
-function utf8.sub(txt, i, j)
-    local o1 = (utf8.offset(txt,i) or (#txt))
-    local o2 = (utf8.offset(txt,j+1) or (#txt+1))-1
-    return txt:sub(o1,o2)
-end
-
 local icons = {}
 for _,icon in ipairs(love.filesystem.getDirectoryItems("images/profile")) do
     if icon:sub(1,4) == "icon" then
@@ -354,10 +346,10 @@ function scene.draw()
         local showKeyboard = HasGamepad
         local kboffset = (showKeyboard and 64 or 0)
         DrawBoxHalfWidth(26, 12.5-kboffset/16, 26, 3)
-        love.graphics.printf("TYPE YOUR PROFILE'S NAME", 0, 216 - kboffset, 640, "center")
-        love.graphics.printf(scene.name, 0, 248-kboffset, 640, "center")
+        DrawText(Localize("setup_name"), 0, 216 - kboffset, 640, "center")
+        DrawText(scene.name, 0, 248-kboffset, 640, "center")
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        love.graphics.print("█", 320+(utf8.len(scene.name)*8)/2, 248-kboffset)
+        DrawText("█", 320+(utf8.len(scene.name)*8)/2, 248-kboffset)
         love.graphics.line(320-12*8, 264-kboffset, 320+12*8, 264-kboffset)
         if showKeyboard then
             for i,row in ipairs(keyboard.keys) do
@@ -382,7 +374,7 @@ function scene.draw()
                         if key[1] == 4 then
                             txt = KeyLabel({"gbutton","start"}) .. " CNFRM"
                         end
-                        love.graphics.printf(txt,(x+ox)+8,y+16,w*8,"center")
+                        DrawText(txt,(x+ox)+8,y+16,w*8,"center")
                     end
                     ox = ox + w * 8 + 16
                 end
@@ -392,7 +384,7 @@ function scene.draw()
     if scene.state == 1 then
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
         DrawBoxHalfWidth(21, 11, 36, 8)
-        love.graphics.printf("PROFILE ICON", 0, 192, 640, "center")
+        DrawText(Localize("setup_icon"), 0, 192, 640, "center")
         love.graphics.setColor(TerminalColors[scene.iconSetupPointer == 0 and ColorID.WHITE or ColorID.DARK_GRAY])
         DrawBoxHalfWidth(28-5, 14, 8, 4)
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
@@ -416,7 +408,7 @@ function scene.draw()
         love.graphics.rectangle("fill", 336+4+48-16-5*8, 264, 16, 16)
         love.graphics.setColor(TerminalColors[scene.iconSetupPointer == 3 and ColorID.WHITE or ColorID.DARK_GRAY])
         DrawBoxHalfWidth(51-5, 15.5, 9, 1)
-        love.graphics.print("CONFIRM", 424-5*8, 264)
+        DrawText(Localize("setup_confirm"), 424-5*8, 264)
 
         if scene.iconSelectingType == 1 then
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
@@ -431,8 +423,8 @@ function scene.draw()
                     love.graphics.setShader()
                 end
             end
-            love.graphics.print("├────────┤", 224-5*8, 224)
-            love.graphics.print("├────────┤", 224-5*8, 304)
+            DrawText("├────────┤", 224-5*8, 224)
+            DrawText("├────────┤", 224-5*8, 304)
         end
         if scene.iconSelectingType > 1 then
             local ox = scene.iconSelectingType == 2 and 0 or 6

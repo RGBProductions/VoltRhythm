@@ -20,6 +20,8 @@ function border.update(dt)
 end
 
 function border.draw()
+    local font = love.graphics.getFont()
+    love.graphics.setFont(LegacyFont)
     for i = 0, 34*4 do
         local t = math.floor(border.time)+i
         local x,y = xpos(t),ypos(t)
@@ -42,6 +44,7 @@ function border.draw()
         love.graphics.setColor(TerminalColors[OverchargeColors[(i%#OverchargeColors)+1]])
         love.graphics.print(chr, x*16, y*16)
     end
+    love.graphics.setFont(font)
 end
 
 return border

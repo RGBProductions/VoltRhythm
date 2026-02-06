@@ -1,13 +1,5 @@
 local scene = {}
 
-local utf8 = require "utf8"
-
-function utf8.sub(txt, i, j)
-    local o1 = (utf8.offset(txt,i) or (#txt))
-    local o2 = (utf8.offset(txt,j+1) or (#txt+1))-1
-    return txt:sub(o1,o2)
-end
-
 local profilesText = love.graphics.newImage("images/title/profiles.png")
 
 local addIcon = Assets.ProfileIcon("add")
@@ -70,18 +62,18 @@ end
 
 function scene.draw()
     local binds = {
-        confirm = HasGamepad and Save.Read("keybinds.confirm")[2] or Save.Read("keybinds.confirm")[1],
-        edit = HasGamepad and Save.Read("keybinds.edit_profile")[2] or Save.Read("keybinds.edit_profile")[1]
+        confirm = HasGamepad and Save.Keybind("confirm")[2] or Save.Keybind("confirm")[1],
+        edit = HasGamepad and Save.Keybind("edit_profile")[2] or Save.Keybind("edit_profile")[1]
     }
 
     local pos = 14-ProfilesView*6
 
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    love.graphics.printf(KeyLabel(binds.confirm) .. " - Select", 0, (16)*16, 176, "right")
+    DrawText(Localize("nav_select"):format(KeyLabel(binds.confirm)), 0, (16)*16, 176, "right")
     if ProfilesSelection >= #scene.profiles then
         love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
     end
-    love.graphics.printf(KeyLabel(binds.edit) .. " - Edit", 480, (16)*16, 176, "left")
+    DrawText(Localize("nav_edit"):format(KeyLabel(binds.edit)), 480, (16)*16, 176, "left")
 
     local function drawProfile(i,icon,profile)
         local name = profile.name
@@ -94,7 +86,7 @@ function scene.draw()
         end
         love.graphics.setColor(TerminalColors[ProfilesSelection == i-1 and ColorID.WHITE or ColorID.DARK_GRAY])
         DrawBoxHalfWidth(40-16, pos, 32, 4)
-        love.graphics.print("┬\n│\n│\n│\n│\n┴", 280, (pos)*16)
+        DrawText("┬\n│\n│\n│\n│\n┴", 280, (pos)*16)
         if icon then
             ProfileIconShader:send("color1", TerminalColors[profile.main_color or ColorID.LIGHT_RED])
             ProfileIconShader:send("color2", TerminalColors[profile.accent_color or ColorID.BLUE])
@@ -102,9 +94,9 @@ function scene.draw()
             love.graphics.draw(icon, 208, (pos+1)*16, 0, 2, 2)
             love.graphics.setShader()
         end
-        love.graphics.printf(name, 296, (pos+2)*16, 152, "left")
+        DrawText(name, 296, (pos+2)*16, 152, "left")
         if progress then
-            love.graphics.printf(progress .. "%", 296, (pos+2)*16, 152, "right")
+            DrawText(progress .. "%", 296, (pos+2)*16, 152, "right")
         end
         pos = pos + 6
     end

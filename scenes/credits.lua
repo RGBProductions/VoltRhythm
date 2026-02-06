@@ -1,5 +1,3 @@
-local utf8 = require "utf8"
-
 local scene = {}
 
 local credits = json.decode(love.filesystem.read("credits.json"))
@@ -48,10 +46,10 @@ function scene.draw()
         local itmY = (i-y)*(64+16*maxY)+16*((maxY-#credit.items)/2+1)
         local itmX = (640-maxX*8)/2
         DrawBoxHalfWidth(itmX/8-1, itmY/16-1, maxX, #credit.items+2)
-        love.graphics.printf(credit.name .. (credit.url and " 🔗" or ""), itmX, itmY+((credit.type == "menu" or credit.type == "action") and 16 or 0), maxX*8, "center")
+        DrawText(credit.name .. (credit.url and " 🔗" or ""), itmX, itmY+((credit.type == "menu" or credit.type == "action") and 16 or 0), maxX*8, "center")
         love.graphics.setColor(TerminalColors[CreditsSelection == i-1 and ColorID.LIGHT_GRAY or ColorID.DARK_GRAY])
         for j,itm in ipairs(credit.items) do
-            love.graphics.printf(itm, itmX, itmY+16*(j+1), maxX*8, "center")
+            DrawText(itm, itmX, itmY+16*(j+1), maxX*8, "center")
         end
     end
 

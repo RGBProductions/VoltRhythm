@@ -1,5 +1,3 @@
-local utf8 = require "utf8"
-
 local scene = {}
 
 local num = 0

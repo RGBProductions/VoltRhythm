@@ -1,5 +1,3 @@
-local utf8 = require "utf8"
-
 local scene = {}
 
 ---@type love.Source|nil
@@ -41,19 +39,23 @@ function SongSelectSetSelectedSong(song, difficulty)
 
     local j = table.index(SongDifficultyOrder, difficulty)
     if not table.index(item.difficulties, difficulty) then
-        if table.index(item.difficulties, SongDifficultyOrder[math.min(j+1, 4)]) then
-            j = math.min(j+1, 4)
-        elseif table.index(item.difficulties, SongDifficultyOrder[math.max(j-1, 1)]) then
-            j = math.max(j-1, 1)
+        if SongSelectOvervoltMode then
+            j = 11-j
         else
-            for i = 1, 4 do
-                if table.index(item.difficulties, SongDifficultyOrder[(j+i-1)%4+1]) then
-                    j = (j+i-1)%4+1
-                    break
-                end
-                if table.index(item.difficulties, SongDifficultyOrder[(j-i-1)%4+1]) then
-                    j = (j-i-1)%4+1
-                    break
+            if table.index(item.difficulties, SongDifficultyOrder[math.min(j+1, 4)]) then
+                j = math.min(j+1, 4)
+            elseif table.index(item.difficulties, SongDifficultyOrder[math.max(j-1, 1)]) then
+                j = math.max(j-1, 1)
+            else
+                for i = 1, 4 do
+                    if table.index(item.difficulties, SongDifficultyOrder[(j+i-1)%4+1]) then
+                        j = (j+i-1)%4+1
+                        break
+                    end
+                    if table.index(item.difficulties, SongDifficultyOrder[(j-i-1)%4+1]) then
+                        j = (j-i-1)%4+1
+                        break
+                    end
                 end
             end
         end
@@ -90,7 +92,7 @@ function SongSelectSetSelectedSong(song, difficulty)
             stopTime = preview:tell("seconds")
             preview:stop()
         end
-        previewTimes = data.songPreview
+        previewTimes = data.songPreview or {0,math.huge}
         preview = nextPreview
         preview:setLooping(true)
         preview:setVolume(SystemSettings.song_volume)
@@ -145,7 +147,17 @@ function scene.load(args)
 
     SongSelectHasNormal = #scene.disk.normalSongs > 0
     SongSelectHasOvervolt = #scene.disk.overvoltSongs > 0
-    SongSelectOvervoltUnlocked = true
+
+    SongSelectOvervoltUnlocked = false
+    for _,song in ipairs(scene.disk.overvoltSongs) do
+        for _,diff in ipairs(song.difficulties) do
+            if song.lock and song.lock:check(scene.disk, diff).passed then
+                SongSelectOvervoltUnlocked = true
+                break
+            end
+        end
+        if SongSelectOvervoltUnlocked then break end
+    end
 
     SongSelectSetSelectedSong(scene.selected.identifier, SongDifficultyOrder[SongSelectDifficulty])
 
@@ -181,34 +193,26 @@ function scene.action(a)
     if a == "left" then
         SongSelectSetSelectedSong(set[((SongSelectSelectedSong - 2) % #set) + 1].identifier, SongDifficultyOrder[SongSelectDifficulty])
     end
-    local selected = set[SongSelectSelectedSong]
+    -- local selected = set[SongSelectSelectedSong]
     if a == "up" then
-        if selected.songData then
-            repeat
-                if SongSelectOvervoltMode then
-                    SongSelectDifficulty = ((SongSelectDifficulty - 4) % 2) + 5
-                else
-                    SongSelectDifficulty = (SongSelectDifficulty % 4) + 1
-                end
-            until table.index(selected.difficulties, SongDifficultyOrder[SongSelectDifficulty])
+        if scene.selected.songData then
+            local diff = table.index(scene.selected.difficulties, SongDifficultyOrder[SongSelectDifficulty])
+            diff = diff % #scene.selected.difficulties + 1
+            SongSelectDifficulty = table.index(SongDifficultyOrder, scene.selected.difficulties[diff])
         end
         SongSelectDifficultyView:start(SongSelectDifficulty, "outExpo", 0.3)
     end
     if a == "down" then
-        if selected.songData then
-            repeat
-                if SongSelectOvervoltMode then
-                    SongSelectDifficulty = ((SongSelectDifficulty - 6) % 2) + 5
-                else
-                    SongSelectDifficulty = ((SongSelectDifficulty - 2) % 4) + 1
-                end
-            until table.index(selected.difficulties, SongDifficultyOrder[SongSelectDifficulty])
+        if scene.selected.songData then
+            local diff = table.index(scene.selected.difficulties, SongDifficultyOrder[SongSelectDifficulty])
+            diff = (diff - 2) % #scene.selected.difficulties +1
+            SongSelectDifficulty = table.index(SongDifficultyOrder, scene.selected.difficulties[diff])
         end
         SongSelectDifficultyView:start(SongSelectDifficulty, "outExpo", 0.3)
     end
     if a == "overvolt" then
         local nextSet = set == scene.disk.normalSongs and scene.disk.overvoltSongs or scene.disk.normalSongs
-        local choice = nextSet[selected.linkedTo or selected.identifier] or nextSet[1]
+        local choice = nextSet[scene.selected.linkedTo or scene.selected.identifier] or nextSet[1]
         if nextSet == scene.disk.overvoltSongs then
             SongSelectSetSelectedSong(choice.identifier, table.index(choice.difficulties, "overvolt") and "overvolt" or "hidden")
         else
@@ -244,14 +248,14 @@ end
 
 function scene.draw()
     local binds = {
-        back = HasGamepad and Save.Read("keybinds.back")[2] or Save.Read("keybinds.back")[1],
-        confirm = HasGamepad and Save.Read("keybinds.confirm")[2] or Save.Read("keybinds.confirm")[1],
-        show_more = HasGamepad and Save.Read("keybinds.show_more")[2] or Save.Read("keybinds.show_more")[1],
-        overvolt = HasGamepad and Save.Read("keybinds.overvolt")[2] or Save.Read("keybinds.overvolt")[1]
+        back = HasGamepad and Save.Keybind("back")[2] or Save.Keybind("back")[1],
+        confirm = HasGamepad and Save.Keybind("confirm")[2] or Save.Keybind("confirm")[1],
+        show_more = HasGamepad and Save.Keybind("show_more")[2] or Save.Keybind("show_more")[1],
+        overvolt = HasGamepad and Save.Keybind("overvolt")[2] or Save.Keybind("overvolt")[1]
     }
 
     local set = SongSelectOvervoltMode and scene.disk.overvoltSongs or scene.disk.normalSongs
-    local selected = set[SongSelectSelectedSong]
+    -- local selected = set[SongSelectSelectedSong]
 
     local function drawSong(song)
         local pos = song.position * 128
@@ -263,7 +267,7 @@ function scene.draw()
 
         local targetDiff = SongDifficultyOrder[SongSelectDifficulty]
         if not table.index(song.difficulties, targetDiff) then
-            for i = 1, 4 do
+            for i = 1, 6 do
                 local i1 = table.index(song.difficulties, SongDifficultyOrder[SongSelectDifficulty+i])
                 if i1 then
                     targetDiff = song.difficulties[i1]
@@ -283,14 +287,14 @@ function scene.draw()
                 for X = -0.5, 5.5 do
                     local color = TerminalColors[OverchargeColors[(math.floor(love.timer.getTime()*6 + (Y-X))%#OverchargeColors)+1]]
                     love.graphics.setColor(color)
-                    love.graphics.print("██", x-48*s+X*16*s, 280-48*s+Y*16*s, 0, s, s)
+                    DrawText("██", x-48*s+X*16*s, 280-48*s+Y*16*s, nil, nil, nil, 0, s, s)
                 end
             end
         end
 
         local b = song.unlocks[targetDiff].passed and 1 or 0.25
         love.graphics.setColor(0.5*b,0.5*b,0.5*b)
-        if song == selected then
+        if song == scene.selected then
             love.graphics.setColor(1*b,1*b,1*b)
         end
         song.cover = Assets.GetCover((song.songData or {}).path, (song.songData or {}).coverAnimSpeed)
@@ -308,42 +312,43 @@ function scene.draw()
     love.graphics.draw(songselectText, 320, 32, 0, 2, 2, songselectText:getWidth()/2, 0)
 
     DrawBoxHalfWidth(2, 6, 74, 6)
-    local difficulty = SongSelectOvervoltMode and (table.index(SongDifficultyOrder, selected.difficulties[#selected.difficulties]) or 5) or SongSelectDifficulty
+    local difficulty = SongSelectOvervoltMode and (table.index(SongDifficultyOrder, scene.selected.difficulties[#scene.selected.difficulties]) or 5) or SongSelectDifficulty
     local diffname = SongDifficultyOrder[difficulty]
-    local savedRating = Save.Read("songs."..(selected.scorePrefix or "")..selected.identifier.."."..SongDifficultyOrder[difficulty])
-    local unlocked = selected.unlocks[diffname].passed
+    local savedRating = Save.Read("songs."..(scene.selected.scorePrefix or "")..scene.selected.identifier.."."..SongDifficultyOrder[difficulty])
+    local unlocked = scene.selected.unlocks[diffname].passed
     if not unlocked then
-        local numReqs = #selected.unlocks[diffname].conditions
+        local numReqs = #scene.selected.unlocks[diffname].conditions
         local y = 152-((numReqs-1)*16)/2
-        for i,condition in ipairs(selected.unlocks[diffname].conditions) do
+        for i,condition in ipairs(scene.selected.unlocks[diffname].conditions) do
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
             if condition.passed then
                 love.graphics.setColor(TerminalColors[ColorID.LIGHT_GREEN])
             end
-            love.graphics.printf(condition.display, 0, y+(i-1)*16, 640, "center")
+            DrawText(condition.display, 0, y+(i-1)*16, 640, "center")
         end
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
     elseif not savedRating then
-        love.graphics.printf("- NO DATA -", 0, 152, 640, "center")
+        DrawText(Localize("songselect_nodata"), 0, 152, 640, "center")
     else
-        love.graphics.printf("BEST RANK", 0, 112, 640, "center")
+        DrawText(Localize("score_bestrank"), 0, 112, 640, "center")
 
         local ratingImage = Ranks[savedRating.rank].image
         love.graphics.draw(ratingImage, 320, 160, 0, 2, 2, ratingImage:getWidth()/2, ratingImage:getHeight()/2)
         if savedRating.plus then love.graphics.draw(Plus, 320, 160, 0, 2, 2, Plus:getWidth()/2, Plus:getHeight()/2) end
 
         if savedRating.fullOvercharge then
-            local foText = "FULL OVERCHARGE"
-            for i = 1, #foText do
+            local foText = Localize("score_max")
+            for i = 1, utf8.len(foText) do
                 local chunkColor = (math.floor(-love.timer.getTime()*#OverchargeColors)+i-1)%#OverchargeColors
                 love.graphics.setColor(TerminalColors[OverchargeColors[chunkColor+1]])
-                love.graphics.print(foText:sub(i,i), 320-(8*#foText)/2+(i-1)*8, 192)
+                DrawText(utf8.sub(foText,i,i), 320-Font:getWidth(foText)/2+Font:getWidth(utf8.sub(foText,1,i-1)), 192)
             end
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
         elseif savedRating.fullCombo then
-            local fcText = "FULL COMBO"
+            -- local fcText = "FULL COMBO"
+            local fcText = Localize("score_fc")
             love.graphics.setColor(TerminalColors[ColorID.MAGENTA])
-            love.graphics.print(fcText, 320-(8*#fcText)/2, 192)
+            DrawText(fcText, 0, 192, 640, "center")
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
         end
 
@@ -353,27 +358,25 @@ function scene.draw()
                 local countString = tostring(savedRating.ratings[i])
                 NoteRatings[i].draw(x,y,false)
                 love.graphics.setColor(TerminalColors[ColorID.WHITE])
-                love.graphics.print(countString, x+8*(20-#(countString)), y)
+                DrawText(countString, x+8*(20-#(countString)), y)
             end
-            -- love.graphics.print("CHARGE: " .. (savedRating.charge or 0) .. " + " .. (savedRating.overcharge or 0) .. "¤", 48, 128)
-            love.graphics.print("CHARGE", 64, 128-16)
-            love.graphics.print("OVERCHARGE", 64, 144-16)
-            love.graphics.print("X-CHARGE", 64, 160-16)
-            love.graphics.print("ACCURACY", 64, 176-16)
+            -- DrawText("CHARGE: " .. (savedRating.charge or 0) .. " + " .. (savedRating.overcharge or 0) .. "¤", 48, 128)
+            DrawText(Localize("score_charge"), 64, 128-16)
+            DrawText(Localize("score_overcharge"), 64, 144-16)
+            DrawText(Localize("score_xcharge"), 64, 160-16)
+            DrawText(Localize("score_acc"), 64, 176-16)
             
             local c = math.floor((savedRating.charge or 0)*ChargeValues[SongDifficultyOrder[difficulty]].charge)
             local o = math.floor((savedRating.overcharge or 0)*ChargeValues[SongDifficultyOrder[difficulty]].charge)
             local x = math.floor(((savedRating.charge or 0) + (savedRating.overcharge or 0))/ChargeYield*XChargeYield*ChargeValues[SongDifficultyOrder[difficulty]].xcharge)
-            love.graphics.print(c .. "¤", 64+8*(19-#tostring(c)), 128-16)
-            love.graphics.print("+" .. o .. "¤", 64+8*(19-#("+" .. tostring(o))), 144-16)
-            love.graphics.print(x .. "¤", 64+8*(19-#tostring(x)), 160-16)
-            love.graphics.print(math.floor((savedRating.accuracy or 0)*100*100)/100 .. "%", 64+8*(19-#tostring(math.floor((savedRating.accuracy or 0)*100*100)/100)), 176-16)
-
-            love.graphics.printf(KeyLabel(binds.show_more) .. " - OVERALL", 64, 192, 160, "center")
+            DrawText(c .. "¤", 64+8*(19-#tostring(c)), 128-16)
+            DrawText("+" .. o .. "¤", 64+8*(19-#("+" .. tostring(o))), 144-16)
+            DrawText(x .. "¤", 64+8*(19-#tostring(x)), 160-16)
+            DrawText(math.floor((savedRating.accuracy or 0)*100*100)/100 .. "%", 64+8*(19-#tostring(math.floor((savedRating.accuracy or 0)*100*100)/100)), 176-16)
         else
             local ratings = {}
-            for _,diff in ipairs(selected.difficulties) do
-                ratings[diff] = Save.Read("songs."..(selected.scorePrefix or "")..selected.identifier.."."..diff) or {}
+            for _,diff in ipairs(scene.selected.difficulties) do
+                ratings[diff] = Save.Read("songs."..(scene.selected.scorePrefix or "")..scene.selected.identifier.."."..diff) or {}
             end
             local c,o,x = 0,0,0
             for diff,rating in pairs(ratings) do
@@ -383,118 +386,107 @@ function scene.draw()
             end
             c,o,x = math.floor(c),math.floor(o),math.floor(x)
 
-            love.graphics.print("TOTAL CHARGE", 320+88, 128-16)
-            love.graphics.print("TOTAL OVERCHARGE", 320+88, 144-16)
-            love.graphics.print("TOTAL X-CHARGE", 320+88, 160-16)
+            DrawText(Localize("score_charge_total"), 320+88, 128-16)
+            DrawText(Localize("score_overcharge_total"), 320+88, 144-16)
+            DrawText(Localize("score_xcharge_total"), 320+88, 160-16)
             
-            love.graphics.print(c .. "¤", 320+80+8*(22-#tostring(c)), 128-16)
-            love.graphics.print("+" .. o .. "¤", 320+80+8*(22-#("+" .. tostring(o))), 144-16)
-            love.graphics.print(x .. "¤", 320+80+8*(22-#tostring(x)), 160-16)
+            DrawText(c .. "¤", 320+80+8*(22-#tostring(c)), 128-16)
+            DrawText("+" .. o .. "¤", 320+80+8*(22-#("+" .. tostring(o))), 144-16)
+            DrawText(x .. "¤", 320+80+8*(22-#tostring(x)), 160-16)
 
             local pc = math.floor((savedRating.charge or 0))
             local po = math.floor((savedRating.overcharge or 0))
             local px = math.floor(((savedRating.charge or 0) + (savedRating.overcharge or 0))/ChargeYield*XChargeYield)
 
-            love.graphics.print("PLAY CHARGE", 64-8, 128-16)
-            love.graphics.print("PLAY OVERCHARGE", 64-8, 144-16)
-            love.graphics.print("PLAY X-CHARGE", 64-8, 160-16)
-            love.graphics.print("PLAY ACCURACY", 64-8, 176-16)
+            DrawText(Localize("score_charge_raw"), 64-8, 128-16)
+            DrawText(Localize("score_overcharge_raw"), 64-8, 144-16)
+            DrawText(Localize("score_xcharge_raw"), 64-8, 160-16)
+            DrawText(Localize("score_acc_raw"), 64-8, 176-16)
             
-            love.graphics.print(pc .. "¤", 64+8*(20-#tostring(pc)), 128-16)
-            love.graphics.print("+" .. po .. "¤", 64+8*(20-#("+" .. tostring(po))), 144-16)
-            love.graphics.print(px .. "¤", 64+8*(20-#tostring(px)), 160-16)
-            love.graphics.print(math.floor((savedRating.accuracy or 0)*100*100)/100 .. "%", 64+8*(20-#tostring(math.floor((savedRating.accuracy or 0)*100*100)/100)), 176-16)
-
-            love.graphics.printf(KeyLabel(binds.show_more) .. " - CHART", 64, 192, 160, "center")
+            DrawText(pc .. "¤", 64+8*(20-#tostring(pc)), 128-16)
+            DrawText("+" .. po .. "¤", 64+8*(20-#("+" .. tostring(po))), 144-16)
+            DrawText(px .. "¤", 64+8*(20-#tostring(px)), 160-16)
+            DrawText(math.floor((savedRating.accuracy or 0)*100*100)/100 .. "%", 64+8*(20-#tostring(math.floor((savedRating.accuracy or 0)*100*100)/100)), 176-16)
         end
+
+        DrawText(Localize(scene.showMore and "nav_chart" or "nav_overall"):format(KeyLabel(binds.show_more)), 64, 192, 160, "center")
     end
 
     DrawBoxHalfWidth(2, 21, 74, 3)
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    local hide = (selected.lock or {}).hideUntilUnlocked and not unlocked
-    local emblem = Assets.Emblem(selected.songData.emblem)
+    local hide = (scene.selected.lock or {}).hideUntilUnlocked and not unlocked
+    local emblem = Assets.Emblem(scene.selected.songData.emblem)
     local emblemSize = hide and 0 or (emblem and (emblem:getWidth() + 8) or 0)
-    local songName = hide and "- NO DATA -" or ((selected.songData or {}).name or "Unrecognized Song")
-    love.graphics.print(songName, (640-(utf8.len(songName)*8 + emblemSize))/2 + emblemSize, 352 + (hide and 16 or 0))
+    local songName = hide and Localize("songselect_nodata") or ((scene.selected.songData or {}).name or "Unrecognized Song")
+    DrawText(songName, (640-(utf8.len(songName)*8 + emblemSize))/2 + emblemSize, 352 + (hide and 16 or 0))
     if emblem and not hide then love.graphics.draw(emblem, (640-(utf8.len(songName)*8 + emblemSize))/2, 360, 0, 1, 1, 0, emblem:getHeight()/2) end
     love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
     if not hide then
-        love.graphics.printf((selected.songData or {}).author or "???", 0, 368, 640, "center")
-        local source = Assets.Source((selected.songData or {}).songPath)
+        DrawText((scene.selected.songData or {}).author or "???", 0, 368, 640, "center")
+        local source = Assets.Source((scene.selected.songData or {}).songPath)
         if source then
             local time = ReadableTime(source:getDuration("seconds"))
-            love.graphics.printf(((selected.songData or {}).bpm or "?") .. " BPM - " .. time, 0, 384, 640, "center")
+            DrawText(((scene.selected.songData or {}).bpm or "?") .. " BPM - " .. time, 0, 384, 640, "center")
         end
     end
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     local charter = "???"
-    if selected.songData then
-        local chart = selected.songData:loadChart(SongDifficultyOrder[difficulty])
+    if scene.selected.songData then
+        local chart = scene.selected.songData:loadChart(SongDifficultyOrder[difficulty])
         if chart then
             charter = chart.charter or "???"
         end
     end
     if unlocked then
-        love.graphics.printf("CHART: " .. charter, 32, 360, 640, "left")
-        love.graphics.printf("COVER: " .. ((selected.songData or {}).coverArtist or "???"), 32, 376, 640, "left")
-        -- local difficultyName = SongDifficulty[difficulties[SongSelectDifficulty] or "easy"].name or scene.difficulty:upper()
-        -- local difficultyColor = SongDifficulty[difficulties[SongSelectDifficulty] or "easy"].color or TerminalColors[ColorID.WHITE]
-        -- local diffs = scene.campaign.sections[SongSelectSelectedSection].songs[SongSelectSelectedSong].difficulties
-        -- local difficulty = SongSelectOvervoltMode and (table.index(difficulties, diffs[#diffs]) or 5) or SongSelectDifficulty
-        -- love.graphics.setColor(difficultyColor)
-        -- love.graphics.print(difficultyName, 608 - (#difficultyName + 1 + #tostring(difficultyLevel) + 2) * 8, 360)
+        DrawText(Localize("songselect_charter"):format(charter), 32, 360, 640, "left")
+        DrawText(Localize("songselect_cover"):format(((scene.selected.songData or {}).coverArtist or "???")), 32, 376, 640, "left")
+
         ---@type SongData?
-        local data = selected.songData
-        for _,diff in ipairs(selected.difficulties) do
-            -- print(diff)
+        local data = scene.selected.songData
+        for _,diff in ipairs(scene.selected.difficulties) do
             local index = table.index(SongDifficultyOrder, diff)
             local p = (index - SongSelectDifficultyView:get())
-            if p >= -1.5 and p <= 1.5 and ((SongSelectOvervoltMode and diff == "overvolt") or (not SongSelectOvervoltMode and diff ~= "overvolt")) then
+            if p >= -1.5 and p <= 1.5 and ((SongSelectOvervoltMode and (diff == "overvolt" or diff == "hidden")) or (not SongSelectOvervoltMode and not (diff == "overvolt" or diff == "hidden"))) then
                 local difficultyLevel = 0
-                if selected.songData then
-                    difficultyLevel = selected.songData:getLevel(diff)
+                if scene.selected.songData then
+                    difficultyLevel = scene.selected.songData:getLevel(diff)
                 end
-                love.graphics.setColor(index == (SongSelectOvervoltMode and (table.index(SongDifficultyOrder, selected.difficulties[#selected.difficulties]) or 5) or SongSelectDifficulty) and {1,1,1} or {0.5,0.5,0.5})
+                love.graphics.setColor(index == SongSelectDifficulty and {1,1,1} or {0.5,0.5,0.5})
                 PrintDifficulty(592,368 - p*16,diff,difficultyLevel,"right")
                 if data then
                     local hasEffects = #((data:loadChart(diff or "easy") or {}).effects or {}) ~= 0
                     if hasEffects then
-                        local x = 592 - 8 * (utf8.len(SongDifficulty[diff].name .. (difficultyLevel ~= nil and (" " .. (difficultyLevel or 0)) or "")) + 3)
-                        love.graphics.print("✨", x, 368 - p*16)
+                        local x = 592 - (Font:getWidth(Localize("difficulty_"..diff) .. (difficultyLevel ~= nil and (" " .. (difficultyLevel or 0)) or "")) + 24)
+                        DrawText("✨", x, 368 - p*16)
                     end
                 end
             end
         end
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        -- love.graphics.print(tostring(difficultyLevel), 608 - (#tostring(difficultyLevel) + 2) * 8, 360)
-        -- print(#selected.difficulties - (selected.hasOvervolt and 1 or 0))
-        if not SongSelectOvervoltMode and (#selected.difficulties - (selected.hasOvervolt and 1 or 0) > 1) then love.graphics.print("🡙", 600, 368) end
+        if #scene.selected.difficulties > 1 then DrawText("🡙", 600, 368) end
     end
 
-    -- love.graphics.printf("Press F8 to create a new song in the editor", 32, 400, 576, "left")
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    love.graphics.printf(KeyLabel(binds.back) .. " - Exit", 32, 416, 576, "left")
-    local canPlay = unlocked and (selected.songData and selected.songData:loadChart(SongDifficultyOrder[difficulty]) ~= nil)
+    DrawText(Localize("nav_exit"):format(KeyLabel(binds.back)), 32, 416, 576, "left")
+    local canPlay = unlocked and (scene.selected.songData and scene.selected.songData:loadChart(SongDifficultyOrder[difficulty]) ~= nil)
     if not canPlay then
         love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
     end
-    love.graphics.printf(KeyLabel(binds.confirm) .. " - Play", 32, 416, 576, "right")
+    DrawText(Localize("nav_play"):format(KeyLabel(binds.confirm)), 32, 416, 576, "right")
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    if SongSelectHasOvervolt and SongSelectHasNormal and SongSelectOvervoltUnlocked then
+    if SongSelectHasOvervolt and SongSelectHasNormal then
         if SongSelectOvervoltMode then
             love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
-            love.graphics.printf("GO BACK", 32, 416, 576, "center")
+            DrawText(Localize("songselect_goback"), 32, 416, 576, "center")
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
-            love.graphics.printf("PRESS " .. KeyLabel(binds.overvolt), 32, 432, 576, "center")
-        else
+        elseif SongSelectOvervoltUnlocked then
             PrintDifficulty(320, 416, "overvolt", nil, "center")
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
-            love.graphics.printf("PRESS " .. KeyLabel(binds.overvolt), 32, 432, 576, "center")
+        end
+        if SongSelectOvervoltMode or SongSelectOvervoltUnlocked then
+            DrawText(Localize("songselect_overvolt"):format(KeyLabel(binds.overvolt)), 32, 432, 576, "center")
         end
     end
-    -- love.graphics.printf("Total Charge: " .. math.floor(scene.totalCharge) .. "¤ (" .. math.floor(scene.totalCharge / scene.potentialCharge * 100) .. "%)", 32, 400, 576, "left")
-    -- love.graphics.printf("Total Overcharge: " .. math.floor(scene.totalOvercharge) .. "¤ (" .. math.floor(scene.totalOvercharge / scene.potentialOvercharge * 100) .. "%)", 32, 400, 576, "right")
-    -- love.graphics.printf("Total X-Charge: " .. math.floor(scene.totalXCharge) .. "¤ (" .. math.floor(scene.totalXCharge / scene.potentialXCharge * 100) .. "%)", 32, 416, 576, "center")
 
     for i,song in ipairs(set) do
         drawSong(song)
@@ -507,10 +499,10 @@ function scene.draw()
         love.graphics.rectangle("fill", 0, 0, 640, 480)
         love.graphics.setColor(1,1,1)
         DrawBoxHalfWidth(x, 10, w, 8)
-        love.graphics.printf("DELETING SCORE FOR SONG:\n" .. songName, 0, 176, 640, "center")
-        love.graphics.printf("ARE YOU SURE?", 0, 240, 640, "center")
-        love.graphics.printf("ESC - No", x*8+16, 288, w*8-16, "left")
-        love.graphics.printf("ENTER - Yes", x*8+16, 288, w*8-16, "right")
+        DrawText("DELETING SCORE FOR SONG:\n" .. songName, 0, 176, 640, "center")
+        DrawText("ARE YOU SURE?", 0, 240, 640, "center")
+        DrawText("ESC - No", x*8+16, 288, w*8-16, "left")
+        DrawText("ENTER - Yes", x*8+16, 288, w*8-16, "right")
     end
 
     if overvoltWarning then
@@ -520,9 +512,9 @@ function scene.draw()
         love.graphics.rectangle("fill", 0, 0, 640, 480)
         love.graphics.setColor(1,1,1)
         DrawBoxHalfWidth(x, 8.5, w, 11)
-        love.graphics.printf("FOR YOUR SAFETY...", 0, 152, 640, "center")
-        love.graphics.printf("OVERVOLT charts are SEVERELY overcharted by design. Please be careful playing these charts.\n\nIf at any point you feel excessive pain in your hands, discontinue play immediately.", x*8+16, 184, w*8-16, "center")
-        love.graphics.printf(KeyLabel(binds.back) .. " - Dismiss", x*8+16, 312, w*8-16, "center")
+        DrawText("FOR YOUR SAFETY...", 0, 152, 640, "center")
+        DrawText("OVERVOLT charts are SEVERELY overcharted by design. Please be careful playing these charts.\n\nIf at any point you feel excessive pain in your hands, discontinue play immediately.", x*8+16, 184, w*8-16, "center")
+        DrawText(KeyLabel(binds.back) .. " - Dismiss", x*8+16, 312, w*8-16, "center")
     end
 
     if versionWarning then
@@ -532,10 +524,10 @@ function scene.draw()
         love.graphics.rectangle("fill", 0, 0, 640, 480)
         love.graphics.setColor(1,1,1)
         DrawBoxHalfWidth(x, 8.5, w, 11)
-        love.graphics.printf("VERSION MISMATCH", 0, 152, 640, "center")
-        love.graphics.printf("This chart was made for a" .. (versionWarning.old and "n older" or (versionWarning.new and " newer" or " different")) .. " version of VoltRhythm!\n\nChart version: " .. ((versionWarning.version.name ~= nil and versionWarning.version.version ~= nil) and (versionWarning.version.name .. " v" .. versionWarning.version.version) or "Unknown") .. "\nGame version: " .. Version.name .. " v" .. Version.version .. "\n\nThis chart may not work correctly!", x*8+16, 184, w*8-16, "center")
-        love.graphics.printf(KeyLabel(binds.back) .. " - Go Back", x*8+16, 312, w*8-16, "left")
-        love.graphics.printf(KeyLabel(binds.confirm) .. " - Play Anyway", x*8+16, 312, w*8-16, "right")
+        DrawText("VERSION MISMATCH", 0, 152, 640, "center")
+        DrawText("This chart was made for a" .. (versionWarning.old and "n older" or (versionWarning.new and " newer" or " different")) .. " version of VoltRhythm!\n\nChart version: " .. ((versionWarning.version.name ~= nil and versionWarning.version.version ~= nil) and (versionWarning.version.name .. " v" .. versionWarning.version.version) or "Unknown") .. "\nGame version: " .. Version.name .. " v" .. Version.version .. "\n\nThis chart may not work correctly!", x*8+16, 184, w*8-16, "center")
+        DrawText(KeyLabel(binds.back) .. " - Go Back", x*8+16, 312, w*8-16, "left")
+        DrawText(KeyLabel(binds.confirm) .. " - Play Anyway", x*8+16, 312, w*8-16, "right")
     end
 end
 

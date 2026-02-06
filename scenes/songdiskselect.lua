@@ -1,5 +1,3 @@
-local utf8 = require "utf8"
-
 local scene = {}
 
 local options = {}
@@ -85,31 +83,34 @@ function scene.draw()
 
         local mx = math.max(utf8.len(chargeTxt),utf8.len(ochargeTxt),utf8.len(xchargeTxt))
 
-        love.graphics.print("           ┌─────────────────────────────────────────────┬──────┬──────┐", 4*8,  8*16)
-        love.graphics.print("    CHARGE │                                             │      │      │", 4*8,  9*16)
-        love.graphics.print("           ├─────────────────────────────────────────────┼──────┼──────┤", 4*8, 10*16)
-        love.graphics.print("OVERCHARGE │                                             │      │      │", 4*8, 11*16)
-        love.graphics.print("           ├─────────────────────────────────────────────┼──────┼──────┤", 4*8, 12*16)
-        love.graphics.print("  X-CHARGE │                                             │      │      │", 4*8, 13*16)
-        love.graphics.print("           └─────────────────────────────────────────────┴──────┴──────┘", 4*8, 14*16)
+        DrawText("┌─────────────────────────────────────────────┬──────┬──────┐", 15*8,  8*16)
+        DrawText("│                                             │      │      │", 15*8,  9*16)
+        DrawText(Localize("score_charge"), 4*8,  9*16, 10*8, "right")
+        DrawText("├─────────────────────────────────────────────┼──────┼──────┤", 15*8, 10*16)
+        DrawText("│                                             │      │      │", 15*8, 11*16)
+        DrawText(Localize("score_overcharge"), 4*8,  11*16, 10*8, "right")
+        DrawText("├─────────────────────────────────────────────┼──────┼──────┤", 15*8, 12*16)
+        DrawText("│                                             │      │      │", 15*8, 13*16)
+        DrawText(Localize("score_xcharge"), 4*8,  13*16, 10*8, "right")
+        DrawText("└─────────────────────────────────────────────┴──────┴──────┘", 15*8, 14*16)
         
         love.graphics.setColor(TerminalColors[ColorID.LIGHT_GREEN])
-        love.graphics.print(("█"):rep(45*chargep), 16*8, 9*16)
+        DrawText(("█"):rep(45*chargep), 16*8, 9*16)
         local ocChunks = math.floor(45*ochargep)
         for i = 1, ocChunks do
             local chunkColor = (math.floor(-love.timer.getTime()*#OverchargeColors)+i-1)%#OverchargeColors
             love.graphics.setColor(TerminalColors[OverchargeColors[chunkColor+1]])
-            love.graphics.print("█", (15+i)*8, 11*16)
+            DrawText("█", (15+i)*8, 11*16)
         end
         love.graphics.setColor(TerminalColors[ColorID.MAGENTA])
-        love.graphics.print(("█"):rep(45*xchargep), 16*8, 13*16)
+        DrawText(("█"):rep(45*xchargep), 16*8, 13*16)
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        love.graphics.printf(chargeTxt, (74-utf8.len(chargeTxt))*8, 9*16, utf8.len(chargeTxt)*8, "right")
-        love.graphics.printf(ochargeTxt, (74-utf8.len(ochargeTxt))*8, 11*16, utf8.len(ochargeTxt)*8, "right")
-        love.graphics.printf(xchargeTxt, (74-utf8.len(xchargeTxt))*8, 13*16, utf8.len(xchargeTxt)*8, "right")
-        love.graphics.printf(chargepTxt, (67-utf8.len(chargepTxt))*8, 9*16, utf8.len(chargepTxt)*8, "right")
-        love.graphics.printf(ochargepTxt, (67-utf8.len(ochargepTxt))*8, 11*16, utf8.len(ochargepTxt)*8, "right")
-        love.graphics.printf(xchargepTxt, (67-utf8.len(xchargepTxt))*8, 13*16, utf8.len(xchargepTxt)*8, "right")
+        DrawText(chargeTxt, (74-utf8.len(chargeTxt))*8, 9*16, utf8.len(chargeTxt)*8, "right")
+        DrawText(ochargeTxt, (74-utf8.len(ochargeTxt))*8, 11*16, utf8.len(ochargeTxt)*8, "right")
+        DrawText(xchargeTxt, (74-utf8.len(xchargeTxt))*8, 13*16, utf8.len(xchargeTxt)*8, "right")
+        DrawText(chargepTxt, (67-utf8.len(chargepTxt))*8, 9*16, utf8.len(chargepTxt)*8, "right")
+        DrawText(ochargepTxt, (67-utf8.len(ochargepTxt))*8, 11*16, utf8.len(ochargepTxt)*8, "right")
+        DrawText(xchargepTxt, (67-utf8.len(xchargepTxt))*8, 13*16, utf8.len(xchargepTxt)*8, "right")
     end
 
     for i = CampaignViewTarget-2, CampaignViewTarget+2 do
@@ -127,7 +128,7 @@ function scene.draw()
         local width = math.floor(lerp(28, 7, math.abs(CampaignView-i)))
         DrawBoxHalfWidth(math.floor(x/8-width/2), y/16-1, width, 3)
         if width > 8 then
-            love.graphics.print("┬\n│\n│\n│\n┴", math.floor(x/8-width/2 + 8)*8, y-16)
+            DrawText("┬\n│\n│\n│\n┴", math.floor(x/8-width/2 + 8)*8, y-16)
         end
         if I < 2 then
             love.graphics.draw(option[2], math.floor(x/8-width/2)*8+12, y, 0, math.min(48,math.floor(width)*8)/48, 1)
@@ -135,18 +136,18 @@ function scene.draw()
 
         if I < 1 then
             local w,wrap = Font:getWrap(option[1], (width-10)*8)
-            love.graphics.printf(option[1], math.floor((x-32)/8)*8, y+16-(8*(#wrap-1)), 144, "center")
+            DrawText(option[1], math.floor((x-32)/8)*8, y+16-(8*(#wrap-1)), 144, "center")
         end
     end
 
     local x = 320-4-(#options-1)/2*16
-    love.graphics.print((" "):rep(#options*2+1), x-8, 352)
+    DrawText((" "):rep(#options*2+1), x-8, 352)
     for i = 1, #options do
         love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
         if i == SongDiskSelectIndex then
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
         end
-        love.graphics.print("○", x+(i-1)*16, 352)
+        DrawText("○", x+(i-1)*16, 352)
     end
 end
 

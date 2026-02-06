@@ -1,11 +1,3 @@
-local utf8 = require "utf8"
-
-function utf8.sub(txt, i, j)
-    local o1 = (utf8.offset(txt,i) or (#txt))
-    local o2 = (utf8.offset(txt,j+1) or (#txt+1))-1
-    return txt:sub(o1,o2)
-end
-
 ---@alias Note {time: number, lane: number, length: number, type: string, extra: table, heldFor: number?, visualLane?: number, holding: boolean?, holdTicks: integer, destroyed: boolean}
 
 local useSteps = false
@@ -876,14 +868,16 @@ SongDifficultyOrder = {
 }
 
 function PrintDifficulty(x,y,difficulty,level,align)
+    local text = Localize("difficulty_"..difficulty)
     local currentX = x
-    local length = utf8.len(SongDifficulty[difficulty].name .. (level ~= nil and (" " .. level) or ""))
-    local nameLength = utf8.len(SongDifficulty[difficulty].name)
+    local fullWidth = Font:getWidth(text .. (level ~= nil and (" " .. level) or ""))
+    local width = Font:getWidth(text)
+    local nameLength = utf8.len(text)
     if align == "right" then
-        currentX = x - length*8
+        currentX = x - fullWidth
     end
     if align == "center" then
-        currentX = x - length*4
+        currentX = x - fullWidth/2
     end
     local color = SongDifficulty[difficulty].color or TerminalColors[ColorID.WHITE]
     local r,g,b,a = love.graphics.getColor()
@@ -893,16 +887,17 @@ function PrintDifficulty(x,y,difficulty,level,align)
             ---@diagnostic disable-next-line: param-type-mismatch
             love.graphics.setColor(color[colorIndex])
             local R,G,B,A = love.graphics.getColor()
+            local c = utf8.sub(text, i, i)
             love.graphics.setColor(r*R,g*G,b*B,a*A)
-            love.graphics.print(utf8.sub(SongDifficulty[difficulty].name, i, i), currentX, y)
-            currentX = currentX + 8
+            love.graphics.print(c, currentX, y)
+            currentX = currentX + Font:getWidth(c)
         end
     else
         love.graphics.setColor(color)
         local R,G,B,A = love.graphics.getColor()
         love.graphics.setColor(r*R,g*G,b*B,a*A)
-        love.graphics.print(SongDifficulty[difficulty].name, currentX, y)
-        currentX = currentX + nameLength*8
+        love.graphics.print(text, currentX, y)
+        currentX = currentX + width
     end
     if level ~= nil then
         currentX = currentX + 8

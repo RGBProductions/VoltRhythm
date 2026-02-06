@@ -1,5 +1,3 @@
-local utf8 = require "utf8"
-
 local scene = {}
 
 local hitSounds = {
@@ -54,13 +52,13 @@ function DrawFC()
         local startI = 5 - t + 1
         local endI = 5 + t
         for i = startI, endI do
-            love.graphics.print(text:sub(i,i), startX+(i-startI)*8, 232)
+            DrawText(text:sub(i,i), startX+(i-startI)*8, 232)
         end
     end
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     if showBrackets then
-        love.graphics.print(bracketSymbol:sub(1,1), 320-math.floor(math.floor(dist)/2+1)*8-8, 232)
-        love.graphics.print(bracketSymbol:sub(2,2), 320+math.floor(math.floor(dist)/2+1)*8, 232)
+        DrawText(bracketSymbol:sub(1,1), 320-math.floor(math.floor(dist)/2+1)*8-8, 232)
+        DrawText(bracketSymbol:sub(2,2), 320+math.floor(math.floor(dist)/2+1)*8, 232)
     end
 end
 
@@ -104,13 +102,13 @@ function DrawFO()
         for i = startI, endI do
             local chunkColor = (math.floor(-love.timer.getTime()*#OverchargeColors)+i-1)%#OverchargeColors
             love.graphics.setColor(TerminalColors[OverchargeColors[chunkColor+1]])
-            love.graphics.print(text:sub(i,i), startX+(i-startI)*8, 232)
+            DrawText(text:sub(i,i), startX+(i-startI)*8, 232)
         end
     end
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     if showBrackets then
-        love.graphics.print(bracketSymbol:sub(1,1), 320-math.floor(math.floor(dist)/2+1)*8-8, 232)
-        love.graphics.print(bracketSymbol:sub(2,2), 320+math.floor(math.floor(dist)/2+1)*8, 232)
+        DrawText(bracketSymbol:sub(1,1), 320-math.floor(math.floor(dist)/2+1)*8-8, 232)
+        DrawText(bracketSymbol:sub(2,2), 320+math.floor(math.floor(dist)/2+1)*8, 232)
     end
 end
 
@@ -680,7 +678,7 @@ function scene.update(dt)
                             FullOvercharge = false
                         else
                             if pos <= -0.25-note.length then
-                                if not note.holding then
+                                if not note.holding and (lastBeatCount % 0.5) > (scene.beatCount % 0.5) then
                                     MissTime = 1
                                     Combo = 0
                                     ComboBreaks = ComboBreaks + 1
@@ -699,12 +697,14 @@ function scene.update(dt)
                                 if not Input.Held[note.lane+1] and not Autoplay then
                                     if pos <= -0.25-(note.length-0.4) then
                                         if note.heldFor == 0 or not note.heldFor then
-                                            MissTime = 1
-                                            Combo = 0
-                                            ComboBreaks = ComboBreaks + 1
-                                            LastRating = #NoteRatings
-                                            RatingCounts[LastRating] = RatingCounts[LastRating] + 1
-                                            FullOvercharge = false
+                                            if (lastBeatCount % 0.5) > (scene.beatCount % 0.5) then
+                                                MissTime = 1
+                                                Combo = 0
+                                                ComboBreaks = ComboBreaks + 1
+                                                LastRating = #NoteRatings
+                                                RatingCounts[LastRating] = RatingCounts[LastRating] + 1
+                                                FullOvercharge = false
+                                            end
                                         end
                                         if not note.destroyed then
                                             note.destroyed = true
@@ -712,7 +712,7 @@ function scene.update(dt)
                                             TryPlayFCOrFO()
                                             i = i - 1
                                         end
-                                    else
+                                    elseif (lastBeatCount % 0.5) > (scene.beatCount % 0.5) then
                                         MissTime = 1
                                         Combo = 0
                                         ComboBreaks = ComboBreaks + 1
@@ -862,8 +862,8 @@ function scene.draw()
 
     -- Debug info
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    --love.graphics.print("Full Combo: " .. tostring(ComboBreaks == 0), 50*8 + AnaglyphSide*0.75, 5*16)
-    --love.graphics.print("Full Overcharge: " .. tostring(FullOvercharge), 50*8 + AnaglyphSide*0.75, 6*16)
+    --DrawText("Full Combo: " .. tostring(ComboBreaks == 0), 50*8 + AnaglyphSide*0.75, 5*16)
+    --DrawText("Full Overcharge: " .. tostring(FullOvercharge), 50*8 + AnaglyphSide*0.75, 6*16)
 
     -- Chart and bar outlines
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
@@ -879,58 +879,80 @@ function scene.draw()
     if not HideTitlebar then
         local level = scene.songData:getLevel(scene.difficulty)
         local fullText = scene.songData.name .. (scene.chart.hideDifficulty and "" or (" - " .. SongDifficulty[scene.masquerade].name .. (level ~= nil and (" " .. level) or "")))
-        love.graphics.print("┌─" .. ("─"):rep(utf8.len(fullText)) .. "─┐\n│ " .. (" "):rep(utf8.len(fullText)) .. " │\n└─" .. ("─"):rep(utf8.len(fullText)) .. "─┘", ((80-(utf8.len(fullText)+4))/2)*8, 1*16)
-        love.graphics.print(scene.songData.name .. (scene.chart.hideDifficulty and "" or " - "), ((80-(utf8.len(fullText)+4))/2 + 2)*8, 2*16)
+        DrawText("┌─" .. ("─"):rep(utf8.len(fullText)) .. "─┐\n│ " .. (" "):rep(utf8.len(fullText)) .. " │\n└─" .. ("─"):rep(utf8.len(fullText)) .. "─┘", ((80-(utf8.len(fullText)+4))/2)*8, 1*16)
+        DrawText(scene.songData.name .. (scene.chart.hideDifficulty and "" or " - "), ((80-(utf8.len(fullText)+4))/2 + 2)*8, 2*16)
         if not scene.chart.hideDifficulty then PrintDifficulty(((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - "))*8, 2*16, scene.masquerade or "easy", level, "left") end
         love.graphics.setColor(r1*BoardBrightness,g1*BoardBrightness,b1*BoardBrightness,a1)
     end
 
-    if Autoplay then love.graphics.print("┬──────────┬\n│ ".. (Showcase and "SHOWCASE" or "AUTOPLAY") .. " │\n┴──────────┴", 34*8, 21*16) end
+    if Autoplay then
+        local text = Localize(Showcase and "game_showcase" or "game_autoplay")
+        local width = math.floor(Font:getWidth(text)/8)
+        local c = width > 13 and "┌┐" or (width == 13 and "├┤" or "┬┬")
+        -- print(width)
+        local horiz = ("─"):rep(width+2)
+        DrawText(utf8.sub(c,1,1)..horiz..utf8.sub(c,2,2).."\n│ ".. text .. " │\n┴"..horiz.."┴", (38-width/2)*8, 21*16)
+    end
 
     if not ShowReducedInfo then
         local acc = math.floor(Accuracy/math.max(Hits,1)*100)
 
-        love.graphics.print("┬──────────┬\n│ ACC " .. (" "):rep(3-#tostring(acc))..acc.. "% │\n└──────────┘", 34*8, 25*16)
-        love.graphics.print("┌──────────┐\n│  CHARGE  │\n├──────────┴", 14*8, 21*16)
+        local locCharge = Localize("game_charge")
+        local locAcc = Localize("game_accuracy")
+        local locValue = Localize("game_charge_value")
+        local boxWidth = math.floor(math.max(Font:getWidth(locCharge), Font:getWidth(locAcc:format("100")), Font:getWidth(locValue:format("200"))) / 8)
+        local horiz = ("─"):rep(boxWidth+2)
+        local space = (" "):rep(boxWidth+2)
+        local accstr = (" "):rep(3-#tostring(acc))..acc
+
+        DrawText("┬"..horiz.."┬\n│"..space.."│\n└"..horiz.."┘", (40-(boxWidth+4)/2)*8, 25*16)
+        DrawText("┌"..horiz.."┐\n│"..space.."│\n├"..horiz.."┴", 14*8, 21*16)
+        DrawText("┌"..horiz.."┐\n│"..space.."│\n┴"..horiz.."┤", (64-(boxWidth+2))*8, 21*16)
+        -- DrawText("┬"..horiz.."┬\n│ ACC " .. (" "):rep(3-#tostring(acc))..acc.. "% │\n└"..horiz.."┘", 34*8, 25*16)
         local c = (Charge*100)/scene.chart.totalCharge
         local chargeAmount = math.floor(c/100*ChargeYield)
         if c ~= c then chargeAmount = 0 end
-        love.graphics.print(" ", 62*8, 22*16) -- Empty space
-        love.graphics.print("┌──────────┐\n│  " .. (" "):rep(5-#tostring(chargeAmount)) .. chargeAmount .."¤  │\n┴──────────┤", 54*8, 21*16)
+        local chargestr = (" "):rep(5-#tostring(chargeAmount)) .. chargeAmount
+        DrawText(locCharge, 16*8, 22*16, boxWidth*8, "center")
+        DrawText(locAcc:format(accstr), (40-(boxWidth+4)/2+2)*8, 26*16, boxWidth*8, "center")
+        DrawText(locValue:format(chargestr), (64-(boxWidth+2)+2)*8, 22*16, boxWidth*8, "center")
+        -- DrawText(" ", 62*8, 22*16) -- Empty space
+        -- DrawText("┌"..horiz.."┐\n│  " .. (" "):rep(5-#tostring(chargeAmount)) .. chargeAmount .."¤  │\n┴"..horiz.."┤", 54*8, 21*16)
+        -- DrawText(" ", 62*8, 22*16) -- Empty space
     end
     -- Gate
     if scene.chargeGate > 0 and scene.chargeGate < 1 then
         love.graphics.setColor(r1*BoardBrightness,g1*BoardBrightness,b1*BoardBrightness,a1)
         local gateX = (15+math.floor(50*scene.chargeGate))
         local symbol = (gateX == 25 or gateX == 54) and "┼" or "┬"
-        love.graphics.print(symbol.."\n\n┴", gateX*8, 23*16)
+        DrawText(symbol.."\n\n┴", gateX*8, 23*16)
         love.graphics.setColor(TerminalColors[ColorID.GOLD])
         local r2,g2,b2,a2 = love.graphics.getColor()
         love.graphics.setColor(r2*BoardBrightness,g2*BoardBrightness,b2*BoardBrightness,a2)
-        love.graphics.print("┊", gateX*8, 24*16)
+        DrawText("┊", gateX*8, 24*16)
     end
     -- Overcharge Threshold
     do
         love.graphics.setColor(r1*BoardBrightness,g1*BoardBrightness,b1*BoardBrightness,a1)
         local thresholdX = (15+math.floor(50*0.8))
-        love.graphics.print("┬\n\n┴", thresholdX*8, 23*16)
+        DrawText("┬\n\n┴", thresholdX*8, 23*16)
         love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
         local r2,g2,b2,a2 = love.graphics.getColor()
         love.graphics.setColor(r2*BoardBrightness,g2*BoardBrightness,b2*BoardBrightness,a2)
-        love.graphics.print("┊", thresholdX*8, 24*16)
+        DrawText("┊", thresholdX*8, 24*16)
     end
 
     -- Bar fill
     local c = math.floor((Charge*100)/scene.chart.totalCharge)
     love.graphics.setColor(TerminalColors[(c < (scene.chargeGate/2*100) and 5) or (c < (scene.chargeGate*100) and 15) or 11])
-    love.graphics.print(("█"):rep(math.min(41,c/2)), 15*8, 24*16)
+    DrawText(("█"):rep(math.min(41,c/2)), 15*8, 24*16)
     -- OVERCHARGE
     if c == c then
         local ocChunks = math.min(10,math.max(0,c/2-41))
         for i = 1, ocChunks do
             local chunkColor = (math.floor(-love.timer.getTime()*#OverchargeColors)+i-1)%#OverchargeColors
             love.graphics.setColor(TerminalColors[OverchargeColors[chunkColor+1]])
-            love.graphics.print("█", (55+i)*8, 24*16)
+            DrawText("█", (55+i)*8, 24*16)
         end
     end
 
@@ -940,14 +962,14 @@ function scene.draw()
     love.graphics.setColor(r3*BoardBrightness,g3*BoardBrightness,b3*BoardBrightness,a3)
     for i = 1, scene.chart.lanes-1 do
         local x = (80-(scene.chart.lanes*4-1))/2 - 1+(i-1)*4 + 1
-        love.graphics.print(("   ┊\n"):rep(16), x*8, 5*16)
+        DrawText(("   ┊\n"):rep(16), x*8, 5*16)
     end
     local jlBrightness = math.max(BoardBrightness,NoteBrightness)
     love.graphics.setColor(r3*jlBrightness,g3*jlBrightness,b3*jlBrightness,a3)
     do
         local drawPos = GetNoteCellY(0, ScrollSpeed*ScrollSpeedMod, 1, ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0, 5, 15)
         if drawPos >= 5 and drawPos <= 20 then
-            love.graphics.print("┈┈┈"..("╬┈┈┈"):rep(scene.chart.lanes-1), ((80-(scene.chart.lanes*4-1))/2 - 1+(1-1)*4 + 1)*8, drawPos*16-16)
+            DrawText("┈┈┈"..("╬┈┈┈"):rep(scene.chart.lanes-1), ((80-(scene.chart.lanes*4-1))/2 - 1+(1-1)*4 + 1)*8, drawPos*16-16)
 
             -- Hit areas
             for i = 1, scene.chart.lanes do
@@ -955,7 +977,7 @@ function scene.draw()
                 local v = math.ceil(math.min(1,PressAmounts[i])+HitAmounts[i]*2)
                 if v > 0 then
                     love.graphics.setColor(TerminalColors[NoteColors[((i-1)%(#NoteColors))+1][v+1]])
-                    love.graphics.print("███", x*8 + AnaglyphSide*0.75, drawPos*16-16)
+                    DrawText("███", x*8 + AnaglyphSide*0.75, drawPos*16-16)
                 end
             end
         end
@@ -982,21 +1004,24 @@ function scene.draw()
     end
     local comboString = tostring(Combo)
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    love.graphics.print(comboString, ((80-(#comboString))/2)*8 + AnaglyphSide*0.75, 7*16)
+    DrawText(comboString, ((80-(#comboString))/2)*8 + AnaglyphSide*0.75, 7*16)
 
     -- Rating counts
-    -- for i,rating in ipairs(NoteRatings) do
-    --     local x,y = 32, (i+4)*16
-    --     NoteRatings[i].draw(x,y,false)
-    --     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    --     love.graphics.print(RatingCounts[i], x+12*8, y)
-    -- end
+    DrawBoxHalfWidth(6, 10, 20, 6)
+    for i,rating in ipairs(NoteRatings) do
+        local x,y = 64, (i+10)*16
+        NoteRatings[i].draw(x,y,false)
+        love.graphics.setColor(TerminalColors[ColorID.WHITE])
+        DrawText(RatingCounts[i], x, y, 144, "right")
+    end
 
     -- Particles
+    love.graphics.setFont(LegacyFont)
     for _,particle in ipairs(Particles) do
         love.graphics.setColor(TerminalColors[particle.color])
         love.graphics.print(particle.char, particle.x-4, particle.y-8)
     end
+    love.graphics.setFont(Font)
 
     love.graphics.pop()
 
@@ -1022,11 +1047,11 @@ function scene.draw()
             DrawBoxHalfWidth(23, 12, 32, 4)
             love.graphics.draw(PausedText, 320, 240-16, 0, 1, 1, PausedText:getWidth()/2, PausedText:getHeight()/2)
             love.graphics.setColor(TerminalColors[PauseSelection == 0 and ColorID.LIGHT_BLUE or ColorID.WHITE])
-            love.graphics.printf("Resume", 320-96, 240+16, 96, "center", 0, 1, 1, 48, 8)
+            DrawText(Localize("game_resume"), 320-96, 240+16, 96, "center", nil, 0, 1, 1, 48, 8)
             love.graphics.setColor(TerminalColors[PauseSelection == 1 and ColorID.LIGHT_BLUE or ColorID.WHITE])
-            love.graphics.printf("Restart", 320, 240+16, 96, "center", 0, 1, 1, 48, 8)
+            DrawText(Localize("game_restart"), 320, 240+16, 96, "center", nil, 0, 1, 1, 48, 8)
             love.graphics.setColor(TerminalColors[scene.forced and ColorID.DARK_GRAY or (PauseSelection == 2 and ColorID.LIGHT_BLUE or ColorID.WHITE)])
-            love.graphics.printf("Quit", 320+96, 240+16, 96, "center", 0, 1, 1, 48, 8)
+            DrawText(Localize("game_quit"), 320+96, 240+16, 96, "center", nil, 0, 1, 1, 48, 8)
         else
             local counterText = Counter[math.ceil(PauseTimer*2)]
             if counterText then

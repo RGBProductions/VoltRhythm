@@ -42,11 +42,11 @@ WindowFocused = true
 NoteRatings = {
     {
         draw = function(ox,oy,center)
-            local txt = "OVERCHARGE"
-            for x = 1, #txt do
-                local c = txt:sub(x,x)
+            local txt = Localize("judgement_overcharge")
+            for x = 1, utf8.len(txt) do
+                local c = utf8.sub(txt,x,x)
                 love.graphics.setColor(TerminalColors[OverchargeColors[(x-1)%#OverchargeColors+1]])
-                love.graphics.print(c, ox+((center and (-(#txt)/2) or 0) + x-1)*8, oy)
+                DrawText(c, ox+(center and (-Font:getWidth(txt)/2) or 0)+(Font:getWidth(utf8.sub(txt,1,x-1))), oy)
             end
         end,
         sampleColor = function() return OverchargeColors[love.math.random(1,#OverchargeColors)] end,
@@ -56,8 +56,8 @@ NoteRatings = {
     {
         draw = function(ox,oy,center)
             love.graphics.setColor(TerminalColors[ColorID.YELLOW])
-            local txt = "SURGE"
-            love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
+            local txt = Localize("judgement_surge")
+            DrawText(txt, ox+(center and (-Font:getWidth(txt)/2) or 0), oy)
         end,
         sampleColor = function() return ColorID.YELLOW end,
         min = 1 - (75 / 200),
@@ -66,8 +66,8 @@ NoteRatings = {
     {
         draw = function(ox,oy,center)
             love.graphics.setColor(TerminalColors[ColorID.GOLD])
-            local txt = "AMP"
-            love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
+            local txt = Localize("judgement_amp")
+            DrawText(txt, ox+(center and (-Font:getWidth(txt)/2) or 0), oy)
         end,
         sampleColor = function() return ColorID.GOLD end,
         min = 1 - (110 / 200),
@@ -76,8 +76,8 @@ NoteRatings = {
     {
         draw = function(ox,oy,center)
             love.graphics.setColor(TerminalColors[ColorID.GREEN])
-            local txt = "FLUX"
-            love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
+            local txt = Localize("judgement_flux")
+            DrawText(txt, ox+(center and (-Font:getWidth(txt)/2) or 0), oy)
         end,
         sampleColor = function() return ColorID.GREEN end,
         min = 1 - (145 / 200),
@@ -86,8 +86,8 @@ NoteRatings = {
     {
         draw = function(ox,oy,center)
             love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
-            local txt = "NULL"
-            love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
+            local txt = Localize("judgement_null")
+            DrawText(txt, ox+(center and (-Font:getWidth(txt)/2) or 0), oy)
         end,
         sampleColor = function() return ColorID.LIGHT_GRAY end,
         min = 1 - (180 / 200),
@@ -96,8 +96,8 @@ NoteRatings = {
     {
         draw = function(ox,oy,center)
             love.graphics.setColor(TerminalColors[ColorID.RED])
-            local txt = "BREAK"
-            love.graphics.print(txt, ox+(center and (-(#txt)/2) or 0)*8, oy)
+            local txt = Localize("judgement_break")
+            DrawText(txt, ox+(center and (-Font:getWidth(txt)/2) or 0), oy)
         end,
         sampleColor = function() return ColorID.RED end,
         min = -math.huge,
@@ -195,8 +195,6 @@ function SetCursor(cursor,x,y)
     CursorY = y or 0
 end
 
-Font = love.graphics.newImageFont("images/font.png", " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%()[].,'\"`~\\|!?/:;@#$^&*<>{}+-_=┌─┐│└┘├┤┴┬┼█▓▒░┊┈╬○◇▷◁║¤👑▧▥▨◐◑◻☓⚠🡙ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρσςτυφχψω🮰✨�Ħ🔗ⒶⒷⓍⓎⓛⓡⓁⓇⓑⓢ⮜⮞⮝⮟⒧⒭ⓧⓄⓈⓉⓞⓗⓥⓕⓜⓟ➀➁")
-
 NoteFontOptions = {"dots", "bars"}
 
 NoteFonts = {
@@ -206,29 +204,13 @@ NoteFonts = {
 
 NoteFont = NoteFonts.dots
 
-function DrawBox(x,y,w,h)
-    love.graphics.print("┌"..("──"):rep(w).."┐\n"..("│"..("  "):rep(w).."│\n"):rep(h).."└"..("──"):rep(w).."┘", x*8, y*16)
-end
-
-function DrawFilledBox(x,y,w,h)
-    love.graphics.print("█"..("██"):rep(w).."█\n"..("█"..("██"):rep(w).."█\n"):rep(h).."█"..("██"):rep(w).."█", x*8, y*16)
-end
-
-function DrawBoxHalfWidth(x,y,w,h)
-    love.graphics.print("┌"..("─"):rep(w).."┐\n"..("│"..(" "):rep(w).."│\n"):rep(h).."└"..("─"):rep(w).."┘", x*8, y*16)
-end
-
+require "lang"
+require "rendering"
 require "transition"
 require "scenemanager"
 
 function EnterMainGame(transition)
     SceneManager[transition and "Transition" or "LoadScene"]("scenes/startup")
-end
-
-if love.filesystem.getInfo("hidepswarning") then
-    EnterMainGame()
-else
-    SceneManager.LoadScene("scenes/photosensitivity")
 end
 
 BorderOptions = {"none", "overcharged", "spooky_pumpkins"}
@@ -253,6 +235,7 @@ SystemSettings = {
     pause_on_lost_focus = true,
     show_fps = false,
     discord_rpc_level = RPCLevels.FULL,
+    language = nil,
     screen_effects = {
         screen_curvature = 0.5,
         scanlines = 0.5,
@@ -269,6 +252,16 @@ if love.filesystem.getInfo("settings.json") then
     if s then
         table.merge(SystemSettings, r)
     end
+end
+
+if SystemSettings.language then
+    if love.filesystem.getInfo("hidepswarning") then
+        EnterMainGame()
+    else
+        SceneManager.LoadScene("scenes/photosensitivity")
+    end
+else
+    SceneManager.LoadScene("scenes/language", {destination = "photosensitivity", transition = false, quitOnFail = true})
 end
 
 Keybinds = {
@@ -410,37 +403,37 @@ function love.gamepadaxis(stick,axis,value)
     Input.GamepadAxis(stick,axis,value)
     if not SceneManager.GamepadAxis(stick,axis,value) then
         if math.abs(GamepadLastAxes[axis] or 0) < 0.5 and math.abs(value) >= 0.5 then
-            if BindContains(Save.Read("keybinds.pause"), "gtrigger", axis) then
+            if BindContains(Save.Keybind("pause"), "gtrigger", axis) then
                 SceneManager.Action("pause")
             end
-            if BindContains(Save.Read("keybinds.back"), "gtrigger", axis) then
+            if BindContains(Save.Keybind("back"), "gtrigger", axis) then
                 SceneManager.Action("back")
             end
-            if BindContains(Save.Read("keybinds.confirm"), "gtrigger", axis) then
+            if BindContains(Save.Keybind("confirm"), "gtrigger", axis) then
                 SceneManager.Action("confirm")
             end
-            if BindContains(Save.Read("keybinds.restart"), "gtrigger", axis) then
+            if BindContains(Save.Keybind("restart"), "gtrigger", axis) then
                 SceneManager.Action("restart")
             end
-            if BindContains(Save.Read("keybinds.overvolt"), "gtrigger", axis) then
+            if BindContains(Save.Keybind("overvolt"), "gtrigger", axis) then
                 SceneManager.Action("overvolt")
             end
-            if BindContains(Save.Read("keybinds.show_more"), "gtrigger", axis) then
+            if BindContains(Save.Keybind("show_more"), "gtrigger", axis) then
                 SceneManager.Action("show_more")
             end
-            if BindContains(Save.Read("keybinds.edit_profile"), "gtrigger", axis) then
+            if BindContains(Save.Keybind("edit_profile"), "gtrigger", axis) then
                 SceneManager.Action("edit_profile")
             end
-            if BindContains(Save.Read("keybinds.menu_left"), "gtrigger", axis) then
+            if BindContains(Save.Keybind("menu_left"), "gtrigger", axis) then
                 SceneManager.Action("left")
             end
-            if BindContains(Save.Read("keybinds.menu_right"), "gtrigger", axis) then
+            if BindContains(Save.Keybind("menu_right"), "gtrigger", axis) then
                 SceneManager.Action("right")
             end
-            if BindContains(Save.Read("keybinds.menu_up"), "gtrigger", axis) then
+            if BindContains(Save.Keybind("menu_up"), "gtrigger", axis) then
                 SceneManager.Action("up")
             end
-            if BindContains(Save.Read("keybinds.menu_down"), "gtrigger", axis) then
+            if BindContains(Save.Keybind("menu_down"), "gtrigger", axis) then
                 SceneManager.Action("down")
             end
             SceneManager.Action("*")
@@ -469,37 +462,37 @@ function love.gamepadpressed(stick,button)
     Input.GamepadPressed(stick,button)
     if SceneManager.GamepadPressed(stick,button) then return end
 
-    if BindContains(Save.Read("keybinds.pause"), "gbutton", button) then
+    if BindContains(Save.Keybind("pause"), "gbutton", button) then
         SceneManager.Action("pause")
     end
-    if BindContains(Save.Read("keybinds.back"), "gbutton", button) then
+    if BindContains(Save.Keybind("back"), "gbutton", button) then
         SceneManager.Action("back")
     end
-    if BindContains(Save.Read("keybinds.confirm"), "gbutton", button) then
+    if BindContains(Save.Keybind("confirm"), "gbutton", button) then
         SceneManager.Action("confirm")
     end
-    if BindContains(Save.Read("keybinds.restart"), "gbutton", button) then
+    if BindContains(Save.Keybind("restart"), "gbutton", button) then
         SceneManager.Action("restart")
     end
-    if BindContains(Save.Read("keybinds.overvolt"), "gbutton", button) then
+    if BindContains(Save.Keybind("overvolt"), "gbutton", button) then
         SceneManager.Action("overvolt")
     end
-    if BindContains(Save.Read("keybinds.show_more"), "gbutton", button) then
+    if BindContains(Save.Keybind("show_more"), "gbutton", button) then
         SceneManager.Action("show_more")
     end
-    if BindContains(Save.Read("keybinds.edit_profile"), "gbutton", button) then
+    if BindContains(Save.Keybind("edit_profile"), "gbutton", button) then
         SceneManager.Action("edit_profile")
     end
-    if BindContains(Save.Read("keybinds.menu_left"), "gbutton", button) then
+    if BindContains(Save.Keybind("menu_left"), "gbutton", button) then
         SceneManager.Action("left")
     end
-    if BindContains(Save.Read("keybinds.menu_right"), "gbutton", button) then
+    if BindContains(Save.Keybind("menu_right"), "gbutton", button) then
         SceneManager.Action("right")
     end
-    if BindContains(Save.Read("keybinds.menu_up"), "gbutton", button) then
+    if BindContains(Save.Keybind("menu_up"), "gbutton", button) then
         SceneManager.Action("up")
     end
-    if BindContains(Save.Read("keybinds.menu_down"), "gbutton", button) then
+    if BindContains(Save.Keybind("menu_down"), "gbutton", button) then
         SceneManager.Action("down")
     end
     SceneManager.Action("*")
@@ -537,6 +530,9 @@ function love.keypressed(k)
         end
         love.graphics.captureScreenshot(name..(num or "")..".png")
     end
+    if k == "f4" then
+        LoadLanguages()
+    end
     if k == "f5" then
         love.mouse.setRelativeMode(not love.mouse.getRelativeMode())
     end
@@ -547,37 +543,37 @@ function love.keypressed(k)
     Input.KeyPressed(k)
     if SceneManager.KeyPressed(k) then return end
 
-    if BindContains(Save.Read("keybinds.pause"), "key", k) then
+    if BindContains(Save.Keybind("pause"), "key", k) then
         SceneManager.Action("pause")
     end
-    if BindContains(Save.Read("keybinds.back"), "key", k) then
+    if BindContains(Save.Keybind("back"), "key", k) then
         SceneManager.Action("back")
     end
-    if BindContains(Save.Read("keybinds.confirm"), "key", k) then
+    if BindContains(Save.Keybind("confirm"), "key", k) then
         SceneManager.Action("confirm")
     end
-    if BindContains(Save.Read("keybinds.restart"), "key", k) then
+    if BindContains(Save.Keybind("restart"), "key", k) then
         SceneManager.Action("restart")
     end
-    if BindContains(Save.Read("keybinds.overvolt"), "key", k) then
+    if BindContains(Save.Keybind("overvolt"), "key", k) then
         SceneManager.Action("overvolt")
     end
-    if BindContains(Save.Read("keybinds.show_more"), "key", k) then
+    if BindContains(Save.Keybind("show_more"), "key", k) then
         SceneManager.Action("show_more")
     end
-    if BindContains(Save.Read("keybinds.edit_profile"), "key", k) then
+    if BindContains(Save.Keybind("edit_profile"), "key", k) then
         SceneManager.Action("edit_profile")
     end
-    if BindContains(Save.Read("keybinds.menu_left"), "key", k) then
+    if BindContains(Save.Keybind("menu_left"), "key", k) then
         SceneManager.Action("left")
     end
-    if BindContains(Save.Read("keybinds.menu_right"), "key", k) then
+    if BindContains(Save.Keybind("menu_right"), "key", k) then
         SceneManager.Action("right")
     end
-    if BindContains(Save.Read("keybinds.menu_up"), "key", k) then
+    if BindContains(Save.Keybind("menu_up"), "key", k) then
         SceneManager.Action("up")
     end
-    if BindContains(Save.Read("keybinds.menu_down"), "key", k) then
+    if BindContains(Save.Keybind("menu_down"), "key", k) then
         SceneManager.Action("down")
     end
     SceneManager.Action("*")
@@ -681,37 +677,13 @@ function love.draw()
     local border = Borders[Save.Read("border")]
     if border and not SuppressBorder and border.draw then border.draw() end
     love.graphics.setColor(1,1,1)
-    love.graphics.print(Version.name .. " v" .. Version.version .. (SystemSettings.show_fps and (" - " .. love.timer.getFPS() .. " FPS") or ""), 16, 480-16-16)
+    DrawText(Version.name .. " v" .. Version.version .. (SystemSettings.show_fps and (" - " .. love.timer.getFPS() .. " FPS") or ""), 16, 480-16-16)
     if Cursor then
+        love.graphics.setFont(LegacyFont)
         love.graphics.print(Cursor, MouseX-CursorX, MouseY-CursorY)
+        love.graphics.setFont(Font)
     end
 
-    love.graphics.setColor(TerminalColors[16])
-    
-    if AnaglyphOn then
-        AnaglyphSide = AnaglyphL
-        love.graphics.setCanvas(Display2)
-        love.graphics.clear(0,0,0)
-    
-        love.graphics.setColor(1,1,1)
-        SceneManager.Draw()
-        love.graphics.setColor(1,1,1)
-        SceneManager.DrawTransition()
-        love.graphics.setColor(1,1,1)
-        if border and not SuppressBorder and border.draw then border.draw() end
-        love.graphics.setColor(1,1,1)
-        love.graphics.print(Version.name .. " v" .. Version.version .. (SystemSettings.show_fps and (" - " .. love.timer.getFPS() .. " FPS") or ""), 16, 480-16-16)
-    
-        love.graphics.setColor(TerminalColors[16])
-        love.graphics.setCanvas(AnaglyphMerge)
-        love.graphics.setShader(Anaglyph)
-        Anaglyph:send("left", Display2)
-        love.graphics.draw(Display)
-        love.graphics.setCanvas(Display)
-        love.graphics.clear(0,0,0)
-        love.graphics.draw(AnaglyphMerge)
-    end
-    
     love.graphics.setCanvas(Final)
     love.graphics.clear(0,0,0)
     love.graphics.setColor(1,1,1)

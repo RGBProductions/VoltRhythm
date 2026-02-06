@@ -9,7 +9,7 @@ Input = {
 }
 
 function Input.ReadBinds()
-    Input.Binds = Save.Read("keybinds.lanes") or Input.Binds
+    Input.Binds = Save.Keybind("lanes") or Input.Binds
 end
 
 function Input.WriteBinds()

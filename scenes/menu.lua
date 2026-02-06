@@ -3,25 +3,25 @@ local scene = {}
 local logo = love.graphics.newImage("images/logo.png")
 
 local options = {
-    {"SINGLEPLAYER", "MAIN GAME", love.graphics.newImage("images/menu/sp.png"), function()
+    {"menu_sp", love.graphics.newImage("images/menu/sp.png"), function()
         SceneManager.Transition("scenes/songdiskselect")
     end},
-    {"EDITOR", "CREATE CHARTS", love.graphics.newImage("images/menu/edit.png"), function()
+    {"menu_edit", love.graphics.newImage("images/menu/edit.png"), function()
         SceneManager.Transition("scenes/neditor")
     end},
-    {"PROFILES", "MANAGE USERS", love.graphics.newImage("images/menu/prof.png"), function()
+    {"menu_prof", love.graphics.newImage("images/menu/prof.png"), function()
         SceneManager.Transition("scenes/profiles")
     end},
-    {"SETTINGS", "CONFIGURE SYSTEM", love.graphics.newImage("images/menu/cfg.png"), function()
+    {"menu_cfg", love.graphics.newImage("images/menu/cfg.png"), function()
         SceneManager.Transition("scenes/settings")
     end},
-    {"CREDITS", "ATTRIBUTION", love.graphics.newImage("images/menu/mp.png"), function()
+    {"menu_cred", love.graphics.newImage("images/menu/mp.png"), function()
         SceneManager.Transition("scenes/credits")
     end},
-    {"REPORT BUG", "CREATE ISSUE ON GITHUB", love.graphics.newImage("images/menu/bug.png"), function()
+    {"menu_bug", love.graphics.newImage("images/menu/bug.png"), function()
         love.system.openURL("https://github.com/RGBProductions/VoltRhythm/issues")
     end},
-    {"EXIT", "SHUTDOWN SYSTEM", love.graphics.newImage("images/menu/exit.png"), function()
+    {"menu_exit", love.graphics.newImage("images/menu/exit.png"), function()
         love.event.push("quit")
     end}
 }
@@ -77,7 +77,7 @@ function scene.action(a)
         MenuViewTarget = MenuViewTarget - 1
     end
     if a == "confirm" then
-        options[MenuSelection+1][4]()
+        options[MenuSelection+1][3]()
     end
 end
 
@@ -104,46 +104,46 @@ function scene.draw()
         local width = math.floor(lerp(24, 7, math.abs(MenuView-i)))
         DrawBoxHalfWidth(math.floor(x/8-width/2), y/16-1, width, 3)
         if width > 8 then
-            love.graphics.print("┬\n│\n│\n│\n┴", math.floor(x/8-width/2 + 8)*8, y-16)
+            DrawText("┬\n│\n│\n│\n┴", math.floor(x/8-width/2 + 8)*8, y-16)
         end
         if I < 2 then
-            love.graphics.draw(option[3], math.floor(x/8-width/2)*8+12, y, 0, math.min(48,math.floor(width)*8)/48, 1)
+            love.graphics.draw(option[2], math.floor(x/8-width/2)*8+12, y, 0, math.min(48,math.floor(width)*8)/48, 1)
         end
 
         if I < 1 then
-            local label1 = option[1]
-            local _,label2 = Font:getWrap(option[2], 112)
+            local label1 = Localize(option[1])
+            local _,label2 = Font:getWrap(Localize(option[1].."_desc"), 112)
             local _,label1Wrapped = Font:getWrap(label1, (width-10)*8)
             local _,label2Wrapped = Font:getWrap(label2[1], (width-10)*8)
             local _,label3Wrapped = Font:getWrap(label2[2] or "", (width-10)*8)
-            if label1Wrapped[1] then love.graphics.printf(label1Wrapped[1], math.floor((x-16)/8)*8, y, 112, "center") end
+            if label1Wrapped[1] then DrawText(label1Wrapped[1], math.floor((x-16)/8)*8, y, 112, "center") end
             love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
-            if label2Wrapped[1] then love.graphics.printf(label2Wrapped[1], math.floor((x-16)/8)*8, y+16, 112, "center") end
-            if label3Wrapped[1] then love.graphics.printf(label3Wrapped[1], math.floor((x-16)/8)*8, y+32, 112, "center") end
+            if label2Wrapped[1] then DrawText(label2Wrapped[1], math.floor((x-16)/8)*8, y+16, 112, "center") end
+            if label3Wrapped[1] then DrawText(label3Wrapped[1], math.floor((x-16)/8)*8, y+32, 112, "center") end
         end
     end
 
     local x = 320-4-(#options-1)/2*16
-    love.graphics.print((" "):rep(#options*2+1), x-8, 352)
+    DrawText((" "):rep(#options*2+1), x-8, 352)
     for i = 1, #options do
         love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
         if i == MenuSelection+1 then
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
         end
-        love.graphics.print("○", x+(i-1)*16, 352)
+        DrawText("○", x+(i-1)*16, 352)
     end
     
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     ProfileIconShader:send("color1", TerminalColors[Save.Read("main_color") or ColorID.LIGHT_RED])
     ProfileIconShader:send("color2", TerminalColors[Save.Read("accent_color") or ColorID.BLUE])
     love.graphics.setShader(ProfileIconShader)
-    local loginText = "LOGGED IN AS " .. Save.Read("name")
+    local loginText = Localize("menu_logged_in"):format(Save.Read("name"))
     local icon = Assets.ProfileIcon(Save.Read("icon") or "icon1")
     if icon then
         love.graphics.draw(icon, 320-Font:getWidth(loginText)/2-32+32, 400+8, 0, 1, 1, 16, 16)
     end
     love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
-    love.graphics.printf(loginText, 32, 400, 640, "center")
+    DrawText(loginText, 32, 400, 640, "center")
 end
 
 return scene

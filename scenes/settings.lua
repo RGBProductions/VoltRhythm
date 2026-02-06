@@ -6,9 +6,9 @@ local rebindTime = 0
 local hitsound = love.audio.newSource("sounds/hit.ogg", "stream")
 local soundprev = love.audio.newSource("sounds/menunav.ogg", "stream")
 
-local askToDelete = false
-local askToDeleteScores = false
-local confirmTimer = 0
+SettingsAskToDelete = false
+SettingsAskToDeleteScores = false
+SettingsConfirmTimer = 0
 
 SettingsChart = SettingsChart or {
     Note:new(SixteenthsToSeconds(0, 60), 0, 0, "normal", {}),
@@ -50,15 +50,15 @@ SettingsChart = SettingsChart or {
     Note:new(SixteenthsToSeconds(32+30, 60), 1, 0, "merge", {dir = 1})
 }
 
-local root = {
+SettingsRoot = SettingsRoot or {
     type = "menu",
     options = {
         {
-            label = "VIDEO",
+            label = "settings_video",
             type = "menu",
             options = {
                 {
-                    label = "PAUSE ON LOST FOCUS",
+                    label = "settings_pause_on_lost_focus",
                     type = "toggle",
                     read = function()
                         return SystemSettings.pause_on_lost_focus
@@ -68,7 +68,7 @@ local root = {
                     end
                 },
                 {
-                    label = "SHOW FRAMERATE",
+                    label = "settings_show_framerate",
                     type = "toggle",
                     read = function()
                         return SystemSettings.show_fps
@@ -78,7 +78,7 @@ local root = {
                     end
                 },
                 {
-                    label = "CHART FX",
+                    label = "settings_enable_chart_effects",
                     type = "toggle",
                     read = function()
                         return SystemSettings.enable_chart_effects
@@ -88,7 +88,7 @@ local root = {
                     end
                 },
                 {
-                    label = "SCREEN FX",
+                    label = "settings_enable_screen_effects",
                     type = "toggle",
                     read = function()
                         return SystemSettings.enable_screen_effects
@@ -98,7 +98,7 @@ local root = {
                     end
                 },
                 {
-                    label = "CHART BG",
+                    label = "settings_enable_background",
                     type = "toggle",
                     read = function()
                         return SystemSettings.enable_background
@@ -108,7 +108,7 @@ local root = {
                     end
                 },
                 {
-                    label = "VIDEO OFFSET",
+                    label = "settings_video_offset",
                     type = "number",
                     min = -math.huge,
                     max = math.huge,
@@ -124,11 +124,11 @@ local root = {
                     end
                 },
                 {
-                    label = "ADJUST SCREEN FX",
+                    label = "settings_adjust_screen_fx",
                     type = "menu",
                     options = {
                         {
-                            label = "CURVATURE",
+                            label = "settings_screen_curvature",
                             type = "number",
                             min = 0,
                             max = 20,
@@ -147,7 +147,7 @@ local root = {
                             end
                         },
                         {
-                            label = "SCANLINES",
+                            label = "settings_scanlines",
                             type = "number",
                             min = 0,
                             max = 20,
@@ -166,7 +166,7 @@ local root = {
                             end
                         },
                         {
-                            label = "BLOOM",
+                            label = "settings_bloom",
                             type = "number",
                             min = 0,
                             max = 20,
@@ -185,7 +185,7 @@ local root = {
                             end
                         },
                         {
-                            label = "ABERRATION",
+                            label = "settings_aberration",
                             type = "number",
                             min = 0,
                             max = 20,
@@ -206,7 +206,7 @@ local root = {
                             end
                         },
                         {
-                            label = "SCREEN TEARING",
+                            label = "settings_tearing",
                             type = "number",
                             min = 0,
                             max = 20,
@@ -226,7 +226,7 @@ local root = {
                             end
                         },
                         {
-                            label = "ZOOM BLUR",
+                            label = "settings_zoom_blur",
                             type = "number",
                             min = 0,
                             max = 20,
@@ -247,7 +247,7 @@ local root = {
                             end
                         },
                         {
-                            label = "SATURATION",
+                            label = "settings_saturation",
                             type = "number",
                             min = 0,
                             max = 40,
@@ -270,11 +270,11 @@ local root = {
             }
         },
         {
-            label = "AUDIO",
+            label = "settings_audio",
             type = "menu",
             options = {
                 {
-                    label = "MASTER VOLUME",
+                    label = "settings_master_volume",
                     type = "number",
                     min = 0,
                     max = 20,
@@ -293,7 +293,7 @@ local root = {
                     end
                 },
                 {
-                    label = "SONG VOLUME",
+                    label = "settings_song_volume",
                     type = "number",
                     min = 0,
                     max = 20,
@@ -312,7 +312,7 @@ local root = {
                     end
                 },
                 {
-                    label = "SOUND VOLUME",
+                    label = "settings_sound_volume",
                     type = "number",
                     min = 0,
                     max = 20,
@@ -331,7 +331,7 @@ local root = {
                     end
                 },
                 {
-                    label = "HIT SOUNDS",
+                    label = "settings_hit_sounds",
                     type = "toggle",
                     read = function()
                         return Save.Read("enable_hit_sounds")
@@ -346,7 +346,7 @@ local root = {
                     end
                 },
                 {
-                    label = "AUDIO OFFSET",
+                    label = "settings_audio_offset",
                     type = "number",
                     min = -math.huge,
                     max = math.huge,
@@ -362,7 +362,7 @@ local root = {
                     end
                 },
                 {
-                    label = "CALIBRATE OFFSET",
+                    label = "settings_calibrate_audio_offset",
                     type = "action",
                     run = function()
                         SceneManager.Transition("scenes/calibration")
@@ -371,154 +371,154 @@ local root = {
             }
         },
         {
-            label = "KEYBINDS",
+            label = "settings_keybinds",
             type = "menu",
             options = {
                 {
-                    label = "LANE 1",
+                    label = "settings_key_lane1",
                     type = "key",
                     read = function(i)
-                        return Save.Read("keybinds.lanes.1")[i]
+                        return Save.Keybind("lanes.1")[i]
                     end,
                     write = function(value,t,i)
                         Save.Write("keybinds.lanes.1."..i, {t, value})
                     end
                 },
                 {
-                    label = "LANE 2",
+                    label = "settings_key_lane2",
                     type = "key",
                     read = function(i)
-                        return Save.Read("keybinds.lanes.2")[i]
+                        return Save.Keybind("lanes.2")[i]
                     end,
                     write = function(value,t,i)
                         Save.Write("keybinds.lanes.2."..i, {t, value})
                     end
                 },
                 {
-                    label = "LANE 3",
+                    label = "settings_key_lane3",
                     type = "key",
                     read = function(i)
-                        return Save.Read("keybinds.lanes.3")[i]
+                        return Save.Keybind("lanes.3")[i]
                     end,
                     write = function(value,t,i)
                         Save.Write("keybinds.lanes.3."..i, {t, value})
                     end
                 },
                 {
-                    label = "LANE 4",
+                    label = "settings_key_lane4",
                     type = "key",
                     read = function(i)
-                        return Save.Read("keybinds.lanes.4")[i]
+                        return Save.Keybind("lanes.4")[i]
                     end,
                     write = function(value,t,i)
                         Save.Write("keybinds.lanes.4."..i, {t, value})
                     end
                 },
                 {
-                    label = "PAUSE",
+                    label = "settings_key_pause",
                     type = "key",
                     read = function(i)
-                        return Save.Read("keybinds.pause")[i]
+                        return Save.Keybind("pause")[i]
                     end,
                     write = function(value,t,i)
                         Save.Write("keybinds.pause."..i, {t, value})
                     end
                 },
                 {
-                    label = "CONFIRM",
+                    label = "settings_key_confirm",
                     type = "key",
                     read = function(i)
-                        return Save.Read("keybinds.confirm")[i]
+                        return Save.Keybind("confirm")[i]
                     end,
                     write = function(value,t,i)
                         Save.Write("keybinds.confirm."..i, {t, value})
                     end
                 },
                 {
-                    label = "BACK",
+                    label = "settings_key_back",
                     type = "key",
                     read = function(i)
-                        return Save.Read("keybinds.back")[i]
+                        return Save.Keybind("back")[i]
                     end,
                     write = function(value,t,i)
                         Save.Write("keybinds.back."..i, {t, value})
                     end
                 },
                 {
-                    label = "QUICK RESTART",
+                    label = "settings_key_restart",
                     type = "key",
                     read = function(i)
-                        return Save.Read("keybinds.restart")[i]
+                        return Save.Keybind("restart")[i]
                     end,
                     write = function(value,t,i)
                         Save.Write("keybinds.restart."..i, {t, value})
                     end
                 },
                 {
-                    label = "OVERVOLT MENU",
+                    label = "settings_key_overvolt",
                     type = "key",
                     read = function(i)
-                        return Save.Read("keybinds.overvolt")[i]
+                        return Save.Keybind("overvolt")[i]
                     end,
                     write = function(value,t,i)
                         Save.Write("keybinds.overvolt."..i, {t, value})
                     end
                 },
                 {
-                    label = "SHOW MORE",
+                    label = "settings_key_show_more",
                     type = "key",
                     read = function(i)
-                        return Save.Read("keybinds.show_more")[i]
+                        return Save.Keybind("show_more")[i]
                     end,
                     write = function(value,t,i)
                         Save.Write("keybinds.show_more."..i, {t, value})
                     end
                 },
                 {
-                    label = "EDIT PROFILE",
+                    label = "settings_key_edit_profile",
                     type = "key",
                     read = function(i)
-                        return Save.Read("keybinds.edit_profile")[i]
+                        return Save.Keybind("edit_profile")[i]
                     end,
                     write = function(value,t,i)
                         Save.Write("keybinds.edit_profile."..i, {t, value})
                     end
                 },
                 {
-                    label = "MENU LEFT",
+                    label = "settings_key_menu_left",
                     type = "key",
                     read = function(i)
-                        return Save.Read("keybinds.menu_left")[i]
+                        return Save.Keybind("menu_left")[i]
                     end,
                     write = function(value,t,i)
                         Save.Write("keybinds.menu_left."..i, {t, value})
                     end
                 },
                 {
-                    label = "MENU RIGHT",
+                    label = "settings_key_menu_right",
                     type = "key",
                     read = function(i)
-                        return Save.Read("keybinds.menu_right")[i]
+                        return Save.Keybind("menu_right")[i]
                     end,
                     write = function(value,t,i)
                         Save.Write("keybinds.menu_right."..i, {t, value})
                     end
                 },
                 {
-                    label = "MENU UP",
+                    label = "settings_key_menu_up",
                     type = "key",
                     read = function(i)
-                        return Save.Read("keybinds.menu_up")[i]
+                        return Save.Keybind("menu_up")[i]
                     end,
                     write = function(value,t,i)
                         Save.Write("keybinds.menu_up."..i, {t, value})
                     end
                 },
                 {
-                    label = "MENU DOWN",
+                    label = "settings_key_menu_down",
                     type = "key",
                     read = function(i)
-                        return Save.Read("keybinds.menu_down")[i]
+                        return Save.Keybind("menu_down")[i]
                     end,
                     write = function(value,t,i)
                         Save.Write("keybinds.menu_down."..i, {t, value})
@@ -527,13 +527,13 @@ local root = {
             }
         },
         {
-            label = "GAME UI",
+            label = "settings_game_ui",
             type = "menu",
             x = -80,
             showChart = true,
             options = {
                 {
-                    label = "SCROLL SPEED",
+                    label = "settings_scroll_speed",
                     type = "number",
                     min = 10,
                     max = 50,
@@ -549,7 +549,7 @@ local root = {
                     end
                 },
                 {
-                    label = "LANE 1 COLOR",
+                    label = "settings_color_lane1",
                     type = "color",
                     read = function()
                         return Save.Read("note_colors.1")
@@ -559,7 +559,7 @@ local root = {
                     end
                 },
                 {
-                    label = "LANE 2 COLOR",
+                    label = "settings_color_lane2",
                     type = "color",
                     read = function()
                         return Save.Read("note_colors.2")
@@ -569,7 +569,7 @@ local root = {
                     end
                 },
                 {
-                    label = "LANE 3 COLOR",
+                    label = "settings_color_lane3",
                     type = "color",
                     read = function()
                         return Save.Read("note_colors.3")
@@ -579,7 +579,7 @@ local root = {
                     end
                 },
                 {
-                    label = "LANE 4 COLOR",
+                    label = "settings_color_lane4",
                     type = "color",
                     read = function()
                         return Save.Read("note_colors.4")
@@ -589,7 +589,7 @@ local root = {
                     end
                 },
                 {
-                    label = "MINE COLOR",
+                    label = "settings_color_mine",
                     type = "color",
                     read = function()
                         return Save.Read("mine_color")
@@ -599,7 +599,7 @@ local root = {
                     end
                 },
                 {
-                    label = "BORDER",
+                    label = "settings_border",
                     type = "number",
                     min = 1,
                     max = #BorderOptions,
@@ -615,7 +615,7 @@ local root = {
                     end
                 },
                 {
-                    label = "NOTE SKIN",
+                    label = "settings_note_skin",
                     type = "number",
                     min = 1,
                     max = #NoteFontOptions,
@@ -634,11 +634,11 @@ local root = {
             }
         },
         {
-            label = "MISC",
+            label = "settings_misc",
             type = "menu",
             options = {
                 {
-                    label = "DISCORD RPC",
+                    label = "settings_discord_rpc_level",
                     type = "number",
                     min = RPCLevels.OFF,
                     max = RPCLevels.FULL,
@@ -647,10 +647,10 @@ local root = {
                         return Discord.hasRPC()
                     end,
                     text = function(value)
-                        if value == RPCLevels.OFF then return "OFF" end
-                        if value == RPCLevels.PLAYING then return "PLAYING" end
-                        if value == RPCLevels.PARTIAL then return "PARTIAL" end
-                        if value == RPCLevels.FULL then return "FULL" end
+                        if value == RPCLevels.OFF then return Localize("settings_discord_rpc_level_off") end
+                        if value == RPCLevels.PLAYING then return Localize("settings_discord_rpc_level_playing") end
+                        if value == RPCLevels.PARTIAL then return Localize("settings_discord_rpc_level_partial") end
+                        if value == RPCLevels.FULL then return Localize("settings_discord_rpc_level_full") end
                         return "UNKNOWN"
                     end,
                     read = function()
@@ -674,28 +674,35 @@ local root = {
                     end
                 },
                 {
-                    label = "OPEN SAVE FOLDER",
+                    label = "settings_set_language",
                     type = "action",
                     run = function()
-                    love.system.openURL("file://"..love.filesystem.getSaveDirectory())
+                        SceneManager.Transition("scenes/language", {destination = "settings", transition = true, quitOnFail = false})
                     end
                 },
                 {
-                    label = "DELETE ALL SCORES",
-                    danger = true,
+                    label = "settings_open_save_folder",
                     type = "action",
                     run = function()
-                        askToDeleteScores = true
-                        confirmTimer = 0
+                        love.system.openURL("file://"..love.filesystem.getSaveDirectory())
                     end
                 },
                 {
-                    label = "DELETE ALL DATA",
+                    label = "settings_delete_scores",
                     danger = true,
                     type = "action",
                     run = function()
-                        askToDelete = true
-                        confirmTimer = 0
+                        SettingsAskToDeleteScores = true
+                        SettingsConfirmTimer = 0
+                    end
+                },
+                {
+                    label = "settings_delete_data",
+                    danger = true,
+                    type = "action",
+                    run = function()
+                        SettingsAskToDelete = true
+                        SettingsConfirmTimer = 0
                     end
                 }
             }
@@ -705,9 +712,9 @@ local root = {
 
 function scene.action(a)
     if a == "back" then
-        if askToDelete or askToDeleteScores then
-            askToDelete = false
-            askToDeleteScores = false
+        if SettingsAskToDelete or SettingsAskToDeleteScores then
+            SettingsAskToDelete = false
+            SettingsAskToDeleteScores = false
             return
         end
 
@@ -750,8 +757,8 @@ function scene.action(a)
         end
 
         if a == "confirm" then
-            if askToDelete then
-                if confirmTimer >= 3 then
+            if SettingsAskToDelete then
+                if SettingsConfirmTimer >= 3 then
                     local function deleteAll(dir)
                         for _,itm in ipairs(love.filesystem.getDirectoryItems(dir)) do
                             if love.filesystem.getInfo(dir.."/"..itm).type == "directory" then
@@ -767,10 +774,10 @@ function scene.action(a)
                 return
             end
 
-            if askToDeleteScores then
-                if confirmTimer >= 3 then
+            if SettingsAskToDeleteScores then
+                if SettingsConfirmTimer >= 3 then
                     Save.Write("songs", {})
-                    askToDeleteScores = false
+                    SettingsAskToDeleteScores = false
                 end
                 return
             end
@@ -861,13 +868,13 @@ function scene.load(args)
         SettingsSelection2 = 0
         SettingsView = 0
         SettingsStack = {}
-        SettingsCurrent = root
+        SettingsCurrent = SettingsRoot
     else
         SettingsSelection = SettingsSelection or 0
         SettingsSelection2 = SettingsSelection2 or 0
         SettingsView = SettingsView or 0
         SettingsStack = SettingsStack or {}
-        SettingsCurrent = SettingsCurrent or root
+        SettingsCurrent = SettingsCurrent or SettingsRoot
     end
     for _,note in ipairs(SettingsChart) do
         note.destroyed = false
@@ -892,7 +899,7 @@ end
 local beatCount = 0
 
 function scene.update(dt)
-    if askToDelete or askToDeleteScores then confirmTimer = confirmTimer + dt end
+    if SettingsAskToDelete or SettingsAskToDeleteScores then SettingsConfirmTimer = SettingsConfirmTimer + dt end
 
     if rebinding and rebindTime > 0 then
         rebindTime = rebindTime - dt
@@ -1031,18 +1038,18 @@ local settingsText = love.graphics.newImage("images/title/settings.png")
 
 function scene.draw()
     local binds = {
-        back = HasGamepad and Save.Read("keybinds.back")[2] or Save.Read("keybinds.back")[1],
-        confirm = HasGamepad and Save.Read("keybinds.confirm")[2] or Save.Read("keybinds.confirm")[1]
+        back = HasGamepad and Save.Keybind("back")[2] or Save.Keybind("back")[1],
+        confirm = HasGamepad and Save.Keybind("confirm")[2] or Save.Keybind("confirm")[1]
     }
 
     local labelStack = {}
     for _,itm in ipairs(SettingsStack) do
         if itm[1].label then
-            table.insert(labelStack, itm[1].label)
+            table.insert(labelStack, Localize(itm[1].label))
         end
     end
     if SettingsCurrent.label then
-        table.insert(labelStack, SettingsCurrent.label)
+        table.insert(labelStack, Localize(SettingsCurrent.label))
     end
 
     local menuX = SettingsCurrent.x or 0
@@ -1055,7 +1062,8 @@ function scene.draw()
             local itmY = (i-y)*80+menuY
             local itmX = (640-128)/2+menuX
             love.graphics.setColor(TerminalColors[SettingsSelection == i-1 and ColorID.WHITE or ColorID.DARK_GRAY])
-            love.graphics.printf(option.label or "", itmX-144, itmY+16, 128, "center")
+            love.graphics.printf(Localize(option.label) or "", itmX-144, itmY+16, 128, "center")
+            love.graphics.setFont(LegacyFont)
             for j = 1, 2 do
                 local text = KeyLabel(values[j])
                 if rebinding and (rebinding[1] == option and rebinding[2] == j-1) then
@@ -1065,6 +1073,7 @@ function scene.draw()
                 DrawBoxHalfWidth(itmX/8-1 + (j-1)*18, itmY/16-1, 128/8, 3)
                 love.graphics.printf(text:upper(), itmX + (j-1)*144, itmY+16, 128, "center")
             end
+            love.graphics.setFont(Font)
         else
             local enabled = true
             if type(option.enable) == "function" then
@@ -1077,19 +1086,19 @@ function scene.draw()
                 text = option.read()
                 value = option.read()
                 if option.type == "toggle" then
-                    text = (text and "ON" or "OFF")
+                    text = Localize(text and "settings_on" or "settings_off")
                 end
                 if type(option.text) == "function" then
                     text = option.text(text)
                 end
             end
             if not enabled then
-                text = "- DISABLED -"
+                text = Localize("settings_disabled")
             end
             local itmY = (i-y)*80+menuY
             local itmX = (640-256)/2+menuX
             DrawBoxHalfWidth(itmX/8-1, itmY/16-1, 256/8, 3)
-            love.graphics.printf(option.label or "", itmX, itmY+((option.type == "menu" or option.type == "action") and 16 or 0), 256, "center")
+            love.graphics.printf(Localize(option.label) or "", itmX, itmY+((option.type == "menu" or option.type == "action") and 16 or 0), 256, "center")
             if option.type == "color" then
                 love.graphics.setColor(TerminalColors[tonumber(text) or 1])
                 love.graphics.rectangle("fill", itmX+(256-16)/2, itmY+32, 16, 16)
@@ -1136,21 +1145,23 @@ function scene.draw()
         end
         
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
+        love.graphics.setFont(NoteFont)
         for _,note in ipairs(SettingsChart) do
             if not note.destroyed then
                 local t = NoteTypes[note.type]
                 if t then
-                    love.graphics.setFont(NoteFont)
                     t.draw(note, chartTime, Save.Read("scroll_speed"), 8 + menuY/16, nil, chartX+2, false)
-                    love.graphics.setFont(Font)
                 end
             end
         end
+        love.graphics.setFont(Font)
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
+        love.graphics.setFont(LegacyFont)
         for _,particle in ipairs(Particles) do
             love.graphics.setColor(TerminalColors[particle.color])
             love.graphics.print(particle.char, particle.x-4, particle.y-8 + menuY)
         end
+        love.graphics.setFont(Font)
     end
 
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
@@ -1159,14 +1170,14 @@ function scene.draw()
 
     if #labelStack > 0 then
         DrawBoxHalfWidth(2, 6, 74, 1)
-        love.graphics.printf(table.concat(labelStack, " / "), 0, 112, 640, "center")
+        DrawText(table.concat(labelStack, " / "), 0, 112, 640, "center")
     end
 
-    if askToDelete then
+    if SettingsAskToDelete then
         love.graphics.setColor(0,0,0,0.75)
         love.graphics.rectangle("fill", 0, 0, 640, 480)
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        local w = 32
+        local w = 36
         local h = 10
         local x = 40-w/2-1
         local Y = 15-h/2-1
@@ -1174,17 +1185,17 @@ function scene.draw()
         love.graphics.rectangle("fill", 0, 0, 640, 480)
         love.graphics.setColor(1,1,1)
         DrawBoxHalfWidth(x, Y, w, h)
-        love.graphics.printf("ARE YOU SURE YOU WANT TO DELETE ALL OF YOUR VOLTRHYTHM DATA?\n\nTHIS IS IRREVERSIBLE!!!\n\nVOLTRHYTHM WILL RESTART AFTER ALL DATA IS DELETED.", x*8+16, Y*16+16, w*8-16, "center")
-        love.graphics.printf(KeyLabel(binds.back) .. " - No", x*8+16, (Y+h)*16, w*8-16, "left")
-        love.graphics.setColor(TerminalColors[confirmTimer >= 3 and ColorID.LIGHT_RED or ColorID.DARK_GRAY])
-        love.graphics.printf(KeyLabel(binds.confirm) .. " - Yes", x*8+16, (Y+h)*16, w*8-16, "right")
+        DrawText(Localize("warning_delete_data"), x*8+16, Y*16+16, w*8-16, "center")
+        DrawText(Localize("nav_no"):format(KeyLabel(binds.back)), x*8+16, (Y+h)*16, w*8-16, "left")
+        love.graphics.setColor(TerminalColors[SettingsConfirmTimer >= 3 and ColorID.LIGHT_RED or ColorID.DARK_GRAY])
+        DrawText(Localize("nav_yes"):format(KeyLabel(binds.confirm)), x*8+16, (Y+h)*16, w*8-16, "right")
     end
 
-    if askToDeleteScores then
+    if SettingsAskToDeleteScores then
         love.graphics.setColor(0,0,0,0.75)
         love.graphics.rectangle("fill", 0, 0, 640, 480)
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        local w = 32
+        local w = 36
         local h = 8
         local x = 40-w/2-1
         local Y = 15-h/2-1
@@ -1192,10 +1203,10 @@ function scene.draw()
         love.graphics.rectangle("fill", 0, 0, 640, 480)
         love.graphics.setColor(1,1,1)
         DrawBoxHalfWidth(x, Y, w, h)
-        love.graphics.printf("ARE YOU SURE YOU WANT TO DELETE ALL OF YOUR PROFILE'S SCORES?\n\nTHIS IS IRREVERSIBLE!!!", x*8+16, Y*16+16, w*8-16, "center")
-        love.graphics.printf(KeyLabel(binds.back) .. " - No", x*8+16, (Y+h)*16, w*8-16, "left")
-        love.graphics.setColor(TerminalColors[confirmTimer >= 3 and ColorID.LIGHT_RED or ColorID.DARK_GRAY])
-        love.graphics.printf(KeyLabel(binds.confirm) .. " - Yes", x*8+16, (Y+h)*16, w*8-16, "right")
+        DrawText(Localize("warning_delete_scores"), x*8+16, Y*16+16, w*8-16, "center")
+        DrawText(Localize("nav_no"):format(KeyLabel(binds.back)), x*8+16, (Y+h)*16, w*8-16, "left")
+        love.graphics.setColor(TerminalColors[SettingsConfirmTimer >= 3 and ColorID.LIGHT_RED or ColorID.DARK_GRAY])
+        DrawText(Localize("nav_yes"):format(KeyLabel(binds.confirm)), x*8+16, (Y+h)*16, w*8-16, "right")
     end
 end
 

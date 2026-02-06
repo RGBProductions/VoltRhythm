@@ -117,9 +117,9 @@ function Save.Write(key,value)
     cur[finalKey] = value
 end
 
-function Save.Read(key)
-    if not profiles[Save.Profile] then return end
-    local cur = profiles[Save.Profile]
+local function read(profile, key)
+    if not profile then return end
+    local cur = profile
     local spl = key:split("%.")
     local finalKey = table.remove(spl,#spl)
     finalKey = tonumber(finalKey) or finalKey
@@ -131,6 +131,14 @@ function Save.Read(key)
         cur = cur[v]
     end
     return cur[finalKey]
+end
+
+function Save.Read(key)
+    return read(profiles[Save.Profile], key)
+end
+
+function Save.Keybind(name)
+    return read(profiles[Save.Profile] or defaultSave, "keybinds."..name)
 end
 
 function Save.GetProfileList()

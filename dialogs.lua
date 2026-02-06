@@ -1,5 +1,3 @@
-local utf8 = require "utf8"
-
 DialogContainer = {}
 DialogContainer.__index = DialogContainer
 
