@@ -234,6 +234,7 @@ SystemSettings = {
     enable_background = true,
     pause_on_lost_focus = true,
     show_fps = false,
+    vsync = true,
     discord_rpc_level = RPCLevels.FULL,
     language = nil,
     screen_effects = {
@@ -253,6 +254,8 @@ if love.filesystem.getInfo("settings.json") then
         table.merge(SystemSettings, r)
     end
 end
+
+love.window.setVSync(SystemSettings.vsync and 1 or 0)
 
 if SystemSettings.language then
     if love.filesystem.getInfo("hidepswarning") then

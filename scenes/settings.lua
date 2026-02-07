@@ -68,6 +68,17 @@ SettingsRoot = SettingsRoot or {
                     end
                 },
                 {
+                    label = "settings_vsync",
+                    type = "toggle",
+                    read = function()
+                        return SystemSettings.vsync
+                    end,
+                    write = function(value)
+                        SystemSettings.vsync = value
+                        love.window.setVSync(SystemSettings.vsync and 1 or 0)
+                    end
+                },
+                {
                     label = "settings_show_framerate",
                     type = "toggle",
                     read = function()

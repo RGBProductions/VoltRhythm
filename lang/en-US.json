@@ -92,6 +92,7 @@
     "difficulty_hidden": "???",
     "settings_video": "VIDEO",
     "settings_pause_on_lost_focus": "PAUSE ON LOST FOCUS",
+    "settings_vsync": "VSYNC",
     "settings_show_framerate": "SHOW FRAMERATE",
     "settings_enable_chart_effects": "CHART FX",
     "settings_enable_screen_effects": "SCREEN FX",
