@@ -37,12 +37,12 @@ end
 local function protectedAction(label, action)
     if EditorDirty then
         local dialog = {
-            title = "CHANGES NOT SAVED",
+            title = Localize("editor_dialog_dirty_title"),
             width = 16,
             height = 9,
             contents = {
-                DialogLabel:new(0, 16, 240, "YOUR CHART HAS UNSAVED CHANGES! ARE YOU SURE?", "center"),
-                DialogButton:new(136, 80, 64, 16, "CANCEL", function ()
+                DialogLabel:new(0, 16, 240, Localize("editor_dialog_dirty"), "center"),
+                DialogButton:new(136, 80, 64, 16, Localize("editor_action_cancel"), function ()
                     table.remove(scene.dialogs, 1)
                 end),
                 DialogButton:new(40, 80, 64, 16, label, function ()
@@ -172,35 +172,34 @@ local function shutoffMusic()
 end
 
 local function fileDialog(type)
-    local filenameInput = DialogInput:new(0, 224, 256, 16, "SONG ID", 32)
+    local filenameInput = DialogInput:new(0, 224, 256, 16, Localize("editor_label_song_id"), 32)
     if scene.songData then
         local splitPath = scene.songData.path:split(getDirectorySeparator())
         filenameInput.content = splitPath[#splitPath]
     end
-    local typename = (type == "r" and "OPEN" or "SAVE")
     local existing = love.filesystem.getDirectoryItems("editor_save")
     local dialog = {
-        title = typename .. " SONG",
+        title = Localize(type == "r" and "editor_dialog_open_title" or "editor_dialog_save_title"),
         width = 32,
         height = 18,
         contents = {
-            DialogButton:new(272, 224, 96, 16, "CANCEL", function ()
+            DialogButton:new(272, 224, 96, 16, Localize("editor_action_cancel"), function ()
                 table.remove(scene.dialogs, 1)
             end),
-            DialogButton:new(392, 224, 96, 16, typename, function ()
+            DialogButton:new(392, 224, 96, 16, Localize(type == "r" and "editor_action_open" or "editor_action_save"), function ()
                 if #filenameInput.content <= 0 then return end
                 if type == "w" then
                     if table.index(existing, filenameInput.content) then
                         local savedialog = {
-                            title = "SAVE SONG",
+                            title = Localize("editor_dialog_save_title"),
                             width = 16,
                             height = 9,
                             contents = {
                                 DialogLabel:new(0, 16, 240, "YOU ARE OVERWRITING AN EXISTING FILE! ARE YOU SURE?", "center"),
-                                DialogButton:new(136, 80, 64, 16, "CANCEL", function ()
+                                DialogButton:new(136, 80, 64, 16, Localize("editor_action_cancel"), function ()
                                     table.remove(scene.dialogs, 1)
                                 end),
-                                DialogButton:new(40, 80, 64, 16, "SAVE", function ()
+                                DialogButton:new(40, 80, 64, 16, Localize("editor_action_save"), function ()
                                     writeChart(filenameInput.content)
                                     table.remove(scene.dialogs, 1)
                                     table.remove(scene.dialogs, 1)
@@ -214,7 +213,7 @@ local function fileDialog(type)
                     end
                 end
                 if type == "r" then
-                    protectedAction("OPEN", function()
+                    protectedAction(Localize("editor_action_open"), function()
                         shutoffMusic()
                         if readChart(filenameInput.content) then
                             table.remove(scene.dialogs, 1)
@@ -256,11 +255,11 @@ end
 local function easingMethodDialog(onSelected)
     local setPage
     local dialog = {
-        title = "EASING FUNCTION",
+        title = Localize("editor_dialog_easing_function_title"),
         width = 32,
         height = 24,
         contents = {
-            DialogButton:new(196, 320, 96, 16, "CANCEL", function ()
+            DialogButton:new(196, 320, 96, 16, Localize("editor_action_cancel"), function ()
                 table.remove(scene.dialogs, 1)
             end),
             DialogButton:new(456, 16, 32, 16, "UP", function ()
@@ -323,7 +322,7 @@ function EasingDialog(effect)
             methodButton.label = (method or "none"):upper()
         end)
     end)
-    local durationIn = DialogInput:new(264, 48, 96, 16, "DURATION", 8, nil, function(self)
+    local durationIn = DialogInput:new(264, 48, 96, 16, Localize("editor_label_duration"), 8, nil, function(self)
         self.content = self.content:lower()
         local multiplier = 1
         if self.content:sub(-1,-1) == "b" then
@@ -336,17 +335,17 @@ function EasingDialog(effect)
     end)
     durationIn.content = tostring(display.duration or 1)
     local dialog = {
-        title = "EFFECT EASING",
+        title = Localize("editor_dialog_easing_title"),
         width = 24,
         height = 10,
         contents = {
             display,
             methodButton,
             durationIn,
-            DialogButton:new(168+32, 96, 64, 16, "CANCEL", function ()
+            DialogButton:new(168+32, 96, 64, 16, Localize("editor_action_cancel"), function ()
                 table.remove(scene.dialogs, 1)
             end),
-            DialogButton:new(72+32, 96, 64, 16, "APPLY", function ()
+            DialogButton:new(72+32, 96, 64, 16, Localize("editor_action_apply"), function ()
                 effect.data.easeMethod = method
                 if effect.data.easeMethod then
                     effect.data.easeDuration = duration
@@ -367,7 +366,7 @@ local function effectPlacementDialog(effect, editing)
     local apply = function(self) end
     local function set(effectType)
         copy.type = effectType
-        typeButton.label = (EffectTypes[effectType] or {readable = effectType}).readable
+        typeButton.label = Localize("effect_"..effectType)
         container.contents = {}
         local t = EffectTypes[effectType] or {}
         if type(t.editor) == "function" then
@@ -375,27 +374,27 @@ local function effectPlacementDialog(effect, editing)
         end
     end
 
-    local effectType = copy.type or "EFFECT TYPE"
-    typeButton = DialogButton:new(0, 0, 304, 16, "EFFECT TYPE", function()
+    local effectType = copy.type or "none"
+    typeButton = DialogButton:new(0, 0, 304, 16, Localize("editor_label_effect_type"), function()
         local buttons = {}
         local names = {}
         for name,_ in pairs(EffectTypes) do
-            table.insert(names, {_.readable or name,name})
+            table.insert(names, name)
         end
         table.sort(names,function (a, b)
-            return a[1] < b[1]
+            return a < b
         end)
         local optionContainer = DialogContainer:new(0,0,304,240,{})
         local scroll = 0
         local function setscroll(n) end
         local max = 0
         local dialog = {
-            title = "EFFECT TYPE",
+            title = Localize("editor_dialog_effect_type_title"),
             width = 20,
             height = 20,
             contents = {
                 optionContainer,
-                DialogButton:new(120, 256, 64, 16, "CANCEL", function ()
+                DialogButton:new(120, 256, 64, 16, Localize("editor_action_cancel"), function ()
                     table.remove(scene.dialogs, 1)
                 end),
                 DialogButton:new(16, 256, 32, 16, "UP", function ()
@@ -407,10 +406,8 @@ local function effectPlacementDialog(effect, editing)
             }
         }
         local pos = 0
-        for _,val in pairs(names) do
-            local name = val[2]
-            local readable = val[1]
-            local button = DialogButton:new(16, 48*pos, 272, 16, readable, function ()
+        for _,name in pairs(names) do
+            local button = DialogButton:new(16, 48*pos, 272, 16, Localize("effect_"..name), function ()
                 effectType = name
                 set(effectType)
                 table.remove(scene.dialogs, 1)
@@ -432,7 +429,7 @@ local function effectPlacementDialog(effect, editing)
         setscroll(scroll)
         table.insert(scene.dialogs, 1, dialog)
     end)
-    local timeInput = DialogInput:new(0, 32, 304, 16, "EFFECT TIME", 35, nil, function(self)
+    local timeInput = DialogInput:new(0, 32, 304, 16, Localize("editor_label_effect_time"), 35, nil, function(self)
         copy.time = tonumber(self.content) or 0
         self.content = tostring(copy.time)
     end)
@@ -442,23 +439,23 @@ local function effectPlacementDialog(effect, editing)
     local pos = 0
     local dataElements = {}
     local dialog = {
-        title = (editing and "EDITING" or "PLACING") .. " EFFECT",
+        title = Localize(editing and "editor_dialog_effect_edit_title" or "editor_dialog_effect_title"),
         width = 20,
         height = 22,
         contents = {
             typeButton,
             timeInput,
-            DialogLabel:new(0, 64, 304, "EFFECT DATA", "center"),
+            DialogLabel:new(0, 64, 304, Localize("editor_label_effect_data"), "center"),
             container,
-            DialogButton:new(216, 288, 64, 16, "CANCEL", function ()
+            DialogButton:new(216, 288, 64, 16, Localize("editor_action_cancel"), function ()
                 table.remove(scene.dialogs, 1)
             end),
-            DialogButton:new(120, 288, 64, 16, "NUDGE", function ()
+            DialogButton:new(120, 288, 64, 16, Localize("editor_action_nudge"), function ()
                 effect.time = effect.time + 0.001
                 copy.time = copy.time + 0.001
                 timeInput.content = tostring(copy.time)
             end),
-            DialogButton:new(24, 288, 64, 16, editing and "APPLY" or "PLACE", function ()
+            DialogButton:new(24, 288, 64, 16, Localize(editing and "editor_action_apply" or "editor_action_place"), function ()
                 EditorDirty = true
                 effect.type = effectType
                 effect.time = copy.time
@@ -478,17 +475,17 @@ local function effectPlacementDialog(effect, editing)
 end
 
 local function metadataDialog()
-    local nameInput = DialogInput:new(0, 16, 368, 16, "SONG NAME", 38, nil, function(self)
+    local nameInput = DialogInput:new(0, 16, 368, 16, Localize("editor_label_song_name"), 38, nil, function(self)
         scene.songData.name = self.content
     end)
-    local authorInput = DialogInput:new(0, 64, 368, 16, "SONG AUTHOR", 38, nil, function(self)
+    local authorInput = DialogInput:new(0, 64, 368, 16, Localize("editor_label_song_author"), 38, nil, function(self)
         scene.songData.author = self.content
     end)
-    local bpmInput = DialogInput:new(160, 96, 120, 16, "BPM", 15, nil, function(self)
+    local bpmInput = DialogInput:new(160, 96, 120, 16, Localize("editor_label_song_bpm"), 15, nil, function(self)
         scene.songData.bpm = tonumber(self.content) or 0
         self.content = tostring(scene.songData.bpm)
     end)
-    local artistInput = DialogInput:new(0, 144, 368, 16, "COVER ARTIST", 20, nil, function(self)
+    local artistInput = DialogInput:new(0, 144, 368, 16, Localize("editor_label_cover_artist"), 20, nil, function(self)
         scene.songData.coverArtist = self.content
     end)
 
@@ -501,7 +498,7 @@ local function metadataDialog()
     local playPreviewButton
 
     local function stopPreview()
-        playPreviewButton.label = "PLAY"
+        playPreviewButton.label = Localize("editor_action_play")
         if preview then
             preview:stop()
         end
@@ -512,12 +509,12 @@ local function metadataDialog()
         scene.songData.songPreview = scene.songData.songPreview or {0,math.floor(source:getDuration()*100000)/100000}
     end
 
-    local previewStartInput = DialogInput:new(56, 208, 80, 16, "START", 10, nil, function(self)
+    local previewStartInput = DialogInput:new(56, 208, 80, 16, Localize("editor_label_start"), 10, nil, function(self)
         stopPreview()
         self.content = tostring(tonumber(self.content) or 0)
         scene.songData.songPreview[1] = tonumber(self.content) or scene.songData.songPreview[1]
     end)
-    local previewEndInput = DialogInput:new(232, 208, 80, 16, "END", 10, nil, function(self)
+    local previewEndInput = DialogInput:new(232, 208, 80, 16, Localize("editor_label_end"), 10, nil, function(self)
         stopPreview()
         self.content = tostring(tonumber(self.content) or 0)
         scene.songData.songPreview[2] = tonumber(self.content) or scene.songData.songPreview[2]
@@ -525,38 +522,41 @@ local function metadataDialog()
     previewStartInput.content = tostring(scene.songData.songPreview[1] or "")
     previewEndInput.content = tostring(scene.songData.songPreview[2] or "")
 
-    playPreviewButton = DialogButton:new(152, 208, 64, 16, "PLAY", function (self)
-        if self.label == "PLAY" then
-            self.label = "STOP"
+    local playing = false
+    playPreviewButton = DialogButton:new(152, 208, 64, 16, Localize("editor_action_play"), function (self)
+        if not playing then
+            self.label = Localize("editor_action_stop")
             Assets.ErasePreview(scene.songData.songPath)
             preview = Assets.Preview(scene.songData.songPath, scene.songData.songPreview)
             if preview then
                 preview:setLooping(true)
                 preview:play()
             end
+            playing = true
         else
             stopPreview()
+            playing = false
         end
     end)
 
     local dialog = {
-        title = "SONG METADATA",
+        title = Localize("editor_dialog_metadata_title"),
         width = 24,
         height = 20,
         contents = {
-            DialogLabel:new(148, 0, 72, "SONG NAME"),
+            DialogLabel:new(148, 0, 72, Localize("editor_label_song_name")),
             nameInput,
-            DialogLabel:new(140, 48, 88, "SONG AUTHOR"),
+            DialogLabel:new(140, 48, 88, Localize("editor_label_song_author")),
             authorInput,
-            DialogLabel:new(88, 96, 64, "SONG BPM"),
+            DialogLabel:new(88, 96, 64, Localize("editor_label_song_bpm")),
             bpmInput,
-            DialogLabel:new(136, 128, 96, "COVER ARTIST"),
+            DialogLabel:new(136, 128, 96, Localize("editor_label_cover_artist")),
             artistInput,
-            DialogLabel:new(136, 176, 96, "SONG PREVIEW"),
+            DialogLabel:new(136, 176, 96, Localize("editor_label_song_preview")),
             previewStartInput,
             previewEndInput,
             playPreviewButton,
-            DialogButton:new(152, 256, 64, 16, "CLOSE", function ()
+            DialogButton:new(152, 256, 64, 16, Localize("editor_action_close"), function ()
                 EditorDirty = true
                 stopPreview()
                 table.remove(scene.dialogs, 1)
@@ -567,17 +567,17 @@ local function metadataDialog()
 end
 
 local function groupDialog()
-    local groupnameInput = DialogInput:new(0, 16, 240, 16, "GROUP NAME", 30)
+    local groupnameInput = DialogInput:new(0, 16, 240, 16, Localize("editor_label_group_name"), 30)
     table.insert(scene.dialogs, 1, {
-        title = "GROUPING " .. #scene.selectedNotes .. " NOTES",
+        title = Localize("editor_dialog_group_title"):format(#scene.selectedNotes),
         width = 16,
         height = 9,
         contents = {
             groupnameInput,
-            DialogButton:new(136, 80, 64, 16, "CANCEL", function ()
+            DialogButton:new(136, 80, 64, 16, Localize("editor_action_cancel"), function ()
                 table.remove(scene.dialogs, 1)
             end),
-            DialogButton:new(40, 80, 64, 16, "GROUP", function ()
+            DialogButton:new(40, 80, 64, 16, Localize("editor_action_group"), function ()
                 EditorDirty = true
                 for _,note in ipairs(scene.selectedNotes) do
                     note.extra.group = groupnameInput.content
@@ -600,12 +600,12 @@ local function notePropertiesDialog(note)
     
     local function set(noteType)
         copy.type = noteType
-        typeButton.label = noteType
+        typeButton.label = Localize("note_"..noteType)
         container.contents = {}
     end
 
     local noteType = copy.type or "none"
-    typeButton = DialogButton:new(0, 0, 304, 16, "NOTE TYPE", function()
+    typeButton = DialogButton:new(0, 0, 304, 16, Localize("editor_label_note_type"), function()
         local buttons = {}
         local names = {}
         for name,_ in pairs(NoteTypes) do
@@ -619,12 +619,12 @@ local function notePropertiesDialog(note)
         local function setscroll(n) end
         local max = 0
         local dialog = {
-            title = "NOTE TYPE",
+            title = Localize("editor_dialog_note_type_title"),
             width = 20,
             height = 20,
             contents = {
                 optionContainer,
-                DialogButton:new(120, 256, 64, 16, "CANCEL", function ()
+                DialogButton:new(120, 256, 64, 16, Localize("editor_action_cancel"), function ()
                     table.remove(scene.dialogs, 1)
                 end),
                 DialogButton:new(16, 256, 32, 16, "UP", function ()
@@ -637,7 +637,7 @@ local function notePropertiesDialog(note)
         }
         local pos = 0
         for _,name in pairs(names) do
-            local button = DialogButton:new(16, 48*pos, 272, 16, name, function ()
+            local button = DialogButton:new(16, 48*pos, 272, 16, Localize("note_"..name), function ()
                 noteType = name
                 set(noteType)
                 table.remove(scene.dialogs, 1)
@@ -659,7 +659,7 @@ local function notePropertiesDialog(note)
         setscroll(scroll)
         table.insert(scene.dialogs, 1, dialog)
     end)
-    local timeInput = DialogInput:new(0, 48, 304, 16, "NOTE TIME", 24, nil, function(self)
+    local timeInput = DialogInput:new(0, 48, 304, 16, Localize("editor_label_note_time"), 24, nil, function(self)
         copy.time = tonumber(self.content) or copy.time
         self.content = tostring(copy.time)
     end)
@@ -669,17 +669,17 @@ local function notePropertiesDialog(note)
     local pos = 0
     local dataElements = {}
     local dialog = {
-        title = "NOTE PROPERTIES",
+        title = Localize("editor_dialog_note_title"),
         width = 20,
         height = 20,
         contents = {
             typeButton,
             timeInput,
             container,
-            DialogButton:new(216, 256, 64, 16, "CANCEL", function ()
+            DialogButton:new(216, 256, 64, 16, Localize("editor_action_cancel"), function ()
                 table.remove(scene.dialogs, 1)
             end),
-            DialogButton:new(24, 256, 64, 16, "APPLY", function ()
+            DialogButton:new(24, 256, 64, 16, Localize("editor_action_apply"), function ()
                 EditorDirty = true
                 note.type = copy.type
                 note.time = copy.time
@@ -696,7 +696,7 @@ local function notePropertiesDialog(note)
 end
 
 local function exitEditor()
-    protectedAction("EXIT", function()
+    protectedAction(Localize("editor_action_exit"), function()
         EditorDirty = false
         shutoffMusic()
         SavedEditorTime = nil
@@ -710,27 +710,27 @@ local editorMenu = {
     {
         id = "file",
         type = "menu",
-        label = "FILE",
+        label = Localize("editor_menu_file"),
         open = false,
         contents = {
             {
                 id = "file.new",
                 type = "action",
-                label = "NEW",
+                label = Localize("editor_menu_new"),
                 onclick = function()
-                    local nameInput = DialogInput:new(0, 0, 368, 16, "SONG NAME", 38)
-                    local authorInput = DialogInput:new(0, 24, 368, 16, "SONG AUTHOR", 38)
-                    local songInput = DialogFileInput:new(0, 64, 368, 16, "SONG AUDIO")
-                    local bpmInput = DialogInput:new(196, 96, 48, 16, "BPM", 15, nil, function(self)
+                    local nameInput = DialogInput:new(0, 0, 368, 16, Localize("editor_label_song_name"), 38)
+                    local authorInput = DialogInput:new(0, 24, 368, 16, Localize("editor_label_song_author"), 38)
+                    local songInput = DialogFileInput:new(0, 64, 368, 16, Localize("editor_label_song_audio"))
+                    local bpmInput = DialogInput:new(196, 96, 48, 16, Localize("editor_label_song_bpm"), 15, nil, function(self)
                         self.content = tostring(tonumber(self.content) or 0)
                     end)
                     bpmInput.content = "120"
-                    local coverInput = DialogFileInput:new(0, 128, 368, 16, "SONG COVER")
-                    local artistInput = DialogInput:new(0, 160, 368, 16, "COVER ARTIST", 20)
+                    local coverInput = DialogFileInput:new(0, 128, 368, 16, Localize("editor_label_song_cover"))
+                    local artistInput = DialogInput:new(0, 160, 368, 16, Localize("editor_label_cover_artist"), 20)
                     local dialog = {
                         width = 24,
                         height = 17,
-                        title = "NEW SONG",
+                        title = Localize("editor_dialog_new_title"),
                         contents = {
                             nameInput,
                             authorInput,
@@ -738,13 +738,13 @@ local editorMenu = {
                             bpmInput,
                             coverInput,
                             artistInput,
-                            DialogLabel:new(124, 96, 64, "SONG BPM"),
-                            DialogButton:new(200, 208, 64, 16, "CANCEL", function ()
+                            DialogLabel:new(124, 96, 64, Localize("editor_label_song_bpm")),
+                            DialogButton:new(200, 208, 64, 16, Localize("editor_action_cancel"), function ()
                                 table.remove(scene.dialogs, 1)
                             end),
-                            DialogButton:new(104, 208, 64, 16, "CREATE", function ()
+                            DialogButton:new(104, 208, 64, 16, Localize("editor_action_create"), function ()
                                 if songInput.file == nil then return end
-                                protectedAction("CREATE", function()
+                                protectedAction(Localize("editor_action_create"), function()
                                     EditorDirty = true
                                     if love.filesystem.getInfo("editor_chart") then
                                         for _,item in ipairs(love.filesystem.getDirectoryItems("editor_chart")) do
@@ -783,7 +783,7 @@ local editorMenu = {
             {
                 id = "file.open",
                 type = "action",
-                label = "OPEN",
+                label = Localize("editor_menu_open"),
                 onclick = function()
                     fileDialog("r")
                     return true
@@ -792,21 +792,21 @@ local editorMenu = {
             {
                 id = "file.recent",
                 type = "menu",
-                label = "OPEN RECENT",
+                label = Localize("editor_menu_open_recent"),
                 open = false,
                 contents = {}
             },
             {
                 id = "file.fromdisk",
                 type = "menu",
-                label = "OPEN FROM DISK",
+                label = Localize("editor_menu_open_from_disk"),
                 open = false,
                 contents = {}
             },
             {
                 id = "file.save",
                 type = "action",
-                label = "SAVE",
+                label = Localize("editor_menu_save"),
                 onclick = function()
                     if not scene.songData then return true end
                     local splitPath = scene.songData.path:split(getDirectorySeparator())
@@ -821,7 +821,7 @@ local editorMenu = {
             {
                 id = "file.saveas",
                 type = "action",
-                label = "SAVE AS",
+                label = Localize("editor_menu_save_as"),
                 onclick = function()
                     fileDialog("w")
                     return true
@@ -830,7 +830,7 @@ local editorMenu = {
             {
                 id = "file.opensavefolder",
                 type = "action",
-                label = "OPEN SAVE FOLDER",
+                label = Localize("editor_menu_open_save_folder"),
                 onclick = function()
                     love.system.openURL("file://"..love.filesystem.getSaveDirectory() .. getDirectorySeparator() .. "editor_save")
                     return true
@@ -839,7 +839,7 @@ local editorMenu = {
             {
                 id = "file.exit",
                 type = "action",
-                label = "EXIT",
+                label = Localize("editor_menu_exit"),
                 onclick = function()
                     exitEditor()
                     return true
@@ -850,13 +850,13 @@ local editorMenu = {
     {
         id = "edit",
         type = "menu",
-        label = "EDIT",
+        label = Localize("editor_menu_edit"),
         open = false,
         contents = {
             {
                 id = "edit.metadata",
                 type = "action",
-                label = "METADATA",
+                label = Localize("editor_menu_metadata"),
                 onclick = function()
                     if not scene.songData then return true end
                     metadataDialog()
@@ -866,7 +866,7 @@ local editorMenu = {
             {
                 id = "edit.difficulties",
                 type = "action",
-                label = "DIFFICULTIES",
+                label = Localize("editor_menu_difficulties"),
                 onclick = function()
                     if not scene.songData then return true end
                     local difficulties = {
@@ -878,7 +878,7 @@ local editorMenu = {
                     local dialog = {
                         width = 20,
                         height = 19,
-                        title = "DIFFICULTIES",
+                        title = Localize("editor_dialog_difficulties_title"),
                         contents = {
                             DialogButton:new(88, 240, 128, 16, "CLOSE", function ()
                                 table.remove(scene.dialogs, 1)
@@ -890,7 +890,7 @@ local editorMenu = {
                         local level = hasDifficulty and scene.songData:getLevel(difficulty) or ""
                         local difficultyLabel = DialogDifficulty:new(16,48*(i-1),128,difficulty,nil,"left")
 
-                        local levelInput = DialogInput:new(96,48*(i-1),32,16,"LVL",4,nil,function(self)
+                        local levelInput = DialogInput:new(96,48*(i-1),32,16,Localize("editor_label_level"),4,nil,function(self)
                             EditorDirty = true
                             scene.songData.levels[difficulty] = tonumber(self.content) or self.content
                             scene.songData.charts[difficulty].level = tonumber(self.content) or self.content
@@ -899,7 +899,7 @@ local editorMenu = {
                         end)
                         levelInput.content = tostring(level)
 
-                        local charterInput = DialogInput:new(216,48*(i-1),80,16,"CHARTER",10,nil,function(self)
+                        local charterInput = DialogInput:new(216,48*(i-1),80,16,Localize("editor_label_chart_designer"),10,nil,function(self)
                             (scene.songData.charts[difficulty] or {}).charter = self.content
                         end)
                         charterInput.content = (scene.songData.charts[difficulty] or {}).charter or ""
@@ -917,15 +917,15 @@ local editorMenu = {
                         end)
                         removeButton = DialogButton:new(184,48*(i-1),16,16,"-",function()
                             local removedialog = {
-                                title = "REMOVE " .. SongDifficulty[difficulty].name:upper(),
+                                title = Localize("editor_dialog_remove_title"):format(Localize("difficulty_"..difficulty)),
                                 width = 16,
                                 height = 9,
                                 contents = {
-                                    DialogLabel:new(0, 16, 240, "ARE YOU SURE?\nTHIS CANNOT BE UNDONE!", "center"),
-                                    DialogButton:new(136, 80, 64, 16, "CANCEL", function ()
+                                    DialogLabel:new(0, 16, 240, Localize("editor_dialog_irreversible"), "center"),
+                                    DialogButton:new(136, 80, 64, 16, Localize("editor_action_cancel"), function ()
                                         table.remove(scene.dialogs, 1)
                                     end),
-                                    DialogButton:new(40, 80, 64, 16, "REMOVE", function ()
+                                    DialogButton:new(40, 80, 64, 16, Localize("editor_action_remove"), function ()
                                         EditorDirty = true
                                         scene.songData:removeChart(difficulty)
                                         if scene.difficulty == difficulty then
@@ -975,7 +975,7 @@ local editorMenu = {
             {
                 id = "edit.copy_effects",
                 type = "action",
-                label = "COPY EFFECTS",
+                label = Localize("editor_menu_copy_effects"),
                 onclick = function()
                     if not scene.songData then return true end
                     local difficulties = {
@@ -984,7 +984,7 @@ local editorMenu = {
                     local dialog = {
                         width = 15,
                         height = 6,
-                        title = "COPY EFFECTS FROM",
+                        title = Localize("editor_dialog_copy_effects_title"),
                         contents = {}
                     }
                     local y = 16
@@ -996,15 +996,15 @@ local editorMenu = {
                             local numLabel = DialogLabel:new(32, y, 160, numEffects .. " EFFECT" .. (numEffects ~= 1 and "S" or ""), "right")
                             table.insert(dialog.contents, DialogButton:new(16,y,192,16,"",function()
                                 local savedialog = {
-                                    title = "COPY EFFECTS FROM " .. difficulty:upper(),
+                                    title = Localize("editor_dialog_copy_effects_confirm_title"):format(Localize("difficulty_"..difficulty)),
                                     width = 16,
                                     height = 10,
                                     contents = {
-                                        DialogLabel:new(0, 16, 240, "THIS WILL OVERWRITE THE CURRENT CHART'S EFFECTS! ARE YOU SURE?", "center"),
-                                        DialogButton:new(136, 96, 64, 16, "CANCEL", function ()
+                                        DialogLabel:new(0, 16, 240, Localize("editor_dialog_copy_effects"), "center"),
+                                        DialogButton:new(136, 96, 64, 16, Localize("editor_action_cancel"), function ()
                                             table.remove(scene.dialogs, 1)
                                         end),
-                                        DialogButton:new(40, 96, 64, 16, "COPY", function ()
+                                        DialogButton:new(40, 96, 64, 16, Localize("editor_action_copy"), function ()
                                             EditorDirty = true
                                             scene.chart.effects = table.merge({}, scene.songData:loadChart(difficulty).effects)
                                             table.remove(scene.dialogs, 1)
@@ -1020,7 +1020,7 @@ local editorMenu = {
                             dialog.height = dialog.height + 3
                         end
                     end
-                    table.insert(dialog.contents, DialogButton:new(48, y+16, 128, 16, "CANCEL", function ()
+                    table.insert(dialog.contents, DialogButton:new(48, y+16, 128, 16, Localize("editor_action_cancel"), function ()
                         table.remove(scene.dialogs, 1)
                     end))
                     table.insert(scene.dialogs, dialog)
@@ -1030,7 +1030,7 @@ local editorMenu = {
             {
                 id = "edit.copy_chart",
                 type = "action",
-                label = "COPY CHART",
+                label = Localize("editor_menu_copy_chart"),
                 onclick = function()
                     if not scene.songData then return true end
                     local difficulties = {
@@ -1057,11 +1057,11 @@ local editorMenu = {
                                     width = 16,
                                     height = 10,
                                     contents = {
-                                        DialogLabel:new(0, 16, 240, "THIS WILL OVERWRITE THE CURRENT CHART! ARE YOU SURE?", "center"),
-                                        DialogButton:new(136, 96, 64, 16, "CANCEL", function ()
+                                        DialogLabel:new(0, 16, 240, Localize("editor_dialog_copy_chart"), "center"),
+                                        DialogButton:new(136, 96, 64, 16, Localize("editor_action_cancel"), function ()
                                             table.remove(scene.dialogs, 1)
                                         end),
-                                        DialogButton:new(40, 96, 64, 16, "COPY", function ()
+                                        DialogButton:new(40, 96, 64, 16, Localize("editor_action_copy"), function ()
                                             EditorDirty = true
                                             local other = scene.songData:loadChart(difficulty)
                                             if other then
@@ -1091,7 +1091,7 @@ local editorMenu = {
                             dialog.height = dialog.height + 3
                         end
                     end
-                    table.insert(dialog.contents, DialogButton:new(48, y+16, 128, 16, "CANCEL", function ()
+                    table.insert(dialog.contents, DialogButton:new(48, y+16, 128, 16, Localize("editor_action_cancel"), function ()
                         table.remove(scene.dialogs, 1)
                     end))
                     table.insert(scene.dialogs, dialog)
@@ -1101,18 +1101,18 @@ local editorMenu = {
             {
                 id = "edit.delete_effects",
                 type = "action",
-                label = "CLEAR EFFECTS",
+                label = Localize("editor_menu_clear_effects"),
                 onclick = function()
                     local dialog = {
-                        title = "CLEAR EFFECTS",
+                        title = Localize("editor_dialog_clear_effects_title"),
                         width = 16,
                         height = 9,
                         contents = {
-                            DialogLabel:new(0, 16, 240, "ARE YOU SURE?\nTHIS CANNOT BE UNDONE!", "center"),
-                            DialogButton:new(136, 80, 64, 16, "CANCEL", function ()
+                            DialogLabel:new(0, 16, 240, Localize("editor_dialog_irreversible"), "center"),
+                            DialogButton:new(136, 80, 64, 16, Localize("editor_action_cancel"), function ()
                                 table.remove(scene.dialogs, 1)
                             end),
-                            DialogButton:new(40, 80, 64, 16, "CLEAR", function ()
+                            DialogButton:new(40, 80, 64, 16, Localize("editor_action_clear"), function ()
                                 EditorDirty = true
                                 scene.chart.effects = {}
                                 table.remove(scene.dialogs, 1)
@@ -1126,18 +1126,18 @@ local editorMenu = {
             {
                 id = "edit.clear_chart",
                 type = "action",
-                label = "CLEAR CHART",
+                label = Localize("editor_menu_clear_chart"),
                 onclick = function()
                     local dialog = {
-                        title = "CLEAR CHART",
+                        title = Localize("editor_dialog_clear_chart_title"),
                         width = 16,
                         height = 9,
                         contents = {
-                            DialogLabel:new(0, 16, 240, "THIS WILL REMOVE ALL NOTES, EFFECTS, AND BPM CHANGES!\nTHIS CANNOT BE UNDONE!", "center"),
-                            DialogButton:new(136, 80, 64, 16, "CANCEL", function ()
+                            DialogLabel:new(0, 16, 240, Localize("editor_dialog_clear_chart"), "center"),
+                            DialogButton:new(136, 80, 64, 16, Localize("editor_action_cancel"), function ()
                                 table.remove(scene.dialogs, 1)
                             end),
-                            DialogButton:new(40, 80, 64, 16, "CLEAR", function ()
+                            DialogButton:new(40, 80, 64, 16, Localize("editor_action_clear"), function ()
                                 EditorDirty = true
                                 scene.chart.effects = {}
                                 scene.chart.notes = {}
@@ -1156,13 +1156,13 @@ local editorMenu = {
     {
         id = "note",
         type = "menu",
-        label = "NOTE",
+        label = Localize("editor_menu_note"),
         open = false,
         contents = {
             {
                 id = "note.select",
                 type = "action",
-                label = "SELECT",
+                label = Localize("editor_menu_select"),
                 onclick = function()
                     SetCursor("🮰", 0, 0)
                     scene.placementMode = placementModes.select
@@ -1172,7 +1172,7 @@ local editorMenu = {
             {
                 id = "note.normal",
                 type = "action",
-                label = "NORMAL",
+                label = Localize("note_normal"),
                 onclick = function()
                     SetCursor("○", 4, 8)
                     scene.placementMode = placementModes.normal
@@ -1182,7 +1182,7 @@ local editorMenu = {
             {
                 id = "note.swap",
                 type = "action",
-                label = "SWAP",
+                label = Localize("note_swap"),
                 onclick = function()
                     SetCursor("◇", 4, 8)
                     scene.placementMode = placementModes.swap
@@ -1192,7 +1192,7 @@ local editorMenu = {
             {
                 id = "note.merge",
                 type = "action",
-                label = "MERGE",
+                label = Localize("note_merge"),
                 onclick = function()
                     SetCursor("▥", 4, 8)
                     scene.placementMode = placementModes.merge
@@ -1202,7 +1202,7 @@ local editorMenu = {
             {
                 id = "note.mine",
                 type = "action",
-                label = "MINE",
+                label = Localize("note_mine"),
                 onclick = function()
                     SetCursor("☓", 4, 8)
                     scene.placementMode = placementModes.mine
@@ -1212,7 +1212,7 @@ local editorMenu = {
             {
                 id = "note.warning",
                 type = "action",
-                label = "WARNING",
+                label = Localize("note_warning"),
                 onclick = function()
                     SetCursor("⚠", 4, 8)
                     scene.placementMode = placementModes.warning
@@ -1222,7 +1222,7 @@ local editorMenu = {
             {
                 id = "note.bpm",
                 type = "action",
-                label = "BPM CHANGE",
+                label = Localize("editor_menu_bpm_change"),
                 onclick = function()
                     SetCursor("▷", 4, 8)
                     scene.placementMode = placementModes.bpm
@@ -1232,7 +1232,7 @@ local editorMenu = {
             {
                 id = "note.bpm",
                 type = "action",
-                label = "EFFECT",
+                label = Localize("editor_menu_effect"),
                 onclick = function()
                     SetCursor("¤", 4, 8)
                     scene.placementMode = placementModes.effect
@@ -1244,13 +1244,13 @@ local editorMenu = {
     {
         id = "play",
         type = "menu",
-        label = "PLAY",
+        label = Localize("editor_menu_play"),
         open = false,
         contents = {
             {
                 id = "play.playtest",
                 type = "action",
-                label = "PLAYTEST",
+                label = Localize("editor_menu_playtest"),
                 onclick = function()
                     if not scene.chart then return true end
                     shutoffMusic()
@@ -1268,7 +1268,7 @@ local editorMenu = {
             {
                 id = "play.auto",
                 type = "action",
-                label = "AUTO SHOWCASE",
+                label = Localize("editor_menu_showcase"),
                 onclick = function()
                     if not scene.chart then return true end
                     shutoffMusic()
@@ -1292,7 +1292,7 @@ local editorMenu = {
     },
     {
         id = "hotreload",
-        label = "HOT RELOAD",
+        label = Localize("editor_menu_hot_reload"),
         type = "action",
         onclick = function()
             SceneManager.Transition("scenes/neditor", {songData = scene.songData, difficulty = scene.difficulty})
@@ -1351,7 +1351,7 @@ buildRecentMenu = function()
             label = itm.name,
             type = "action",
             onclick = function()
-                protectedAction("OPEN", function()
+                protectedAction(Localize("editor_action_open"), function()
                     shutoffMusic()
                     readChart(id)
                 end)
@@ -1449,11 +1449,11 @@ function scene.load(args)
 
     if HasGamepad then
         table.insert(scene.dialogs, 1, {
-            title = "GAMEPAD NOT SUPPORTED",
+            title = Localize("editor_dialog_gamepad_title"),
             width = 16,
             height = 14,
             contents = {
-                DialogLabel:new(0, 0, 240, "Hey, you!\nIt appears you are using a gamepad. Currently, the editor does not support gamepad input.\n\nYou may press " .. KeyLabel(Save.Keybind("back")[2]) .. " to exit the editor and continue playing.", "center"),
+                DialogLabel:new(0, 0, 240, Localize("editor_dialog_gamepad"):format(KeyLabel(Save.Keybind("back")[2])), "center"),
                 DialogButton:new(88, 160, 64, 16, "OK", function ()
                     table.remove(scene.dialogs, 1)
                 end)
@@ -1611,7 +1611,7 @@ local function fullCopy(a,b)
 end
 
 function scene.directorydropped(path)
-    protectedAction("IMPORT", function()
+    protectedAction(Localize("editor_action_import"), function()
         love.filesystem.mount(path, "temp_import")
         local splitPath = path:split("/")
         local name = splitPath[#splitPath]
@@ -1766,13 +1766,13 @@ local function drawTab(tab,x,y)
             drawTab(elem, X + 8*(width+4), Y)
             love.graphics.setColor(TerminalColors[ColorID.LIGHT_BLUE])
         end
-        love.graphics.print(elem.label, X+16, Y+16)
+        DrawText(elem.label, X+16, Y+16)
         if elem.type == "menu" then
-            love.graphics.print("▷", X+8+width*8, Y+16)
+            DrawText("▷", X+8+width*8, Y+16)
         end
         if i ~= #tab.contents then
             love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
-            love.graphics.print(("┈"):rep(width+2), X+8, Y+32)
+            DrawText(("┈"):rep(width+2), X+8, Y+32)
         end
     end
 end
@@ -1784,7 +1784,7 @@ function scene.draw()
         for i = 1, 4-1 do
             love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
             local x = (80-(scene.chart.lanes*4-1))/2 - 1+(i-1)*4 + 1
-            love.graphics.print(("   ┊\n"):rep(16), x*8, 7*16)
+            DrawText(("   ┊\n"):rep(16), x*8, 7*16)
         end
 
         local bpmChanges = scene.chart.bpmChanges
@@ -1811,7 +1811,7 @@ function scene.draw()
                 local drawPos = GetNoteCellY(pos, speed, 1, 0, chartPos, chartHeight)-1
                 if drawPos >= chartPos and drawPos < chartPos+chartHeight then
                     love.graphics.setColor(TerminalColors[numSteps%(4*zoom) == 0 and ColorID.LIGHT_GRAY or ColorID.DARK_GRAY])
-                    love.graphics.print("┈┈┈╬┈┈┈╬┈┈┈╬┈┈┈", (80-(scene.chart.lanes*4-1))/2 * 8, drawPos*16-8)
+                    DrawText("┈┈┈╬┈┈┈╬┈┈┈╬┈┈┈", (80-(scene.chart.lanes*4-1))/2 * 8, drawPos*16-8)
                 end
                 local mouseDist = math.abs((drawPos*16-8) - (MouseY-8))
                 if mouseDist < closestY then
@@ -1842,7 +1842,7 @@ function scene.draw()
             local pos = 0
             local drawPos = GetNoteCellY(pos, speed, 1, 0, chartPos, chartHeight)-1
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
-            love.graphics.print("┈┈┈╬┈┈┈╬┈┈┈╬┈┈┈", (80-(scene.chart.lanes*4-1))/2 * 8, drawPos*16-8)
+            DrawText("┈┈┈╬┈┈┈╬┈┈┈╬┈┈┈", (80-(scene.chart.lanes*4-1))/2 * 8, drawPos*16-8)
         end
 
         local chartX = (80-(scene.chart.lanes*4-1))/2 - 1 + 2
@@ -1900,7 +1900,7 @@ function scene.draw()
             local drawPos = GetNoteCellY(change.time - scene.chartTimeTemp, speed, 1, 0, chartPos, chartHeight)
             local txt = change.bpm .. " BPM ▷"
             local w = 8*#txt
-            love.graphics.printf(txt, chartX*8-24 - w, drawPos*16-24, w, "right")
+            DrawText(txt, chartX*8-24 - w, drawPos*16-24, w, "right")
         end
 
         love.graphics.setFont(Font)
@@ -1930,11 +1930,11 @@ function scene.draw()
                     local barPos = pos+i/speed
                     local extPos = chartPos+chartHeight-barPos*speed+(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1)
                     if extPos >= chartPos and extPos-(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1) < chartPos+(chartHeight-1) then
-                        love.graphics.printf("┊", chartX*8+136 + (x*12) - w, math.floor(extPos*16-8-0), w, "left")
+                        DrawText("┊", chartX*8+136 + (x*12) - w, math.floor(extPos*16-8-0), w, "left")
                     end
                 end
             end
-            love.graphics.printf(txt, chartX*8+136 + (x*12) - w, drawPos*16-24, w, "left")
+            DrawText(txt, chartX*8+136 + (x*12) - w, drawPos*16-24, w, "left")
             effectPos[lastEffectPos] = x + 1
         end
 
@@ -1976,7 +1976,7 @@ function scene.draw()
             local drawPos = GetNoteCellY(scene.lastNoteTime - scene.chartTimeTemp, speed, 1, 0, chartPos, chartHeight)
             local txt = "▷"
             local w = 8*#txt
-            love.graphics.printf(txt, chartX*8-24 - w, drawPos*16-24, w, "right")
+            DrawText(txt, chartX*8-24 - w, drawPos*16-24, w, "right")
         end
 
 
@@ -2009,7 +2009,7 @@ function scene.draw()
             local drawPos = GetNoteCellY(scene.lastNoteTime - scene.chartTimeTemp, speed, 1, 0, chartPos, chartHeight)
             local txt = "¤"
             local w = 8
-            love.graphics.printf(txt, chartX*8+136 + (effectPos[lastEffectPos] or 0)*12 - w, drawPos*16-24, w, "right")
+            DrawText(txt, chartX*8+136 + (effectPos[lastEffectPos] or 0)*12 - w, drawPos*16-24, w, "right")
         end
     
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
@@ -2022,24 +2022,24 @@ function scene.draw()
             love.graphics.print("█", scrollbarX, 352-y)
         end
 
-        love.graphics.print("Zoom: " .. math.floor(zoom*1000)/1000 .. "x", scrollbarX+24, 96)
+        DrawText(Localize("editor_zoom"):format(math.floor(zoom*1000)/1000), scrollbarX+24, 96)
     else
         if scene.songData then
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
-            love.graphics.printf("- NO CHART LOADED -", 64, 232, 512, "center")
+            DrawText(Localize("editor_no_chart"), 64, 232, 512, "center")
             love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
-            love.graphics.printf("GO TO EDIT / DIFFICULTIES TO CREATE A NEW CHART", 64, 248, 512, "center")
+            DrawText(Localize("editor_no_chart_subtext"), 64, 248, 512, "center")
         else
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
-            love.graphics.printf("- NO SONG LOADED -", 64, 232, 512, "center")
+            DrawText(Localize("editor_no_song"), 64, 232, 512, "center")
             love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
-            love.graphics.printf("GO TO FILE / NEW TO CREATE A NEW SONG", 64, 248, 512, "center")
+            DrawText(Localize("editor_no_song_subtext"), 64, 248, 512, "center")
         end
     end
 
     for _,particle in ipairs(Particles) do
         love.graphics.setColor(TerminalColors[particle.color])
-        love.graphics.print(particle.char, particle.x-4, particle.y-8)
+        DrawText(particle.char, particle.x-4, particle.y-8)
     end
 
 
@@ -2054,16 +2054,16 @@ function scene.draw()
             drawTab(tab, X-8, Y+16)
             love.graphics.setColor(TerminalColors[ColorID.LIGHT_BLUE])
         end
-        love.graphics.print(tab.label, tabPosition, 32)
+        DrawText(tab.label, tabPosition, 32)
         tabPosition = tabPosition + 8*(utf8.len(tab.label)+4)
     end
 
     if scene.difficulty then
         local level = scene.songData:getLevel(scene.difficulty)
-        love.graphics.printf(scene.songData.name, 0, 400, 568, "right")
+        DrawText(scene.songData.name, 0, 400, 568, "right")
         if EditorDirty then
             love.graphics.setColor(TerminalColors[ColorID.LIGHT_RED])
-            love.graphics.print("*", 568-Font:getWidth(scene.songData.name)-16, 400)
+            DrawText("*", 568-Font:getWidth(scene.songData.name)-16, 400)
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
         end
         PrintDifficulty(568, 416, scene.difficulty or "easy", level or 0, "right")
@@ -2074,14 +2074,14 @@ function scene.draw()
 
     if scene.chart then
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        love.graphics.print("Suggested Level: ", 32, 400)
-        love.graphics.print("     Full Level: ", 32, 416)
+        DrawText(Localize("editor_level"), 32, 400, 128, "right")
+        DrawText(Localize("editor_level_raw"), 32, 416, 128, "right")
         local difficulty = math.max(1, scene.lastRating)
         if math.floor(difficulty + 0.5) < SongDifficulty[scene.difficulty].range[1] or math.floor(difficulty + 0.5) > SongDifficulty[scene.difficulty].range[2] then
             love.graphics.setColor(TerminalColors[ColorID.LIGHT_RED])
         end
-        love.graphics.print(tostring(math.floor(difficulty + 0.5)), 168, 400)
-        love.graphics.print(tostring(math.floor(difficulty*1000)/1000), 168, 416)
+        DrawText(tostring(math.floor(difficulty + 0.5)), 168, 400)
+        DrawText(tostring(math.floor(difficulty*1000)/1000), 168, 416)
     end
 
     for i = #scene.dialogs, 1, -1 do
@@ -2095,7 +2095,7 @@ function scene.draw()
         for _,element in ipairs(dialog.contents) do
             element:draw((x+2)*8, (y+3)*16)
         end
-        love.graphics.printf(dialog.title, (x+1)*8, (y+1)*16, dialog.width*16, "center")
+        DrawText(dialog.title, (x+1)*8, (y+1)*16, dialog.width*16, "center")
     end
 end
 
@@ -2201,20 +2201,20 @@ function scene.mousepressed(x,y,b,t,p)
                 end
                 if scene.placementMode == placementModes.bpm then
                     local time = scene.lastNoteTime
-                    local bpmInput = DialogInput:new(0, 16, 240, 16, "NEW BPM", 15, nil, function(self)
+                    local bpmInput = DialogInput:new(0, 16, 240, 16, Localize("editor_label_new_bpm"), 15, nil, function(self)
                         self.content = tostring(tonumber(self.content) or 0)
                     end)
                     bpmInput.content = "120"
                     table.insert(scene.dialogs, 1, {
-                        title = "PLACING BPM CHANGE",
+                        title = Localize("editor_dialog_bpm_change_title"),
                         width = 16,
                         height = 9,
                         contents = {
                             bpmInput,
-                            DialogButton:new(136, 80, 64, 16, "CANCEL", function ()
+                            DialogButton:new(136, 80, 64, 16, Localize("editor_action_cancel"), function ()
                                 table.remove(scene.dialogs, 1)
                             end),
-                            DialogButton:new(40, 80, 64, 16, "PLACE", function ()
+                            DialogButton:new(40, 80, 64, 16, Localize("editor_action_place"), function ()
                                 EditorDirty = true
                                 table.insert(scene.chart.bpmChanges, {time = time, bpm = tonumber(bpmInput.content)})
                                 table.remove(scene.dialogs, 1)
