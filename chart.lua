@@ -339,7 +339,6 @@ NoteTypes = {
 
 EffectTypes = {
     modify_curve = {
-        readable = "CURVATURE",
         apply = function(self)
             if self.data.smoothing then
                 CurveModifier:fromSmoothing(self.data.strength, self.data.smoothing)
@@ -348,10 +347,10 @@ EffectTypes = {
             end
         end,
         editor = function(self,container)
-            local strengthIn = DialogInput:new(0,0,container.width,16,"STRENGTH",5)
+            local strengthIn = DialogInput:new(0,0,container.width,16,Localize("effect_data_strength"),5)
             strengthIn.content = tostring(self.data.strength or "")
             table.insert(container.contents, strengthIn)
-            local easingButton = DialogButton:new(0, 32, container.width, 16, "EASING", function()
+            local easingButton = DialogButton:new(0, 32, container.width, 16, Localize("effect_data_easing"), function()
                 EasingDialog(self)
             end)
             table.insert(container.contents, easingButton)
@@ -363,7 +362,6 @@ EffectTypes = {
         end
     },
     chromatic = {
-        readable = "ABERRATION",
         apply = function(self)
             if self.data.smoothing then
                 ChromaticModifier:fromSmoothing(self.data.strength, self.data.smoothing)
@@ -372,10 +370,10 @@ EffectTypes = {
             end
         end,
         editor = function(self,container)
-            local strengthIn = DialogInput:new(0,0,container.width,16,"STRENGTH",5)
+            local strengthIn = DialogInput:new(0,0,container.width,16,Localize("effect_data_strength"),5)
             strengthIn.content = tostring(self.data.strength or "")
             table.insert(container.contents, strengthIn)
-            local easingButton = DialogButton:new(0, 32, container.width, 16, "EASING", function()
+            local easingButton = DialogButton:new(0, 32, container.width, 16, Localize("effect_data_easing"), function()
                 EasingDialog(self)
             end)
             table.insert(container.contents, easingButton)
@@ -387,7 +385,6 @@ EffectTypes = {
         end
     },
     tear = {
-        readable = "TEARING",
         apply = function(self)
             if self.data.smoothing then
                 TearingModifier:fromSmoothing(self.data.strength, self.data.smoothing)
@@ -396,10 +393,10 @@ EffectTypes = {
             end
         end,
         editor = function(self,container)
-            local strengthIn = DialogInput:new(0,0,container.width,16,"STRENGTH",5)
+            local strengthIn = DialogInput:new(0,0,container.width,16,Localize("effect_data_strength"),5)
             strengthIn.content = tostring(self.data.strength or "")
             table.insert(container.contents, strengthIn)
-            local easingButton = DialogButton:new(0, 32, container.width, 16, "EASING", function()
+            local easingButton = DialogButton:new(0, 32, container.width, 16, Localize("effect_data_easing"), function()
                 EasingDialog(self)
             end)
             table.insert(container.contents, easingButton)
@@ -411,7 +408,6 @@ EffectTypes = {
         end
     },
     board_brightness = {
-        readable = "BOARD BRIGHTNESS",
         apply = function(self)
             BoardBrightnessTarget = self.data.brightness or BoardBrightnessTarget
             BoardBrightnessSmoothing = self.data.smoothing or 0
@@ -420,9 +416,9 @@ EffectTypes = {
             end
         end,
         editor = function(self,container)
-            local strengthIn = DialogInput:new(0,0,container.width,16,"BRIGHTNESS",5)
+            local strengthIn = DialogInput:new(0,0,container.width,16,Localize("effect_data_brightness"),5)
             strengthIn.content = tostring(self.data.brightness or "")
-            local easingButton = DialogButton:new(0, 32, container.width, 16, "EASING", function()
+            local easingButton = DialogButton:new(0, 32, container.width, 16, Localize("effect_data_easing"), function()
                 EasingDialog(self)
             end)
             table.insert(container.contents, easingButton)
@@ -435,7 +431,6 @@ EffectTypes = {
         end
     },
     note_brightness = {
-        readable = "NOTE BRIGHTNESS",
         apply = function(self)
             NoteBrightnessTarget = self.data.brightness or NoteBrightnessTarget
             NoteBrightnessSmoothing = self.data.smoothing or 0
@@ -444,10 +439,10 @@ EffectTypes = {
             end
         end,
         editor = function(self,container)
-            local strengthIn = DialogInput:new(0,0,container.width,16,"BRIGHTNESS",5)
+            local strengthIn = DialogInput:new(0,0,container.width,16,Localize("effect_data_brightness"),5)
             strengthIn.content = tostring(self.data.brightness or "")
             table.insert(container.contents, strengthIn)
-            local easingButton = DialogButton:new(0, 32, container.width, 16, "EASING", function()
+            local easingButton = DialogButton:new(0, 32, container.width, 16, Localize("effect_data_easing"), function()
                 EasingDialog(self)
             end)
             table.insert(container.contents, easingButton)
@@ -459,7 +454,6 @@ EffectTypes = {
         end
     },
     bloom = {
-        readable = "BLOOM",
         apply = function(self)
             if self.data.smoothing then
                 BloomStrengthModifier:fromSmoothing(self.data.strength, self.data.smoothing)
@@ -468,10 +462,10 @@ EffectTypes = {
             end
         end,
         editor = function(self,container)
-            local strengthIn = DialogInput:new(0,0,container.width,16,"STRENGTH",5)
+            local strengthIn = DialogInput:new(0,0,container.width,16,Localize("effect_data_strength"),5)
             strengthIn.content = tostring(self.data.strength or "")
             table.insert(container.contents, strengthIn)
-            local easingButton = DialogButton:new(0, 32, container.width, 16, "EASING", function()
+            local easingButton = DialogButton:new(0, 32, container.width, 16, Localize("effect_data_easing"), function()
                 EasingDialog(self)
             end)
             table.insert(container.contents, easingButton)
@@ -483,16 +477,15 @@ EffectTypes = {
         end
     },
     wave = {
-        readable = "NOTE WAVINESS",
         apply = function(self)
             WavinessTarget = self.data.strength
             WavinessSmoothing = self.data.smoothing or 0
         end,
         editor = function(self,container)
-            local strengthIn = DialogInput:new(0,0,container.width,16,"STRENGTH",5)
+            local strengthIn = DialogInput:new(0,0,container.width,16,Localize("effect_data_strength"),5)
             strengthIn.content = tostring(self.data.strength or "")
             table.insert(container.contents, strengthIn)
-            local easingButton = DialogButton:new(0, 32, container.width, 16, "EASING", function()
+            local easingButton = DialogButton:new(0, 32, container.width, 16, Localize("effect_data_easing"), function()
                 EasingDialog(self)
             end)
             table.insert(container.contents, easingButton)
@@ -504,16 +497,15 @@ EffectTypes = {
         end
     },
     scroll_speed = {
-        readable = "SCROLL SPEED",
         apply = function(self)
             ScrollSpeedModTarget = self.data.speed
             ScrollSpeedModSmoothing = self.data.smoothing or 0
         end,
         editor = function(self,container)
-            local strengthIn = DialogInput:new(0,0,container.width,16,"SPEED MULT",5)
+            local strengthIn = DialogInput:new(0,0,container.width,16,Localize("effect_data_speed_multiplier"),5)
             strengthIn.content = tostring(self.data.speed or "")
             table.insert(container.contents, strengthIn)
-            local easingButton = DialogButton:new(0, 32, container.width, 16, "EASING", function()
+            local easingButton = DialogButton:new(0, 32, container.width, 16, Localize("effect_data_easing"), function()
                 EasingDialog(self)
             end)
             table.insert(container.contents, easingButton)
@@ -525,7 +517,6 @@ EffectTypes = {
         end
     },
     note_speed = {
-        readable = "LANE SPEED",
         apply = function(self)
             if NoteSpeedMods[self.data.lane+1] then
                 NoteSpeedMods[self.data.lane+1][2] = self.data.speed
@@ -533,13 +524,13 @@ EffectTypes = {
             end
         end,
         editor = function(self,container)
-            local laneIn = DialogInput:new(0,0,container.width,16,"AFFECTED LANE (0-3)",5)
-            local strengthIn = DialogInput:new(0,32,container.width,16,"SPEED MULT",5)
+            local laneIn = DialogInput:new(0,0,container.width,16,Localize("effect_data_lane"),5)
+            local strengthIn = DialogInput:new(0,32,container.width,16,Localize("effect_data_speed_multiplier"),5)
             laneIn.content = tostring(self.data.lane or "")
             strengthIn.content = tostring(self.data.speed or "")
             table.insert(container.contents, strengthIn)
             table.insert(container.contents, laneIn)
-            local easingButton = DialogButton:new(0, 64, container.width, 16, "EASING", function()
+            local easingButton = DialogButton:new(0, 64, container.width, 16, Localize("effect_data_easing"), function()
                 EasingDialog(self)
             end)
             table.insert(container.contents, easingButton)
@@ -552,7 +543,6 @@ EffectTypes = {
         end
     },
     offset = {
-        readable = "VIEW OFFSET",
         apply = function(self)
             if self.data.smoothing then
                 ViewOffset:fromSmoothing(self.data.offset, self.data.smoothing)
@@ -562,13 +552,13 @@ EffectTypes = {
             ViewOffsetMoveLine = not self.data.keep_line
         end,
         editor = function(self,container)
-            local offsetIn = DialogInput:new(0,0,container.width,16,"OFFSET",5)
-            local keepIn = DialogToggle:new(0,80,container.width,16,"KEEP LINE")
+            local offsetIn = DialogInput:new(0,0,container.width,16,Localize("effect_data_offset"),5)
+            local keepIn = DialogToggle:new(0,80,container.width,16,Localize("effect_data_keep_line"))
             offsetIn.content = tostring(self.data.offset or "")
             keepIn.active = self.data.keep_line
             table.insert(container.contents, keepIn)
             table.insert(container.contents, offsetIn)
-            local easingButton = DialogButton:new(0, 32, container.width, 16, "EASING", function()
+            local easingButton = DialogButton:new(0, 32, container.width, 16, Localize("effect_data_easing"), function()
                 EasingDialog(self)
             end)
             table.insert(container.contents, easingButton)
@@ -581,14 +571,13 @@ EffectTypes = {
         end
     },
     freeze_view = {
-        readable = "FREEZE VIEW",
         apply = function(self,chart)
             ChartFrozen = not ChartFrozen
             ViewOffsetFreeze = self.time - chart.time
             ViewOffsetMoveLine = not self.data.keep_line
         end,
         editor = function(self,container)
-            local keepIn = DialogToggle:new(0,80,container.width,16,"KEEP LINE")
+            local keepIn = DialogToggle:new(0,80,container.width,16,Localize("effect_data_keep_line"))
             keepIn.active = self.data.keep_line
             table.insert(container.contents, keepIn)
             return function(effect)
@@ -597,12 +586,11 @@ EffectTypes = {
         end
     },
     hide_titlebar = {
-        readable = "HIDE TITLEBAR",
         apply = function(self)
             HideTitlebar = self.data.hide
         end,
         editor = function(self,container)
-            local showIn = DialogToggle:new(0,0,container.width,16,"HIDE")
+            local showIn = DialogToggle:new(0,0,container.width,16,Localize("effect_data_hide"))
             showIn.active = self.data.hide
             table.insert(container.contents, showIn)
             return function(effect)
@@ -611,12 +599,11 @@ EffectTypes = {
         end
     },
     show_reduced_info = {
-        readable = "REDUCED INFO",
         apply = function(self)
             ShowReducedInfo = self.data.reduced
         end,
         editor = function(self,container)
-            local showIn = DialogToggle:new(0,0,container.width,16,"REDUCE")
+            local showIn = DialogToggle:new(0,0,container.width,16,Localize("effect_data_reduce"))
             showIn.active = self.data.reduced
             table.insert(container.contents, showIn)
             return function(effect)
@@ -625,7 +612,6 @@ EffectTypes = {
         end
     },
     edit_note = {
-        readable = "[ADV] EDIT NOTE",
         apply = function(self,chart)
             for _,note in ipairs(chart.notes) do
                 if note.extra.id == self.data.id or note.extra.group == self.data.group then
@@ -654,10 +640,10 @@ EffectTypes = {
             end
         end,
         editor = function(self,container)
-            local groupIn = DialogInput:new(0,0,container.width,16,"NOTE GROUP",5)
-            local timeIn = DialogInput:new(0,32,container.width,16,"TYPE",5)
-            local laneIn = DialogInput:new(0,64,container.width,16,"LANE",5)
-            local typeIn = DialogInput:new(0,96,container.width,16,"TYPE",5)
+            local groupIn = DialogInput:new(0,0,container.width,16,Localize("effect_data_note_group"),5)
+            local timeIn = DialogInput:new(0,32,container.width,16,Localize("effect_data_note_time"),5)
+            local laneIn = DialogInput:new(0,64,container.width,16,Localize("effect_data_note_lane"),5)
+            local typeIn = DialogInput:new(0,96,container.width,16,Localize("effect_data_note_type"),5)
             groupIn.content = tostring(self.data.group or "")
             timeIn.content = tostring(self.data.time or "")
             laneIn.content = tostring(self.data.lane or "")
@@ -666,7 +652,7 @@ EffectTypes = {
             table.insert(container.contents, timeIn)
             table.insert(container.contents, laneIn)
             table.insert(container.contents, typeIn)
-            local easingButton = DialogButton:new(0, 128, container.width, 16, "EASING", function()
+            local easingButton = DialogButton:new(0, 128, container.width, 16, Localize("effect_data_easing"), function()
                 EasingDialog(self)
             end)
             table.insert(container.contents, easingButton)
@@ -681,7 +667,6 @@ EffectTypes = {
         end
     },
     transform = {
-        readable = "TRANSFORMATIONS",
         apply = function(self)
             if self.data.shift then
                 if self.data.smoothing then
@@ -719,13 +704,13 @@ EffectTypes = {
             end
         end,
         editor = function(self,container)
-            local shiftXIn = DialogInput:new(0,0,container.width/2-8,16,"SHIFT X",5)
-            local shiftYIn = DialogInput:new(container.width/2+8,0,container.width/2-8,16,"SHIFT Y",5)
-            local scaleXIn = DialogInput:new(0,32,container.width/2-8,16,"SCALE X",5)
-            local scaleYIn = DialogInput:new(container.width/2+8,32,container.width/2-8,16,"SCALE Y",5)
-            local shearXIn = DialogInput:new(0,64,container.width/2-8,16,"SHEAR X",5)
-            local shearYIn = DialogInput:new(container.width/2+8,64,container.width/2-8,16,"SHEAR Y",5)
-            local rotationIn = DialogInput:new(0,96,container.width,16,"ROTATION",5)
+            local shiftXIn = DialogInput:new(0,0,container.width/2-8,16,Localize("effect_data_shift_x"),5)
+            local shiftYIn = DialogInput:new(container.width/2+8,0,container.width/2-8,16,Localize("effect_data_shift_y"),5)
+            local scaleXIn = DialogInput:new(0,32,container.width/2-8,16,Localize("effect_data_scale_x"),5)
+            local scaleYIn = DialogInput:new(container.width/2+8,32,container.width/2-8,16,Localize("effect_data_scale_y"),5)
+            local shearXIn = DialogInput:new(0,64,container.width/2-8,16,Localize("effect_data_shear_x"),5)
+            local shearYIn = DialogInput:new(container.width/2+8,64,container.width/2-8,16,Localize("effect_data_shear_x"),5)
+            local rotationIn = DialogInput:new(0,96,container.width,16,Localize("effect_data_rotation"),5)
             shiftXIn.content = tostring((self.data.shift or {})[1] or "")
             shiftYIn.content = tostring((self.data.shift or {})[2] or "")
             scaleXIn.content = tostring((self.data.scale or {})[1] or "")
@@ -740,7 +725,7 @@ EffectTypes = {
             table.insert(container.contents, shearXIn)
             table.insert(container.contents, shearYIn)
             table.insert(container.contents, rotationIn)
-            local easingButton = DialogButton:new(0, 128, container.width, 16, "EASING", function()
+            local easingButton = DialogButton:new(0, 128, container.width, 16, Localize("effect_data_easing"), function()
                 EasingDialog(self)
             end)
             table.insert(container.contents, easingButton)
@@ -767,7 +752,6 @@ EffectTypes = {
         end
     },
     modify_bg = {
-        readable = "[ADV] MODIFY BG",
         apply = function(self,chart)
             local background = Assets.Background(chart.background)
             if background then
@@ -778,12 +762,11 @@ EffectTypes = {
         end
     },
     autoplay = {
-        readable = "SET AUTOPLAY",
         apply = function(self)
             Autoplay = self.data.autoplay
         end,
         editor = function(self,container)
-            local autoIn = DialogToggle:new(0,0,container.width,16,"AUTOPLAY")
+            local autoIn = DialogToggle:new(0,0,container.width,16,Localize("effect_data_autoplay"))
             autoIn.active = self.data.autoplay
             table.insert(container.contents, autoIn)
             return function(effect)

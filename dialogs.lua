@@ -84,7 +84,7 @@ end
 
 function DialogLabel:draw(x,y)
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    love.graphics.printf(self.text, self.x+x, self.y+y, self.width, self.align or "left")
+    DrawText(self.text, self.x+x, self.y+y, self.width, self.align or "left")
 end
 
 
@@ -151,7 +151,7 @@ end
 function DialogButton:draw(x,y)
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     DrawBoxHalfWidth((self.x+x)/8-1, (self.y+y)/16-1, self.width/8, self.height/16)
-    love.graphics.printf(self.label, self.x+x, self.y+y, self.width, "center")
+    DrawText(self.label, self.x+x, self.y+y, self.width, "center")
 end
 
 function DialogButton:click(x,y)
@@ -186,7 +186,7 @@ end
 function DialogToggle:draw(x,y)
     love.graphics.setColor(TerminalColors[self.active and ColorID.LIGHT_BLUE or ColorID.WHITE])
     DrawBoxHalfWidth((self.x+x)/8-1, (self.y+y)/16-1, self.width/8, self.height/16)
-    love.graphics.printf(self.label .. " - " .. (self.active and "ON" or "OFF"), self.x+x, self.y+y, self.width, "center")
+    DrawText(Localize("effect_data_toggle"):format(self.label, Localize(self.active and "settings_on" or "settings_off")), self.x+x, self.y+y, self.width, "center")
 end
 
 function DialogToggle:click(x,y)
@@ -228,10 +228,10 @@ function DialogInput:draw(x,y)
     -- DrawBoxHalfWidth((self.x+x)/8-1, (self.y+y)/16-1, self.width/8, self.height/16)
     if #self.content <= 0 then
         love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
-        love.graphics.printf(self.label, self.x+x, self.y+y, self.width, "center")
+        DrawText(self.label, self.x+x, self.y+y, self.width, "center")
     else
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        love.graphics.printf(self.content, self.x+x, self.y+y, self.width, "center")
+        DrawText(self.content, self.x+x, self.y+y, self.width, "center")
     end
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     if self.selected then
@@ -304,12 +304,12 @@ function DialogFileInput:draw(x,y)
     DrawBoxHalfWidth((self.x+x)/8-1, (self.y+y)/16-1, self.width/8, self.height/16)
     if self.file then
         local width = math.min(self.width, Font:getWidth(self.filename))
-        love.graphics.printf(self.filename:sub(-math.floor(width/8), -1), self.x+x, self.y+y, self.width, "center")
+        DrawText(self.filename:sub(-math.floor(width/8), -1), self.x+x, self.y+y, self.width, "center")
     elseif self.open then
         love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
-        love.graphics.printf("DROP A FILE", self.x+x, self.y+y, self.width, "center")
+        DrawText("DROP A FILE", self.x+x, self.y+y, self.width, "center")
     else
-        love.graphics.printf(self.label, self.x+x, self.y+y, self.width, "center")
+        DrawText(self.label, self.x+x, self.y+y, self.width, "center")
     end
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
 end
@@ -363,7 +363,7 @@ function DialogEasing:draw(x,y)
     local h = self.height - 24
     DrawBoxHalfWidth((self.x+x)/8-1, (self.y+y)/16-1, self.width/8, self.height/16)
     if not EasingMethods[self.method] then
-        love.graphics.printf("- NO EASING -", self.x+x, self.y+y+(self.height-16)/2, self.width, "center")
+        DrawText("- NO EASING -", self.x+x, self.y+y+(self.height-16)/2, self.width, "center")
         return
     end
     love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
