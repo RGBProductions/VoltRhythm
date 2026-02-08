@@ -349,7 +349,6 @@ Showcase = false
 GamepadLastAxes = {}
 GamepadAxes = {}
 
-local gamepads = 0
 HasGamepad = false
 
 KeyMap = {

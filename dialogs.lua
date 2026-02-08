@@ -238,7 +238,6 @@ function DialogInput:draw(x,y)
         local X = Font:getWidth(self.content)
         love.graphics.print("█", self.x+x+(self.width+X)/2, self.y+y)
     end
-    local width = self.max*8
     love.graphics.line(self.x+x, self.y+y+16, self.x+x+self.width, self.y+y+16)
 end
 

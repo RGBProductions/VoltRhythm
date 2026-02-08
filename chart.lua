@@ -294,7 +294,6 @@ NoteTypes = {
                 love.graphics.setColor(r*R,g*G,b*B,a*A)
 
                 local cells = self.length * math.abs(speed)
-                local f = love.graphics.getFont()
                 for i = 0.5, cells do
                     local barPos = mainpos-i/speed
                     local extPos = GetNoteCellY(barPos, speed, (NoteSpeedMods[self.lane+1] or {})[1] or 1, ViewOffset:get()+(ViewOffsetFreeze or 0), chartPos, chartHeight)
@@ -1155,7 +1154,7 @@ function Chart:resetAllNotes()
     end
 end
 
-function Chart.fromFile(path,b)
+function Chart.fromFile(path)
     local s,data = pcall(json.decode, love.filesystem.read(path))
     if not s then return end
     data.song = getPathOf(path).."/"..data.song
