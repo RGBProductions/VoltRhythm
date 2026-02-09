@@ -1039,7 +1039,7 @@ local editorMenu = {
                     local dialog = {
                         width = 15,
                         height = 6,
-                        title = "COPY CHART FROM",
+                        title = Localize("editor_dialog_copy_chart_title"),
                         contents = {}
                     }
                     local y = 16
@@ -1053,7 +1053,7 @@ local editorMenu = {
                             local numLabel = DialogLabel:new(32, y, 160, numNotes .. " NOTE" .. (numNotes ~= 1 and "S" or ""), "right")
                             table.insert(dialog.contents, DialogButton:new(16,y,192,16,"",function()
                                 local savedialog = {
-                                    title = "COPY CHART FROM " .. difficulty:upper(),
+                                    title = Localize("editor_dialog_copy_chart_confirm_title"):format(Localize("difficulty_"..difficulty)),
                                     width = 16,
                                     height = 10,
                                     contents = {

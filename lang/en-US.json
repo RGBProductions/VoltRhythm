@@ -248,6 +248,8 @@
     "editor_dialog_remove_title": "REMOVE %s",
     "editor_dialog_copy_effects_title": "COPY EFFECTS FROM",
     "editor_dialog_copy_effects_confirm_title": "COPY EFFECTS FROM %s",
+    "editor_dialog_copy_chart_title": "COPY CHART FROM",
+    "editor_dialog_copy_chart_confirm_title": "COPY CHART FROM %s",
     "editor_dialog_clear_effects_title": "CLEAR EFFECTS",
     "editor_dialog_clear_chart_title": "CLEAR CHART",
     "editor_dialog_gamepad_title": "GAMEPAD NOT SUPPORTED",
