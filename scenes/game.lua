@@ -567,7 +567,7 @@ function scene.update(dt)
                 if Autoplay then
                     if pos <= 0 then
                         local t = NoteTypes[note.type]
-                        if not t.autoplayIgnores then
+                        if t and not t.autoplayIgnores then
                             local hit = true
                             if t.hit then
                                 hit = false
@@ -1006,13 +1006,15 @@ function scene.draw()
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     DrawText(comboString, ((80-(#comboString))/2)*8 + AnaglyphSide*0.75, 7*16)
 
-    -- Rating counts
-    DrawBoxHalfWidth(6, 10, 20, 6)
-    for i,rating in ipairs(NoteRatings) do
-        local x,y = 64, (i+10)*16
-        NoteRatings[i].draw(x,y,false)
-        love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        DrawText(RatingCounts[i], x, y, 144, "right")
+    -- Judgements
+    if Save.Read("show_judgements") then
+        DrawBoxHalfWidth(6, 10, 20, 6)
+        for i,rating in ipairs(NoteRatings) do
+            local x,y = 64, (i+10)*16
+            NoteRatings[i].draw(x,y,false)
+            love.graphics.setColor(TerminalColors[ColorID.WHITE])
+            DrawText(RatingCounts[i], x, y, 144, "right")
+        end
     end
 
     -- Particles

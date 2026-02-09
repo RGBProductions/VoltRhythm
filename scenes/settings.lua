@@ -641,6 +641,16 @@ SettingsRoot = SettingsRoot or {
                         Save.Write("note_skin", NoteFontOptions[value])
                         NoteFont = NoteFonts[NoteFontOptions[value]]
                     end
+                },
+                {
+                    label = "settings_show_judgements",
+                    type = "toggle",
+                    read = function()
+                        return Save.Read("show_judgements")
+                    end,
+                    write = function(value)
+                        Save.Write("show_judgements", value)
+                    end
                 }
             }
         },

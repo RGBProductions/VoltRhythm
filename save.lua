@@ -36,7 +36,8 @@ local defaultSave = {
     border = "none",
     note_skin = "dots",
     scroll_speed = 25,
-    enable_hit_sounds = false
+    enable_hit_sounds = false,
+    show_judgements = false
 }
 
 function Save.Flush()
