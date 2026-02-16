@@ -127,9 +127,11 @@ local function writeChart(name)
     local songName = splitSong[#splitSong]
     local splitPath = scene.songData.path:split("/")
     name = name or splitPath[#splitPath]
-    scene.chart.version.name = Version.name
-    scene.chart.version.version = Version.version
-    scene.chart.version.code = Version.chart_version
+    for _,chart in pairs(scene.songData.charts) do
+        chart.version.name = Version.name
+        chart.version.version = Version.version
+        chart.version.code = Version.chart_version
+    end
     scene.songData:save("editor_save/" .. name)
     if oSongPath ~= "editor_save/"..name.."/"..songName then
         local contents_s,size_s = love.filesystem.read(oSongPath)
