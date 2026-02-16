@@ -39,7 +39,7 @@ function SongSelectSetSelectedSong(song, difficulty)
 
     local j = table.index(SongDifficultyOrder, difficulty)
     if not table.index(item.difficulties, difficulty) then
-        if SongSelectOvervoltMode and difficulty == "overvolt" or difficulty == "hidden" then
+        if SongSelectOvervoltMode and (difficulty == "overvolt" or difficulty == "hidden") then
             j = 11-j
         else
             if table.index(item.difficulties, SongDifficultyOrder[math.min(j+1, 4)]) then
