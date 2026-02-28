@@ -128,6 +128,9 @@ local function writeChart(name)
     local splitPath = scene.songData.path:split("/")
     name = name or splitPath[#splitPath]
     for _,chart in pairs(scene.songData.charts) do
+        if not chart.version then
+            chart.version = {}
+        end
         chart.version.name = Version.name
         chart.version.version = Version.version
         chart.version.code = Version.chart_version
