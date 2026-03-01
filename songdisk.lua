@@ -92,7 +92,7 @@ function SongDisk.AddSongs(disk, songs, songSource, addToFL)
             end
 
             local flNObject = copy(normalObject)
-            local flOObject = copy(normalObject)
+            local flOObject = copy(overvoltObject)
             flNObject.position = #fullLibrary.normalSongs
             flOObject.position = #fullLibrary.overvoltSongs
 
@@ -106,6 +106,8 @@ function SongDisk.AddSongs(disk, songs, songSource, addToFL)
                 table.insert(disk.allSongs, overvoltObject)
                 if addToFL then add(fullLibrary.overvoltSongs, flOObject) table.insert(fullLibrary.allSongs, flOObject) end
             end
+        else
+            print("Invalid song in disk '" .. disk.name .. "': '" .. song.song .. "'")
         end
     end
 end
