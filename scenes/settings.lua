@@ -135,6 +135,13 @@ SettingsRoot = SettingsRoot or {
                     end
                 },
                 {
+                    label = "settings_calibrate_audio_offset",
+                    type = "action",
+                    run = function()
+                        SceneManager.Transition("scenes/vcalibration")
+                    end
+                },
+                {
                     label = "settings_adjust_screen_fx",
                     type = "menu",
                     options = {

@@ -155,6 +155,8 @@
     "calibration_begin": "Press ENTER to begin calibration.",
     "calibration_instructions": "Press any key on the fourth beat.\nPress %s to stop.\n\nOffset is %sms.",
     "calibration_instructions_gamepad": "Press any button on the fourth beat.\nPress %s to stop.\n\nOffset is %sms.",
+    "vcalibration_instructions": "Press any key when the moving circle reaches the fourth circle.\nPress %s to stop.\n\nOffset is %sms.",
+    "vcalibration_instructions_gamepad": "Press any button when the moving circle reaches the fourth circle.\nPress %s to stop.\n\nOffset is %sms.",
     "calibration_failed": "No inputs were made. Your offset has not changed.\n\nPress %s to exit.",
     "calibration_finished": "Your new offset is %sms.\n\nPress %s to exit.",
     "photosensitivity_text": "VoltRhythm contains rapidly-moving patterns and flashing lights that could cause health complications for those with photosensitive conditions.\n\nIf you suffer from any of these conditions, please use extreme caution while playing or avoid playing entirely.",
