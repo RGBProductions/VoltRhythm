@@ -169,6 +169,8 @@
     "warning_version_old": "n older",
     "warning_version_new": "newer",
     "warning_version_client": "different",
+    "warning_delete_score_title": "DELETING SCORE FOR: %s",
+    "warning_delete_score": "Are you sure?",
     "warning_delete_scores": "Are you sure you want to delete ALL of your profile's scores?\n\nTHIS IS IRREVERSIBLE!!!",
     "warning_delete_data": "Are you sure you want to delete ALL of your VoltRhythm data?\n\nTHIS IS IRREVERSIBLE!!!\n\nVoltRhythm will restart after all data is deleted.",
     "editor_action_cancel": "CANCEL",

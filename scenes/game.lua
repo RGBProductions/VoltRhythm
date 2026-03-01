@@ -276,7 +276,7 @@ end
 function Restart()
     if scene.song then scene.song:stop() end
     scene.chart:resetAllNotes()
-    SceneManager.Transition("scenes/game", {songData = scene.songData, scorePrefix = scene.scorePrefix, difficulty = scene.difficulty, isEditor = scene.isEditor, forced = scene.forced})
+    SceneManager.Transition("scenes/game", {songData = scene.songData, scorePrefix = scene.scorePrefix, difficulty = scene.difficulty, isEditor = scene.isEditor, forced = scene.forced, chargeGate = scene.chargeGate})
 end
 
 function Exit()

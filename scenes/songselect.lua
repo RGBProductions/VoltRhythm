@@ -210,7 +210,7 @@ function scene.action(a)
         end
         SongSelectDifficultyView:start(SongSelectDifficulty, "outExpo", 0.3)
     end
-    if a == "overvolt" then
+    if a == "overvolt" and #scene.disk.overvoltSongs > 0 then
         local nextSet = set == scene.disk.normalSongs and scene.disk.overvoltSongs or scene.disk.normalSongs
         local choice = nextSet[scene.selected.linkedTo or scene.selected.identifier] or nextSet[1]
         if nextSet == scene.disk.overvoltSongs then
@@ -499,10 +499,10 @@ function scene.draw()
         love.graphics.rectangle("fill", 0, 0, 640, 480)
         love.graphics.setColor(1,1,1)
         DrawBoxHalfWidth(x, 10, w, 8)
-        DrawText("DELETING SCORE FOR SONG:\n" .. songName, 0, 176, 640, "center")
-        DrawText("ARE YOU SURE?", 0, 240, 640, "center")
-        DrawText("ESC - No", x*8+16, 288, w*8-16, "left")
-        DrawText("ENTER - Yes", x*8+16, 288, w*8-16, "right")
+        DrawText(Localize("warning_delete_score_title"):format(songName), 0, 176, 640, "center")
+        DrawText(Localize("warning_delete_score"), 0, 240, 640, "center")
+        DrawText(Localize("nav_no"):format(KeyLabel(binds.back)), x*8+16, 288, w*8-16, "left")
+        DrawText(Localize("nav_yes"):format(KeyLabel(binds.confirm)), x*8+16, 288, w*8-16, "right")
     end
 
     if overvoltWarning then
@@ -512,9 +512,9 @@ function scene.draw()
         love.graphics.rectangle("fill", 0, 0, 640, 480)
         love.graphics.setColor(1,1,1)
         DrawBoxHalfWidth(x, 8.5, w, 11)
-        DrawText("FOR YOUR SAFETY...", 0, 152, 640, "center")
-        DrawText("OVERVOLT charts are SEVERELY overcharted by design. Please be careful playing these charts.\n\nIf at any point you feel excessive pain in your hands, discontinue play immediately.", x*8+16, 184, w*8-16, "center")
-        DrawText(KeyLabel(binds.back) .. " - Dismiss", x*8+16, 312, w*8-16, "center")
+        DrawText(Localize("warning_overvolt_title"), 0, 152, 640, "center")
+        DrawText(Localize("warning_overvolt"), x*8+16, 184, w*8-16, "center")
+        DrawText(Localize("nav_dismiss"):format(KeyLabel(binds.back)), x*8+16, 312, w*8-16, "center")
     end
 
     if versionWarning then
@@ -524,10 +524,10 @@ function scene.draw()
         love.graphics.rectangle("fill", 0, 0, 640, 480)
         love.graphics.setColor(1,1,1)
         DrawBoxHalfWidth(x, 8.5, w, 11)
-        DrawText("VERSION MISMATCH", 0, 152, 640, "center")
-        DrawText("This chart was made for a" .. (versionWarning.old and "n older" or (versionWarning.new and " newer" or " different")) .. " version of VoltRhythm!\n\nChart version: " .. ((versionWarning.version.name ~= nil and versionWarning.version.version ~= nil) and (versionWarning.version.name .. " v" .. versionWarning.version.version) or "Unknown") .. "\nGame version: " .. Version.name .. " v" .. Version.version .. "\n\nThis chart may not work correctly!", x*8+16, 184, w*8-16, "center")
-        DrawText(KeyLabel(binds.back) .. " - Go Back", x*8+16, 312, w*8-16, "left")
-        DrawText(KeyLabel(binds.confirm) .. " - Play Anyway", x*8+16, 312, w*8-16, "right")
+        DrawText(Localize("warning_version_title"), 0, 152, 640, "center")
+        DrawText(Localize("warning_version"):format(Localize(versionWarning.old and "warning_version_old" or (versionWarning.new and "warning_version_new" or "warning_version_client")), ((versionWarning.version.name ~= nil and versionWarning.version.version ~= nil) and (versionWarning.version.name .. " v" .. versionWarning.version.version) or "Unknown"), Version.name .. " v" .. Version.version), x*8+16, 184, w*8-16, "center")
+        DrawText(Localize("nav_back"):format(KeyLabel(binds.back)), x*8+16, 312, w*8-16, "left")
+        DrawText(Localize("nav_play_anyway"):format(KeyLabel(binds.confirm)), x*8+16, 312, w*8-16, "right")
     end
 end
 

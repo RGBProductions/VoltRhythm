@@ -885,7 +885,7 @@ local editorMenu = {
                         height = 19,
                         title = Localize("editor_dialog_difficulties_title"),
                         contents = {
-                            DialogButton:new(88, 240, 128, 16, "CLOSE", function ()
+                            DialogButton:new(88, 240, 128, 16, Localize("editor_action_close"), function ()
                                 table.remove(scene.dialogs, 1)
                             end)
                         }
