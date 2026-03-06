@@ -408,10 +408,10 @@ EffectTypes = {
     },
     board_brightness = {
         apply = function(self)
-            BoardBrightnessTarget = self.data.brightness or BoardBrightnessTarget
-            BoardBrightnessSmoothing = self.data.smoothing or 0
-            if (self.data.smoothing or 0) == 0 then
-                BoardBrightness = BoardBrightnessTarget
+            if self.data.smoothing then
+                BoardBrightness:fromSmoothing(self.data.brightness, self.data.smoothing)
+            else
+                BoardBrightness:start(self.data.brightness, self.data.easeMethod or "linear", self.data.easeDuration or 0)
             end
         end,
         editor = function(self,container)
@@ -431,10 +431,10 @@ EffectTypes = {
     },
     note_brightness = {
         apply = function(self)
-            NoteBrightnessTarget = self.data.brightness or NoteBrightnessTarget
-            NoteBrightnessSmoothing = self.data.smoothing or 0
-            if (self.data.smoothing or 0) == 0 then
-                NoteBrightness = NoteBrightnessTarget
+            if self.data.smoothing then
+                NoteBrightness:fromSmoothing(self.data.brightness, self.data.smoothing)
+            else
+                NoteBrightness:start(self.data.brightness, self.data.easeMethod or "linear", self.data.easeDuration or 0)
             end
         end,
         editor = function(self,container)
@@ -669,20 +669,20 @@ EffectTypes = {
         apply = function(self)
             if self.data.shift then
                 if self.data.smoothing then
-                    DisplayShift[1]:fromSmoothing(self.data.shift[1], self.data.smoothing)
-                    DisplayShift[2]:fromSmoothing(self.data.shift[2], self.data.smoothing)
+                    if self.data.shift[1] then DisplayShift[1]:fromSmoothing(self.data.shift[1], self.data.smoothing) end
+                    if self.data.shift[2] then DisplayShift[2]:fromSmoothing(self.data.shift[2], self.data.smoothing) end
                 else
-                    DisplayShift[1]:start(self.data.shift[1], self.data.easeMethod or "linear", self.data.easeDuration or 0)
-                    DisplayShift[2]:start(self.data.shift[2], self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                    if self.data.shift[1] then DisplayShift[1]:start(self.data.shift[1], self.data.easeMethod or "linear", self.data.easeDuration or 0) end
+                    if self.data.shift[2] then DisplayShift[2]:start(self.data.shift[2], self.data.easeMethod or "linear", self.data.easeDuration or 0) end
                 end
             end
             if self.data.scale then
                 if self.data.smoothing then
-                    DisplayScale[1]:fromSmoothing(self.data.scale[1], self.data.smoothing)
-                    DisplayScale[2]:fromSmoothing(self.data.scale[2], self.data.smoothing)
+                    if self.data.scale[1] then DisplayScale[1]:fromSmoothing(self.data.scale[1], self.data.smoothing) end
+                    if self.data.scale[2] then DisplayScale[2]:fromSmoothing(self.data.scale[2], self.data.smoothing) end
                 else
-                    DisplayScale[1]:start(self.data.scale[1], self.data.easeMethod or "linear", self.data.easeDuration or 0)
-                    DisplayScale[2]:start(self.data.scale[2], self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                    if self.data.scale[1] then DisplayScale[1]:start(self.data.scale[1], self.data.easeMethod or "linear", self.data.easeDuration or 0) end
+                    if self.data.scale[2] then DisplayScale[2]:start(self.data.scale[2], self.data.easeMethod or "linear", self.data.easeDuration or 0) end
                 end
             end
             if self.data.rotation then
@@ -694,11 +694,11 @@ EffectTypes = {
             end
             if self.data.shear then
                 if self.data.smoothing then
-                    DisplayShear[1]:fromSmoothing(self.data.shear[1], self.data.smoothing)
-                    DisplayShear[2]:fromSmoothing(self.data.shear[2], self.data.smoothing)
+                    if self.data.shear[1] then DisplayShear[1]:fromSmoothing(self.data.shear[1], self.data.smoothing) end
+                    if self.data.shear[2] then DisplayShear[2]:fromSmoothing(self.data.shear[2], self.data.smoothing) end
                 else
-                    DisplayShear[1]:start(self.data.shear[1], self.data.easeMethod or "linear", self.data.easeDuration or 0)
-                    DisplayShear[2]:start(self.data.shear[2], self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                    if self.data.shear[1] then DisplayShear[1]:start(self.data.shear[1], self.data.easeMethod or "linear", self.data.easeDuration or 0) end
+                    if self.data.shear[2] then DisplayShear[2]:start(self.data.shear[2], self.data.easeMethod or "linear", self.data.easeDuration or 0) end
                 end
             end
         end,
@@ -736,13 +736,13 @@ EffectTypes = {
                 local shearX = tonumber(shearXIn.content)
                 local shearY = tonumber(shearYIn.content)
                 if shiftX or shiftY then
-                    effect.data.shift = {shiftX or (effect.data.shift or {})[1] or 0, shiftY or (effect.data.shift or {})[2] or 0}
+                    effect.data.shift = {shiftX or (effect.data.shift or {})[1], shiftY or (effect.data.shift or {})[2]}
                 end
                 if scaleX or scaleY then
-                    effect.data.scale = {scaleX or (effect.data.scale or {})[1] or 1, scaleY or (effect.data.scale or {})[2] or 1}
+                    effect.data.scale = {scaleX or (effect.data.scale or {})[1], scaleY or (effect.data.scale or {})[2]}
                 end
                 if shearX or shearY then
-                    effect.data.shear = {shearX or (effect.data.shear or {})[1] or 0, shearY or (effect.data.shear or {})[2] or 0}
+                    effect.data.shear = {shearX or (effect.data.shear or {})[1], shearY or (effect.data.shear or {})[2]}
                 end
                 effect.data.rotation = tonumber(rotationIn.content) or effect.data.rotation
                 effect.data.easeMethod = self.data.easeMethod
@@ -1064,6 +1064,7 @@ end
 ---@field notes table
 ---@field effects table
 ---@field bpmChanges table
+---@field comments table
 ---@field time number
 ---@field lanes integer
 ---@field charter string
@@ -1096,6 +1097,10 @@ function Chart:new(data)
     table.sort(chart.bpmChanges or {}, function (a, b)
         return a.time < b.time
     end)
+    chart.comments = data.comments or {}
+    table.sort(chart.comments or {}, function (a, b)
+        return a.time < b.time
+    end)
     chart.time = 0
     chart.totalCharge = 0
     for _,note in ipairs(chart.notes) do
@@ -1125,6 +1130,9 @@ function Chart:sort()
         return a.time < b.time
     end)
     table.sort(self.bpmChanges or {}, function (a, b)
+        return a.time < b.time
+    end)
+    table.sort(self.comments or {}, function (a, b)
         return a.time < b.time
     end)
 end
@@ -1203,6 +1211,7 @@ function Chart:save(path)
         notes = notes,
         effects = effects,
         bpmChanges = self.bpmChanges,
+        comments = self.comments,
         charter = self.charter,
         hideDifficulty = self.hideDifficulty,
         spoiler = self.spoiler,

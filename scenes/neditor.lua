@@ -10,7 +10,8 @@ local placementModes = {
     mine = 4,
     warning = 5,
     bpm = 6,
-    effect = 7
+    effect = 7,
+    comment = 8
 }
 
 local notes = {"normal", "swap", "merge", "mine", "warning"}
@@ -1243,6 +1244,16 @@ local editorMenu = {
                     scene.placementMode = placementModes.effect
                     return true
                 end
+            },
+            {
+                id = "note.comment",
+                type = "action",
+                label = Localize("editor_menu_comment"),
+                onclick = function()
+                    SetCursor("!", 4, 8)
+                    scene.placementMode = placementModes.comment
+                    return true
+                end
             }
         }
     },
@@ -1499,6 +1510,7 @@ function scene.update(dt)
     if source then
         source:setVolume(SystemSettings.song_volume)
         scene.chartTimeTemp = math.max(-scene.audioOffset,math.min(source:getDuration("seconds"), scene.chartTimeTemp))
+        source:setPitch(love.keyboard.isDown("lalt") and (love.keyboard.isDown("lctrl") and 0.25 or 0.5) or 1)
     end
     
     if source then
@@ -1733,6 +1745,12 @@ function scene.keypressed(k)
     if k == "g" and love.keyboard.isDown("lctrl") then
         groupDialog()
     end
+    if k == "h" then
+        for _,note in ipairs(scene.selectedNotes) do
+            note.lane = 3-note.lane
+        end
+        EditorDirty = true
+    end
 end
 
 local function clickTab(tab,x,y,cx,cy)
@@ -1792,7 +1810,8 @@ function scene.draw()
             DrawText(("   ┊\n"):rep(16), x*8, 7*16)
         end
 
-        local bpmChanges = scene.chart.bpmChanges
+        local bpmChanges = scene.chart.bpmChanges or {}
+        local comments = scene.chart.comments or {}
 
         local currentTime = 0
         local currentBPM = scene.chart.bpm
@@ -1851,6 +1870,19 @@ function scene.draw()
         end
 
         local chartX = (80-(scene.chart.lanes*4-1))/2 - 1 + 2
+
+        love.graphics.setFont(Font)
+        love.graphics.setColor(TerminalColors[ColorID.YELLOW])
+        for _,comment in ipairs(comments) do
+            local drawPos = GetNoteCellY(comment.time - scene.chartTimeTemp, speed, 1, 0, chartPos, chartHeight)
+            local txt = "! ▷"
+            local w = 8*#txt
+            local x = chartX*8-128 - w
+            local y = drawPos*16-24
+            DrawText(txt, x, y, w, "right")
+            DrawText("───────────────", (80-(scene.chart.lanes*4-1))/2 * 8, drawPos*16-24)
+        end
+
         for _,note in ipairs(scene.chart.notes) do
             local t = NoteTypes[note.type]
             if t and type(t.draw) == "function" then
@@ -1976,16 +2008,21 @@ function scene.draw()
         end
 
         love.graphics.setFont(Font)
-        love.graphics.setColor(TerminalColors[ColorID.CYAN])
         if scene.placementMode == placementModes.bpm then
+            love.graphics.setColor(TerminalColors[ColorID.CYAN])
             local drawPos = GetNoteCellY(scene.lastNoteTime - scene.chartTimeTemp, speed, 1, 0, chartPos, chartHeight)
             local txt = "▷"
             local w = 8*#txt
             DrawText(txt, chartX*8-24 - w, drawPos*16-24, w, "right")
         end
+        if scene.placementMode == placementModes.comment then
+            love.graphics.setColor(TerminalColors[ColorID.YELLOW])
+            local drawPos = GetNoteCellY(scene.lastNoteTime - scene.chartTimeTemp, speed, 1, 0, chartPos, chartHeight)
+            local txt = "! ▷"
+            local w = 8*#txt
+            DrawText(txt, chartX*8-128 - w, drawPos*16-24, w, "right")
+        end
 
-
-        love.graphics.setFont(Font)
         love.graphics.setColor(TerminalColors[ColorID.MAGENTA])
         lastEffectPos = -math.huge
         local lastEffectTime = 0
@@ -2028,6 +2065,24 @@ function scene.draw()
         end
 
         DrawText(Localize("editor_zoom"):format(math.floor(zoom*1000)/1000), scrollbarX+24, 96)
+
+        love.graphics.setColor(TerminalColors[ColorID.YELLOW])
+        for _,comment in ipairs(comments) do
+            local drawPos = GetNoteCellY(comment.time - scene.chartTimeTemp, speed, 1, 0, chartPos, chartHeight)
+            local txt = "! ▷"
+            local w = 8*#txt
+            local x = chartX*8-128 - w
+            local y = drawPos*16-24
+            if source then
+                local dur = source:getDuration("seconds")
+                local pos = comment.time/dur
+                local Y = pos*240
+                love.graphics.print("─", scrollbarX-16, 352-Y)
+            end
+            if MouseX >= x and MouseX < x+w and MouseY >= y and MouseY < y+16 then
+                DrawText(comment.comment, MouseX+16, MouseY, math.min(320, 640-MouseX-16))
+            end
+        end
     else
         if scene.songData then
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
@@ -2228,6 +2283,27 @@ function scene.mousepressed(x,y,b,t,p)
                         }
                     })
                 end
+                if scene.placementMode == placementModes.comment then
+                    local time = scene.lastNoteTime
+                    local bpmInput = DialogInput:new(0, 16, 240, 16, Localize("editor_label_comment"), 128)
+                    table.insert(scene.dialogs, 1, {
+                        title = Localize("editor_dialog_comment_title"),
+                        width = 16,
+                        height = 9,
+                        contents = {
+                            bpmInput,
+                            DialogButton:new(136, 80, 64, 16, Localize("editor_action_cancel"), function ()
+                                table.remove(scene.dialogs, 1)
+                            end),
+                            DialogButton:new(40, 80, 64, 16, Localize("editor_action_place"), function ()
+                                EditorDirty = true
+                                table.insert(scene.chart.comments, {time = time, comment = bpmInput.content})
+                                table.remove(scene.dialogs, 1)
+                                scene.chart:sort()
+                            end)
+                        }
+                    })
+                end
                 if scene.placementMode == placementModes.effect then
                     effectPlacementDialog({time = scene.lastNoteTime, data = {}}, false)
                 end
@@ -2301,6 +2377,21 @@ function scene.mousepressed(x,y,b,t,p)
             if x >= X and x < X+w and y >= Y-16 and y < Y+16+16 then
                 EditorDirty = true
                 table.remove(scene.chart.bpmChanges or {}, i)
+                for _=1,8 do
+                    table.insert(Particles, {x = x, y = y, vx = (love.math.random()*2-1)*64, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = ColorID.RED, char = "¤"})
+                end
+                return
+            end
+        end
+        for i,comment in ipairs(scene.chart.comments or {}) do
+            local drawPos = GetNoteCellY(comment.time - scene.chartTimeTemp, speed, 1, 0, chartPos, chartHeight)
+            local txt = "! ▷"
+            local w = 8*#txt
+            
+            local X,Y = chartX*8-128 - w, drawPos*16-24
+            if x >= X and x < X+w and y >= Y-16 and y < Y+16+16 then
+                EditorDirty = true
+                table.remove(scene.chart.comments or {}, i)
                 for _=1,8 do
                     table.insert(Particles, {x = x, y = y, vx = (love.math.random()*2-1)*64, vy = (love.math.random()*2-1)*64, life = (love.math.random()*0.5+0.5)*0.25, color = ColorID.RED, char = "¤"})
                 end

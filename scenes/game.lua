@@ -187,6 +187,8 @@ function scene.load(args)
     scene.bpm = scene.chart.bpm
     scene.beatCount = SecondsToSixteenths(scene.chart.time - scene.bpmChangeTime, scene.bpm) / 4 + scene.bpmChangeBeats
     scene.notesDestroyed = 0
+    scene.nextComment = 1
+    scene.comment = nil
     local colorIndexes = Save.Read("note_colors") or {ColorID.LIGHT_RED, ColorID.YELLOW, ColorID.LIGHT_GREEN, ColorID.LIGHT_BLUE}
     NoteColors = {
         ColorTransitionTable[colorIndexes[1]],
@@ -237,13 +239,6 @@ function scene.load(args)
         NoteSpeedMods[i] = {1,1,0}
     end
 
-    NoteBrightness = 1
-    NoteBrightnessTarget = 1
-    NoteBrightnessSmoothing = 0
-    BoardBrightness = 1
-    BoardBrightnessTarget = 1
-    BoardBrightnessSmoothing = 0
-
     PauseTimer = 0
     Paused = false
     SongStarted = false
@@ -263,6 +258,9 @@ function ResetEffects()
     TearingModifier:set(0)
     CurveModifier:set(1)
     ViewOffset:set(0)
+
+    NoteBrightness:set(1)
+    BoardBrightness:set(1)
 end
 
 function PauseGame()
@@ -468,6 +466,7 @@ function scene.update(dt)
         rpcUpdateTime = 5
     end
 
+    EffectTimescale = PauseTimer > 0 and 0 or (love.keyboard.isDown("lshift") and 16 or (scene.modifiers.speed or 1))
     if not WindowFocused and PauseTimer <= 0 and SystemSettings.pause_on_lost_focus then
         PauseGame()
     end
@@ -484,7 +483,6 @@ function scene.update(dt)
     end
     UpdateFC(dt)
     UpdateFO(dt)
-    EffectTimescale = love.keyboard.isDown("lshift") and 16 or (scene.modifiers.speed or 1)
     -- Update chart time and scroll chart
     local lastTime = scene.chart.time
     scene.chart.time = scene.chart.time + dt*EffectTimescale
@@ -734,6 +732,13 @@ function scene.update(dt)
 
     HandleChartEffects()
 
+    if scene.isEditor and scene.chart.comments[scene.nextComment] then
+        if scene.chart.comments[scene.nextComment].time <= scene.chart.time then
+            scene.comment = scene.chart.comments[scene.nextComment]
+            scene.nextComment = scene.nextComment + 1
+        end
+    end
+
     if scene.song then
         if scene.chart.time >= scene.song:getDuration("seconds") then
             if not SceneManager.TransitionState.Transitioning then
@@ -781,7 +786,10 @@ function scene.update(dt)
     DisplayShear[1]:update(dt*EffectTimescale)
     DisplayShear[2]:update(dt*EffectTimescale)
     
-    ViewOffset:update(dt)
+    ViewOffset:update(dt*EffectTimescale)
+
+    NoteBrightness:update(dt*EffectTimescale)
+    BoardBrightness:update(dt*EffectTimescale)
     
     do
         if ScrollSpeedModSmoothing == 0 then
@@ -806,22 +814,6 @@ function scene.update(dt)
         else
             local blend = math.pow(1/WavinessSmoothing,dt*EffectTimescale)
             Waviness = blend*(Waviness-WavinessTarget)+WavinessTarget
-        end
-    end
-    do
-        if NoteBrightnessSmoothing == 0 then
-            NoteBrightness = NoteBrightnessTarget
-        else
-            local blend = math.pow(1/NoteBrightnessSmoothing,dt*EffectTimescale)
-            NoteBrightness = blend*(NoteBrightness-NoteBrightnessTarget)+NoteBrightnessTarget
-        end
-    end
-    do
-        if BoardBrightnessSmoothing == 0 then
-            BoardBrightness = BoardBrightnessTarget
-        else
-            local blend = math.pow(1/BoardBrightnessSmoothing,dt*EffectTimescale)
-            BoardBrightness = blend*(BoardBrightness-BoardBrightnessTarget)+BoardBrightnessTarget
         end
     end
 
@@ -868,13 +860,13 @@ function scene.draw()
     -- Chart and bar outlines
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     local r0,g0,b0,a0 = love.graphics.getColor()
-    love.graphics.setColor(r0*BoardBrightness,g0*BoardBrightness,b0*BoardBrightness,a0)
+    love.graphics.setColor(r0*BoardBrightness:get(),g0*BoardBrightness:get(),b0*BoardBrightness:get(),a0)
     DrawBoxHalfWidth((80-(scene.chart.lanes*4-1))/2 - 1, 4, scene.chart.lanes*4-1, 16)
     DrawBoxHalfWidth(14, 23, 50, 1)
 
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     local r1,g1,b1,a1 = love.graphics.getColor()
-    love.graphics.setColor(r1*BoardBrightness,g1*BoardBrightness,b1*BoardBrightness,a1)
+    love.graphics.setColor(r1*BoardBrightness:get(),g1*BoardBrightness:get(),b1*BoardBrightness:get(),a1)
     -- Text Displays
     if not HideTitlebar then
         local level = scene.songData:getLevel(scene.difficulty)
@@ -882,7 +874,7 @@ function scene.draw()
         DrawText("┌─" .. ("─"):rep(utf8.len(fullText)) .. "─┐\n│ " .. (" "):rep(utf8.len(fullText)) .. " │\n└─" .. ("─"):rep(utf8.len(fullText)) .. "─┘", ((80-(utf8.len(fullText)+4))/2)*8, 1*16)
         DrawText(scene.songData.name .. (scene.chart.hideDifficulty and "" or " - "), ((80-(utf8.len(fullText)+4))/2 + 2)*8, 2*16)
         if not scene.chart.hideDifficulty then PrintDifficulty(((80-(utf8.len(fullText)+4))/2 + 2 + utf8.len(scene.songData.name .. " - "))*8, 2*16, scene.masquerade or "easy", level, "left") end
-        love.graphics.setColor(r1*BoardBrightness,g1*BoardBrightness,b1*BoardBrightness,a1)
+        love.graphics.setColor(r1*BoardBrightness:get(),g1*BoardBrightness:get(),b1*BoardBrightness:get(),a1)
     end
 
     if Autoplay then
@@ -922,23 +914,23 @@ function scene.draw()
     end
     -- Gate
     if scene.chargeGate > 0 and scene.chargeGate < 1 then
-        love.graphics.setColor(r1*BoardBrightness,g1*BoardBrightness,b1*BoardBrightness,a1)
+        love.graphics.setColor(r1*BoardBrightness:get(),g1*BoardBrightness:get(),b1*BoardBrightness:get(),a1)
         local gateX = (15+math.floor(50*scene.chargeGate))
         local symbol = (gateX == 25 or gateX == 54) and "┼" or "┬"
         DrawText(symbol.."\n\n┴", gateX*8, 23*16)
         love.graphics.setColor(TerminalColors[ColorID.GOLD])
         local r2,g2,b2,a2 = love.graphics.getColor()
-        love.graphics.setColor(r2*BoardBrightness,g2*BoardBrightness,b2*BoardBrightness,a2)
+        love.graphics.setColor(r2*BoardBrightness:get(),g2*BoardBrightness:get(),b2*BoardBrightness:get(),a2)
         DrawText("┊", gateX*8, 24*16)
     end
     -- Overcharge Threshold
     do
-        love.graphics.setColor(r1*BoardBrightness,g1*BoardBrightness,b1*BoardBrightness,a1)
+        love.graphics.setColor(r1*BoardBrightness:get(),g1*BoardBrightness:get(),b1*BoardBrightness:get(),a1)
         local thresholdX = (15+math.floor(50*0.8))
         DrawText("┬\n\n┴", thresholdX*8, 23*16)
         love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
         local r2,g2,b2,a2 = love.graphics.getColor()
-        love.graphics.setColor(r2*BoardBrightness,g2*BoardBrightness,b2*BoardBrightness,a2)
+        love.graphics.setColor(r2*BoardBrightness:get(),g2*BoardBrightness:get(),b2*BoardBrightness:get(),a2)
         DrawText("┊", thresholdX*8, 24*16)
     end
 
@@ -959,12 +951,12 @@ function scene.draw()
     -- Lanes and judgement line
     love.graphics.setColor(TerminalColors[9])
     local r3,g3,b3,a3 = love.graphics.getColor()
-    love.graphics.setColor(r3*BoardBrightness,g3*BoardBrightness,b3*BoardBrightness,a3)
+    love.graphics.setColor(r3*BoardBrightness:get(),g3*BoardBrightness:get(),b3*BoardBrightness:get(),a3)
     for i = 1, scene.chart.lanes-1 do
         local x = (80-(scene.chart.lanes*4-1))/2 - 1+(i-1)*4 + 1
         DrawText(("   ┊\n"):rep(16), x*8, 5*16)
     end
-    local jlBrightness = math.max(BoardBrightness,NoteBrightness)
+    local jlBrightness = math.max(BoardBrightness:get(),NoteBrightness:get())
     love.graphics.setColor(r3*jlBrightness,g3*jlBrightness,b3*jlBrightness,a3)
     do
         local drawPos = GetNoteCellY(0, ScrollSpeed*ScrollSpeedMod, 1, ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0, 5, 15)
@@ -989,7 +981,7 @@ function scene.draw()
             local t = NoteTypes[note.type]
             if t and type(t.draw) == "function" then
                 love.graphics.setFont(NoteFont)
-                love.graphics.setColor(NoteBrightness,NoteBrightness,NoteBrightness,1)
+                love.graphics.setColor(NoteBrightness:get(),NoteBrightness:get(),NoteBrightness:get(),1)
                 t.draw(note,scene.chart.time - SystemSettings.video_offset,(ScrollSpeed*ScrollSpeedMod),nil,nil,((80-(scene.chart.lanes*4-1))/2)+1)
                 love.graphics.setFont(Font)
             end
@@ -1037,6 +1029,12 @@ function scene.draw()
     -- a shader can be added here
     love.graphics.setColor(1,1,1)
     love.graphics.draw(GameDisplay)
+
+    if scene.comment and scene.chart.time - scene.comment.time <= 4 then
+        love.graphics.setColor(TerminalColors[ColorID.YELLOW])
+        DrawText(scene.comment.comment, 0, 480-64, 640, "center")
+        love.graphics.setColor(1,1,1)
+    end
     
     DrawFC()
     DrawFO()

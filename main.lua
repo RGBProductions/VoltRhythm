@@ -294,6 +294,8 @@ TearingModifier = Easer:new(0)
 BloomStrengthModifier = Easer:new(1)
 ZoomBlurStrengthModifier = Easer:new(0)
 SaturationModifier = Easer:new(1)
+NoteBrightness = Easer:new(1)
+BoardBrightness = Easer:new(1)
 NoteSpeedMods = {}
 
 ViewOffset = Easer:new(0)
@@ -632,11 +634,11 @@ function love.update(dt)
     local border = Borders[Save.Read("border")]
     if border and border.update then border.update(dt) end
 
-    CurveModifier:update(dt)
-    ChromaticModifier:update(dt)
-    TearingModifier:update(dt)
-    BloomStrengthModifier:update(dt)
-    ZoomBlurStrengthModifier:update(dt)
+    CurveModifier:update(dt*EffectTimescale)
+    ChromaticModifier:update(dt*EffectTimescale)
+    TearingModifier:update(dt*EffectTimescale)
+    BloomStrengthModifier:update(dt*EffectTimescale)
+    ZoomBlurStrengthModifier:update(dt*EffectTimescale)
     
     MissTime = math.max(0,MissTime - dt * 8 * EffectTimescale)
     
