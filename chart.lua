@@ -475,6 +475,29 @@ EffectTypes = {
             end
         end
     },
+    zoom_blur = {
+        apply = function(self)
+            if self.data.smoothing then
+                ZoomBlurStrengthModifier:fromSmoothing(self.data.strength, self.data.smoothing)
+            else
+                ZoomBlurStrengthModifier:start(self.data.strength, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+            end
+        end,
+        editor = function(self,container)
+            local strengthIn = DialogInput:new(0,0,container.width,16,Localize("effect_data_strength"),5)
+            strengthIn.content = tostring(self.data.strength or "")
+            table.insert(container.contents, strengthIn)
+            local easingButton = DialogButton:new(0, 32, container.width, 16, Localize("effect_data_easing"), function()
+                EasingDialog(self)
+            end)
+            table.insert(container.contents, easingButton)
+            return function(effect)
+                effect.data.strength = tonumber(strengthIn.content) or effect.data.strength
+                effect.data.easeMethod = self.data.easeMethod
+                effect.data.easeDuration = self.data.easeDuration
+            end
+        end
+    },
     wave = {
         apply = function(self)
             WavinessTarget = self.data.strength

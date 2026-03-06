@@ -288,6 +288,7 @@
     "effect_board_brightness": "BOARD BRIGHTNESS",
     "effect_note_brightness": "NOTE BRIGHTNESS",
     "effect_bloom": "BLOOM",
+    "effect_zoom_blur": "ZOOM BLUR",
     "effect_wave": "NOTE WAVINESS",
     "effect_scroll_speed": "SCROLL SPEED",
     "effect_note_speed": "LANE SPEED",

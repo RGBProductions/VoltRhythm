@@ -388,7 +388,7 @@ local function effectPlacementDialog(effect, editing)
             table.insert(names, name)
         end
         table.sort(names,function (a, b)
-            return a < b
+            return Localize("effect_"..a) < Localize("effect_"..b)
         end)
         local optionContainer = DialogContainer:new(0,0,304,240,{})
         local scroll = 0
@@ -618,7 +618,7 @@ local function notePropertiesDialog(note)
             table.insert(names, name)
         end
         table.sort(names,function (a, b)
-            return a < b
+            return Localize("note_"..a) < Localize("note_"..b)
         end)
         local optionContainer = DialogContainer:new(0,0,304,240,{})
         local scroll = 0
@@ -1302,15 +1302,13 @@ local editorMenu = {
         }
     },
     {
-        label = "                          ",
-        type = "action",
-        onclick = function() end
-    },
-    {
         id = "hotreload",
         label = Localize("editor_menu_hot_reload"),
         type = "action",
         onclick = function()
+            shutoffMusic()
+            SavedEditorTime = scene.chartTimeTemp
+            SavedEditorZoom = scene.zoom
             SceneManager.Transition("scenes/neditor", {songData = scene.songData, difficulty = scene.difficulty})
         end
     }
