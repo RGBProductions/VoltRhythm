@@ -409,7 +409,7 @@ function scene.draw()
             DrawText(math.floor((savedRating.accuracy or 0)*100*100)/100 .. "%", 64+8*(20-#tostring(math.floor((savedRating.accuracy or 0)*100*100)/100)), 176-16)
         end
 
-        DrawText(Localize(scene.showMore and "nav_chart" or "nav_overall"):format(KeyLabel(binds.show_more)), 64, 192, 160, "center")
+        DrawText(Localize(scene.showMore and "nav_chart" or "nav_overall", KeyLabel(binds.show_more)), 64, 192, 160, "center")
     end
 
     DrawBoxHalfWidth(2, 21, 74, 3)
@@ -438,8 +438,8 @@ function scene.draw()
         end
     end
     if unlocked then
-        DrawText(Localize("songselect_charter"):format(charter), 32, 360, 640, "left")
-        DrawText(Localize("songselect_cover"):format(((scene.selected.songData or {}).coverArtist or "???")), 32, 376, 640, "left")
+        DrawText(Localize("songselect_charter", charter), 32, 360, 640, "left")
+        DrawText(Localize("songselect_cover", ((scene.selected.songData or {}).coverArtist or "???")), 32, 376, 640, "left")
 
         ---@type SongData?
         local data = scene.selected.songData
@@ -467,12 +467,12 @@ function scene.draw()
     end
 
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    DrawText(Localize("nav_exit"):format(KeyLabel(binds.back)), 32, 416, 576, "left")
+    DrawText(Localize("nav_exit", KeyLabel(binds.back)), 32, 416, 576, "left")
     local canPlay = unlocked and (scene.selected.songData and scene.selected.songData:loadChart(SongDifficultyOrder[difficulty]) ~= nil)
     if not canPlay then
         love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
     end
-    DrawText(Localize("nav_play"):format(KeyLabel(binds.confirm)), 32, 416, 576, "right")
+    DrawText(Localize("nav_play", KeyLabel(binds.confirm)), 32, 416, 576, "right")
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     if SongSelectHasOvervolt and SongSelectHasNormal then
         if SongSelectOvervoltMode then
@@ -484,7 +484,7 @@ function scene.draw()
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
         end
         if SongSelectOvervoltMode or SongSelectOvervoltUnlocked then
-            DrawText(Localize("songselect_overvolt"):format(KeyLabel(binds.overvolt)), 32, 432, 576, "center")
+            DrawText(Localize("songselect_overvolt", KeyLabel(binds.overvolt)), 32, 432, 576, "center")
         end
     end
 
@@ -499,10 +499,10 @@ function scene.draw()
         love.graphics.rectangle("fill", 0, 0, 640, 480)
         love.graphics.setColor(1,1,1)
         DrawBoxHalfWidth(x, 10, w, 8)
-        DrawText(Localize("warning_delete_score_title"):format(songName), 0, 176, 640, "center")
+        DrawText(Localize("warning_delete_score_title", songName), 0, 176, 640, "center")
         DrawText(Localize("warning_delete_score"), 0, 240, 640, "center")
-        DrawText(Localize("nav_no"):format(KeyLabel(binds.back)), x*8+16, 288, w*8-16, "left")
-        DrawText(Localize("nav_yes"):format(KeyLabel(binds.confirm)), x*8+16, 288, w*8-16, "right")
+        DrawText(Localize("nav_no", KeyLabel(binds.back)), x*8+16, 288, w*8-16, "left")
+        DrawText(Localize("nav_yes", KeyLabel(binds.confirm)), x*8+16, 288, w*8-16, "right")
     end
 
     if overvoltWarning then
@@ -514,7 +514,7 @@ function scene.draw()
         DrawBoxHalfWidth(x, 8.5, w, 11)
         DrawText(Localize("warning_overvolt_title"), 0, 152, 640, "center")
         DrawText(Localize("warning_overvolt"), x*8+16, 184, w*8-16, "center")
-        DrawText(Localize("nav_dismiss"):format(KeyLabel(binds.back)), x*8+16, 312, w*8-16, "center")
+        DrawText(Localize("nav_dismiss", KeyLabel(binds.back)), x*8+16, 312, w*8-16, "center")
     end
 
     if versionWarning then
@@ -525,9 +525,9 @@ function scene.draw()
         love.graphics.setColor(1,1,1)
         DrawBoxHalfWidth(x, 8.5, w, 11)
         DrawText(Localize("warning_version_title"), 0, 152, 640, "center")
-        DrawText(Localize("warning_version"):format(Localize(versionWarning.old and "warning_version_old" or (versionWarning.new and "warning_version_new" or "warning_version_client")), ((versionWarning.version.name ~= nil and versionWarning.version.version ~= nil) and (versionWarning.version.name .. " v" .. versionWarning.version.version) or "Unknown"), Version.name .. " v" .. Version.version), x*8+16, 184, w*8-16, "center")
-        DrawText(Localize("nav_back"):format(KeyLabel(binds.back)), x*8+16, 312, w*8-16, "left")
-        DrawText(Localize("nav_play_anyway"):format(KeyLabel(binds.confirm)), x*8+16, 312, w*8-16, "right")
+        DrawText(Localize("warning_version", Localize(versionWarning.old and "warning_version_old" or (versionWarning.new and "warning_version_new" or "warning_version_client")), ((versionWarning.version.name ~= nil and versionWarning.version.version ~= nil) and (versionWarning.version.name .. " v" .. versionWarning.version.version) or "Unknown"), Version.name .. " v" .. Version.version), x*8+16, 184, w*8-16, "center")
+        DrawText(Localize("nav_back", KeyLabel(binds.back)), x*8+16, 312, w*8-16, "left")
+        DrawText(Localize("nav_play_anyway", KeyLabel(binds.confirm)), x*8+16, 312, w*8-16, "right")
     end
 end
 

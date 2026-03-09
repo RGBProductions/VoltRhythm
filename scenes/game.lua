@@ -1,3 +1,5 @@
+local format = (require "lume").format
+
 local scene = {}
 
 local hitSounds = {
@@ -869,7 +871,7 @@ function scene.draw()
         local locCharge = Localize("game_charge")
         local locAcc = Localize("game_accuracy")
         local locValue = Localize("game_charge_value")
-        local boxWidth = math.floor(math.max(Font:getWidth(locCharge), Font:getWidth(locAcc:format("100")), Font:getWidth(locValue:format("200"))) / 8)
+        local boxWidth = math.floor(math.max(Font:getWidth(locCharge), Font:getWidth(format(locAcc, {"100"})), Font:getWidth(format(locValue, {"200"}))) / 8)
         local horiz = ("─"):rep(boxWidth+2)
         local space = (" "):rep(boxWidth+2)
         local accstr = (" "):rep(3-#tostring(acc))..acc
@@ -883,8 +885,8 @@ function scene.draw()
         if c ~= c then chargeAmount = 0 end
         local chargestr = (" "):rep(5-#tostring(chargeAmount)) .. chargeAmount
         DrawText(locCharge, 16*8, 22*16, boxWidth*8, "center")
-        DrawText(locAcc:format(accstr), (40-(boxWidth+4)/2+2)*8, 26*16, boxWidth*8, "center")
-        DrawText(locValue:format(chargestr), (64-(boxWidth+2)+2)*8, 22*16, boxWidth*8, "center")
+        DrawText(format(locAcc, {accstr}), (40-(boxWidth+4)/2+2)*8, 26*16, boxWidth*8, "center")
+        DrawText(format(locValue, {chargestr}), (64-(boxWidth+2)+2)*8, 22*16, boxWidth*8, "center")
         -- DrawText(" ", 62*8, 22*16) -- Empty space
         -- DrawText("┌"..horiz.."┐\n│  " .. (" "):rep(5-#tostring(chargeAmount)) .. chargeAmount .."¤  │\n┴"..horiz.."┤", 54*8, 21*16)
         -- DrawText(" ", 62*8, 22*16) -- Empty space

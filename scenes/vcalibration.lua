@@ -59,10 +59,10 @@ function scene.draw()
     }
 
     if not scene.going and not scene.complete then
-        DrawText(Localize("calibration_begin"):format(KeyLabel(binds.confirm)), 0, 240-8, 640, "center")
+        DrawText(Localize("calibration_begin", KeyLabel(binds.confirm)), 0, 240-8, 640, "center")
     end
     if scene.going then
-        DrawText(Localize(HasGamepad and "vcalibration_instructions_gamepad" or "vcalibration_instructions"):format(KeyLabel(binds.confirm), math.floor((scene.offset/scene.hits)*1000)), 0, 240-16-16, 640, "center")
+        DrawText(Localize(HasGamepad and "vcalibration_instructions_gamepad" or "vcalibration_instructions", KeyLabel(binds.confirm), math.floor((scene.offset/scene.hits)*1000)), 0, 240-16-16, 640, "center")
         for i = 0, 3 do
             local t = 1 - ((scene.time/SixteenthsToSeconds(4, 130) - i) % 4)
             love.graphics.setColor(TerminalColors[t >= 5/6 and ColorID.WHITE or (t >= 4/6 and ColorID.LIGHT_GRAY or ColorID.DARK_GRAY)])
@@ -75,9 +75,9 @@ function scene.draw()
     end
     if scene.complete then
         if scene.hits == 0 then
-            DrawText(Localize("calibration_failed"):format(KeyLabel(binds.confirm)), 0, 240-8-16, 640, "center")
+            DrawText(Localize("calibration_failed", KeyLabel(binds.confirm)), 0, 240-8-16, 640, "center")
         else
-            DrawText(Localize("calibration_finished"):format(math.floor((scene.offset/scene.hits)*1000), KeyLabel(binds.confirm)), 0, 240-8-16, 640, "center")
+            DrawText(Localize("calibration_finished", math.floor((scene.offset/scene.hits)*1000), KeyLabel(binds.confirm)), 0, 240-8-16, 640, "center")
         end
     end
 end

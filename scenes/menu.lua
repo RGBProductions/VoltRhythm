@@ -137,7 +137,7 @@ function scene.draw()
     ProfileIconShader:send("color1", TerminalColors[Save.Read("main_color") or ColorID.LIGHT_RED])
     ProfileIconShader:send("color2", TerminalColors[Save.Read("accent_color") or ColorID.BLUE])
     love.graphics.setShader(ProfileIconShader)
-    local loginText = Localize("menu_logged_in"):format(Save.Read("name"))
+    local loginText = Localize("menu_logged_in", Save.Read("name"))
     local icon = Assets.ProfileIcon(Save.Read("icon") or "icon1")
     if icon then
         love.graphics.draw(icon, 320-Font:getWidth(loginText)/2-32+32, 400+8, 0, 1, 1, 16, 16)

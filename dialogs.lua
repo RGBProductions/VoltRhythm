@@ -186,7 +186,7 @@ end
 function DialogToggle:draw(x,y)
     love.graphics.setColor(TerminalColors[self.active and ColorID.LIGHT_BLUE or ColorID.WHITE])
     DrawBoxHalfWidth((self.x+x)/8-1, (self.y+y)/16-1, self.width/8, self.height/16)
-    DrawText(Localize("effect_data_toggle"):format(self.label, Localize(self.active and "settings_on" or "settings_off")), self.x+x, self.y+y, self.width, "center")
+    DrawText(Localize("effect_data_toggle", self.label, Localize(self.active and "settings_on" or "settings_off")), self.x+x, self.y+y, self.width, "center")
 end
 
 function DialogToggle:click(x,y)

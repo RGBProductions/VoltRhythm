@@ -162,7 +162,7 @@ function scene.draw()
             DrawText(countString, 48+8*(20-utf8.len(countString)), y)
         end
     end
-    DrawText(Localize(scene.showMore and "nav_back" or "nav_more"):format(KeyLabel(binds.show_more)), 48, 352, 160, "center")
+    DrawText(Localize(scene.showMore and "nav_back" or "nav_more", KeyLabel(binds.show_more)), 48, 352, 160, "center")
 
     local songName = scene.songData.name
     local artistName = scene.songData.author
@@ -255,9 +255,9 @@ function scene.draw()
         end
     end
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    DrawText(Localize("nav_exit"):format(KeyLabel(binds.back)), 32, 400, 576, "left")
-    DrawText(Localize("nav_retry"):format(KeyLabel(binds.restart)), 32, 400, 576, "center")
-    DrawText(Localize("nav_continue"):format(KeyLabel(binds.confirm)), 32, 400, 576, "right")
+    DrawText(Localize("nav_exit", KeyLabel(binds.back)), 32, 400, 576, "left")
+    DrawText(Localize("nav_retry", KeyLabel(binds.restart)), 32, 400, 576, "center")
+    DrawText(Localize("nav_continue", KeyLabel(binds.confirm)), 32, 400, 576, "right")
 
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     DrawBoxHalfWidth(2, 1, 74, 3)

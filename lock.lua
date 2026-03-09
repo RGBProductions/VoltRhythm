@@ -100,42 +100,42 @@ local displays = {
     play_song = function(condition, disk)
         -- return "Play " .. songName(condition.song) .. " on " .. (condition.difficulty ~= nil and condition.difficulty:upper() or "any difficulty")
         local key = condition.difficulty ~= nil and "lock_play_song" or "lock_play_song_any"
-        return Localize(key):format(songName(condition.song), (condition.difficulty ~= nil and condition.difficulty:upper() or "any difficulty"))
+        return Localize(key, songName(condition.song), (condition.difficulty ~= nil and condition.difficulty:upper() or "any difficulty"))
     end,
     charge = function(condition, disk)
         local progress, max = unlockers.charge(condition, disk)
         if condition.song then
             if condition.difficulty ~= nil then
-                return Localize("lock_charge_song"):format(condition.amount, songName(condition.song), (condition.difficulty ~= nil and condition.difficulty:upper() or "any difficulty"), math.floor(progress), max)
+                return Localize("lock_charge_song", condition.amount, songName(condition.song), (condition.difficulty ~= nil and condition.difficulty:upper() or "any difficulty"), math.floor(progress), max)
             else
-                return Localize("lock_charge_song_any"):format(condition.amount, songName(condition.song), math.floor(progress), max)
+                return Localize("lock_charge_song_any", condition.amount, songName(condition.song), math.floor(progress), max)
             end
         else
-            return Localize("lock_charge_total"):format(condition.amount, math.floor(progress), max)
+            return Localize("lock_charge_total", condition.amount, math.floor(progress), max)
         end
     end,
     overcharge = function(condition, disk)
         local progress, max = unlockers.overcharge(condition, disk)
         if condition.song then
             if condition.difficulty ~= nil then
-                return Localize("lock_overcharge_song"):format(condition.amount, songName(condition.song), (condition.difficulty ~= nil and condition.difficulty:upper() or "any difficulty"), math.floor(progress), max)
+                return Localize("lock_overcharge_song", condition.amount, songName(condition.song), (condition.difficulty ~= nil and condition.difficulty:upper() or "any difficulty"), math.floor(progress), max)
             else
-                return Localize("lock_overcharge_song_any"):format(condition.amount, songName(condition.song), math.floor(progress), max)
+                return Localize("lock_overcharge_song_any", condition.amount, songName(condition.song), math.floor(progress), max)
             end
         else
-            return Localize("lock_overcharge_total"):format(condition.amount, math.floor(progress), max)
+            return Localize("lock_overcharge_total", condition.amount, math.floor(progress), max)
         end
     end,
     xcharge = function(condition, disk)
         local progress, max = unlockers.xcharge(condition, disk)
         if condition.song then
             if condition.difficulty ~= nil then
-                return Localize("lock_xcharge_song"):format(condition.amount, songName(condition.song), (condition.difficulty ~= nil and condition.difficulty:upper() or "any difficulty"), math.floor(progress), max)
+                return Localize("lock_xcharge_song", condition.amount, songName(condition.song), (condition.difficulty ~= nil and condition.difficulty:upper() or "any difficulty"), math.floor(progress), max)
             else
-                return Localize("lock_xcharge_song_any"):format(condition.amount, songName(condition.song), math.floor(progress), max)
+                return Localize("lock_xcharge_song_any", condition.amount, songName(condition.song), math.floor(progress), max)
             end
         else
-            return Localize("lock_xcharge_total"):format(condition.amount, math.floor(progress), max)
+            return Localize("lock_xcharge_total", condition.amount, math.floor(progress), max)
         end
     end
 }

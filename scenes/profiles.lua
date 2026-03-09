@@ -69,11 +69,11 @@ function scene.draw()
     local pos = 14-ProfilesView*6
 
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    DrawText(Localize("nav_select"):format(KeyLabel(binds.confirm)), 0, (16)*16, 176, "right")
+    DrawText(Localize("nav_select", KeyLabel(binds.confirm)), 0, (16)*16, 176, "right")
     if ProfilesSelection >= #scene.profiles then
         love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
     end
-    DrawText(Localize("nav_edit"):format(KeyLabel(binds.edit)), 480, (16)*16, 176, "left")
+    DrawText(Localize("nav_edit", KeyLabel(binds.edit)), 480, (16)*16, 176, "left")
 
     local function drawProfile(i,icon,profile)
         local name = profile.name

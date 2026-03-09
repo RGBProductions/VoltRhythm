@@ -1214,9 +1214,9 @@ function scene.draw()
         love.graphics.setColor(1,1,1)
         DrawBoxHalfWidth(x, Y, w, h)
         DrawText(Localize("warning_delete_data"), x*8+16, Y*16+16, w*8-16, "center")
-        DrawText(Localize("nav_no"):format(KeyLabel(binds.back)), x*8+16, (Y+h)*16, w*8-16, "left")
+        DrawText(Localize("nav_no", KeyLabel(binds.back)), x*8+16, (Y+h)*16, w*8-16, "left")
         love.graphics.setColor(TerminalColors[SettingsConfirmTimer >= 3 and ColorID.LIGHT_RED or ColorID.DARK_GRAY])
-        DrawText(Localize("nav_yes"):format(KeyLabel(binds.confirm)), x*8+16, (Y+h)*16, w*8-16, "right")
+        DrawText(Localize("nav_yes", KeyLabel(binds.confirm)), x*8+16, (Y+h)*16, w*8-16, "right")
     end
 
     if SettingsAskToDeleteScores then
@@ -1232,9 +1232,9 @@ function scene.draw()
         love.graphics.setColor(1,1,1)
         DrawBoxHalfWidth(x, Y, w, h)
         DrawText(Localize("warning_delete_scores"), x*8+16, Y*16+16, w*8-16, "center")
-        DrawText(Localize("nav_no"):format(KeyLabel(binds.back)), x*8+16, (Y+h)*16, w*8-16, "left")
+        DrawText(Localize("nav_no", KeyLabel(binds.back)), x*8+16, (Y+h)*16, w*8-16, "left")
         love.graphics.setColor(TerminalColors[SettingsConfirmTimer >= 3 and ColorID.LIGHT_RED or ColorID.DARK_GRAY])
-        DrawText(Localize("nav_yes"):format(KeyLabel(binds.confirm)), x*8+16, (Y+h)*16, w*8-16, "right")
+        DrawText(Localize("nav_yes", KeyLabel(binds.confirm)), x*8+16, (Y+h)*16, w*8-16, "right")
     end
 end
 

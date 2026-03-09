@@ -575,7 +575,7 @@ end
 local function groupDialog()
     local groupnameInput = DialogInput:new(0, 16, 240, 16, Localize("editor_label_group_name"), 30)
     table.insert(scene.dialogs, 1, {
-        title = Localize("editor_dialog_group_title"):format(#scene.selectedNotes),
+        title = Localize("editor_dialog_group_title", #scene.selectedNotes),
         width = 16,
         height = 9,
         contents = {
@@ -923,7 +923,7 @@ local editorMenu = {
                         end)
                         removeButton = DialogButton:new(184,48*(i-1),16,16,"-",function()
                             local removedialog = {
-                                title = Localize("editor_dialog_remove_title"):format(Localize("difficulty_"..difficulty)),
+                                title = Localize("editor_dialog_remove_title", Localize("difficulty_"..difficulty)),
                                 width = 16,
                                 height = 9,
                                 contents = {
@@ -1002,7 +1002,7 @@ local editorMenu = {
                             local numLabel = DialogLabel:new(32, y, 160, numEffects .. " EFFECT" .. (numEffects ~= 1 and "S" or ""), "right")
                             table.insert(dialog.contents, DialogButton:new(16,y,192,16,"",function()
                                 local savedialog = {
-                                    title = Localize("editor_dialog_copy_effects_confirm_title"):format(Localize("difficulty_"..difficulty)),
+                                    title = Localize("editor_dialog_copy_effects_confirm_title", Localize("difficulty_"..difficulty)),
                                     width = 16,
                                     height = 10,
                                     contents = {
@@ -1059,7 +1059,7 @@ local editorMenu = {
                             local numLabel = DialogLabel:new(32, y, 160, numNotes .. " NOTE" .. (numNotes ~= 1 and "S" or ""), "right")
                             table.insert(dialog.contents, DialogButton:new(16,y,192,16,"",function()
                                 local savedialog = {
-                                    title = Localize("editor_dialog_copy_chart_confirm_title"):format(Localize("difficulty_"..difficulty)),
+                                    title = Localize("editor_dialog_copy_chart_confirm_title", Localize("difficulty_"..difficulty)),
                                     width = 16,
                                     height = 10,
                                     contents = {
@@ -1467,7 +1467,7 @@ function scene.load(args)
             width = 16,
             height = 14,
             contents = {
-                DialogLabel:new(0, 0, 240, Localize("editor_dialog_gamepad"):format(KeyLabel(Save.Keybind("back")[2])), "center"),
+                DialogLabel:new(0, 0, 240, Localize("editor_dialog_gamepad", KeyLabel(Save.Keybind("back")[2])), "center"),
                 DialogButton:new(88, 160, 64, 16, "OK", function ()
                     table.remove(scene.dialogs, 1)
                 end)
@@ -2062,7 +2062,7 @@ function scene.draw()
             love.graphics.print("█", scrollbarX, 352-y)
         end
 
-        DrawText(Localize("editor_zoom"):format(math.floor(zoom*1000)/1000), scrollbarX+24, 96)
+        DrawText(Localize("editor_zoom", math.floor(zoom*1000)/1000), scrollbarX+24, 96)
 
         love.graphics.setColor(TerminalColors[ColorID.YELLOW])
         for _,comment in ipairs(comments) do

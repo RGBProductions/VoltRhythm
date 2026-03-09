@@ -1,3 +1,5 @@
+local format = (require "lume").format
+
 local languages = {}
 
 function LoadLanguages()
@@ -27,7 +29,7 @@ function GetLanguages()
     return res
 end
 
-function Localize(str)
+function Localize(str, ...)
     local lang = SystemSettings.language or "en-US"
     if not languages[lang] then lang = "en-US" end
     local chain = {}
@@ -35,7 +37,7 @@ function Localize(str)
         chain[lang] = true
         lang = languages[lang].fallback or "en-US"
     end
-    return languages[lang][str] or str
+    return format(languages[lang][str] or str, {...})
 end
 
 function GetLangName(lang)
