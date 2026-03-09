@@ -2,10 +2,6 @@
 
 local useSteps = false
 
-Waviness = 0
-WavinessTarget = 0
-WavinessSmoothing = 0
-
 NoteTypes = {
     normal = {
         ---@param self Note
@@ -15,7 +11,7 @@ NoteTypes = {
             local pos = mainpos
             chartHeight = chartHeight or 15
             chartPos = chartPos or 5
-            if not isEditor then pos = pos+math.sin(pos*8)*Waviness/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1)) end
+            if not isEditor then pos = pos+math.sin(pos*8)*Waviness:get()/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1)) end
             local drawPos = GetNoteCellY(pos, speed, (NoteSpeedMods[self.lane+1] or {})[1] or 1, ViewOffset:get()+(ViewOffsetFreeze or 0), chartPos, chartHeight)
             local visualLane = self.visualLane or self.lane
             if useSteps then drawPos = math.floor(drawPos) end
@@ -25,9 +21,9 @@ NoteTypes = {
             local cells = self.length * math.abs(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1))
             for i = 0.5, cells do
                 local barPos = mainpos+i/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1))
-                if not isEditor then barPos = barPos+math.sin(barPos*8)*Waviness/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1)) end
+                if not isEditor then barPos = barPos+math.sin(barPos*8)*Waviness:get()/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1)) end
                 local extPos = GetNoteCellY(barPos, speed, (NoteSpeedMods[self.lane+1] or {})[1] or 1, ViewOffset:get()+(ViewOffsetFreeze or 0), chartPos, chartHeight)
-                if extPos >= chartPos and extPos-(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1) < chartPos+(chartHeight-1) then
+                if extPos >= chartPos and extPos-(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*ScrollSpeedModifier:get() < chartPos+(chartHeight-1) then
                     love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][3]])
                     local R,G,B,A = love.graphics.getColor()
                     love.graphics.setColor(r*R,g*G,b*B,a*A)
@@ -66,7 +62,7 @@ NoteTypes = {
             local pos = mainpos
             chartHeight = chartHeight or 15
             chartPos = chartPos or 5
-            if not isEditor then pos = pos+math.sin(pos*8)*Waviness/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1)) end
+            if not isEditor then pos = pos+math.sin(pos*8)*Waviness:get()/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1)) end
             local drawPos = GetNoteCellY(pos, speed, (NoteSpeedMods[self.lane+1] or {})[1] or 1, ViewOffset:get()+(ViewOffsetFreeze or 0), chartPos, chartHeight)
             local laneOffset = isEditor and 1 or math.max(0,math.min(1, ((pos*(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1)))-7)/4))
             local visualLane = (self.visualLane or self.lane) - self.extra.dir*laneOffset
@@ -78,7 +74,7 @@ NoteTypes = {
             local cells = self.length * speed
             for i = 0.5, cells do
                 local barPos = mainpos+i/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1))
-                if not isEditor then barPos = barPos+math.sin(barPos*8)*Waviness/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1)) end
+                if not isEditor then barPos = barPos+math.sin(barPos*8)*Waviness:get()/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1)) end
                 local extPos = GetNoteCellY(barPos, speed, (NoteSpeedMods[self.lane+1] or {})[1] or 1, ViewOffset:get()+(ViewOffsetFreeze or 0), chartPos, chartHeight)
                 if extPos >= chartPos and extPos < chartPos+(chartHeight-1) then
                     love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][3]])
@@ -125,7 +121,7 @@ NoteTypes = {
             local pos = mainpos
             chartHeight = chartHeight or 15
             chartPos = chartPos or 5
-            if not isEditor then pos = pos+math.sin(pos*8)*Waviness/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1)) end
+            if not isEditor then pos = pos+math.sin(pos*8)*Waviness:get()/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1)) end
             local drawPos = GetNoteCellY(pos, speed, (NoteSpeedMods[self.lane+1] or {})[1] or 1, ViewOffset:get()+(ViewOffsetFreeze or 0), chartPos, chartHeight)
             if useSteps then drawPos = math.floor(drawPos) end
 
@@ -170,7 +166,7 @@ NoteTypes = {
                         if rating == 1 then
                             local x = (80-(SceneManager.ActiveScene.chart.lanes*4-1))/2 - 1+(i)*4 + 1
                             for _=1, 4 do
-                                local drawPos = GetNoteCellY(0, ScrollSpeed*ScrollSpeedMod, 1, ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0, 5, 15)
+                                local drawPos = GetNoteCellY(0, ScrollSpeed*ScrollSpeedModifier:get(), 1, ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0, 5, 15)
                                 table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
                             end
                         end
@@ -206,7 +202,7 @@ NoteTypes = {
             local pos = mainpos
             chartHeight = chartHeight or 15
             chartPos = chartPos or 5
-            if not isEditor then pos = pos+math.sin(pos*8)*Waviness/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1)) end
+            if not isEditor then pos = pos+math.sin(pos*8)*Waviness:get()/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1)) end
             local drawPos = GetNoteCellY(pos, speed, (NoteSpeedMods[self.lane+1] or {})[1] or 1, ViewOffset:get()+(ViewOffsetFreeze or 0), chartPos, chartHeight)
             local visualLane = self.visualLane or self.lane
             if useSteps then drawPos = math.floor(drawPos) end
@@ -235,7 +231,7 @@ NoteTypes = {
                 FullOvercharge = false
                 local x = (80-(SceneManager.ActiveScene.chart.lanes*4-1))/2 - 1+(self.lane)*4 + 1
                 for _=1, 4 do
-                    local drawPos = GetNoteCellY(0, ScrollSpeed*ScrollSpeedMod, 1, ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0, 5, 15)
+                    local drawPos = GetNoteCellY(0, ScrollSpeed*ScrollSpeedModifier:get(), 1, ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0, 5, 15)
                     table.insert(Particles, {id = "badhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = ColorID.RED, char = "¤"})
                 end
                 return false
@@ -278,7 +274,7 @@ NoteTypes = {
             local pos = mainpos
             chartHeight = chartHeight or 15
             chartPos = chartPos or 5
-            if not isEditor then pos = pos+math.sin(pos*8)*Waviness/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1)) end
+            if not isEditor then pos = pos+math.sin(pos*8)*Waviness:get()/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1)) end
             local len = ((self.length or 0) == 0 and 1 or self.length)
             local drawPos = GetNoteCellY(pos, speed, (NoteSpeedMods[self.lane+1] or {})[1] or 1, ViewOffset:get()+(ViewOffsetFreeze or 0), chartPos, chartHeight)
             local drawPos2 = GetNoteCellY(pos-len, speed, (NoteSpeedMods[self.lane+1] or {})[1] or 1, ViewOffset:get()+(ViewOffsetFreeze or 0), chartPos, chartHeight)
@@ -297,7 +293,7 @@ NoteTypes = {
                 for i = 0.5, cells do
                     local barPos = mainpos-i/speed
                     local extPos = GetNoteCellY(barPos, speed, (NoteSpeedMods[self.lane+1] or {})[1] or 1, ViewOffset:get()+(ViewOffsetFreeze or 0), chartPos, chartHeight)
-                    if extPos >= chartPos and extPos-(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*(ScrollSpeedMod or 1) < chartPos+(chartHeight-1) then
+                    if extPos >= chartPos and extPos-(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*ScrollSpeedModifier:get() < chartPos+(chartHeight-1) then
                         love.graphics.print("┊", (chartX+visualLane*4)*8+4, math.floor(extPos*16-8-0), 0, 1, 1, NoteFont:getWidth("┊")/2)
                     end
                 end
@@ -500,8 +496,11 @@ EffectTypes = {
     },
     wave = {
         apply = function(self)
-            WavinessTarget = self.data.strength
-            WavinessSmoothing = self.data.smoothing or 0
+            if self.data.smoothing then
+                Waviness:fromSmoothing(self.data.strength, self.data.smoothing)
+            else
+                Waviness:start(self.data.strength, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+            end
         end,
         editor = function(self,container)
             local strengthIn = DialogInput:new(0,0,container.width,16,Localize("effect_data_strength"),5)
@@ -520,8 +519,11 @@ EffectTypes = {
     },
     scroll_speed = {
         apply = function(self)
-            ScrollSpeedModTarget = self.data.speed
-            ScrollSpeedModSmoothing = self.data.smoothing or 0
+            if self.data.smoothing then
+                ScrollSpeedModifier:fromSmoothing(self.data.speed, self.data.smoothing)
+            else
+                ScrollSpeedModifier:start(self.data.speed, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+            end
         end,
         editor = function(self,container)
             local strengthIn = DialogInput:new(0,0,container.width,16,Localize("effect_data_speed_multiplier"),5)

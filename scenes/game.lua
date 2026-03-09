@@ -211,9 +211,6 @@ function scene.load(args)
     HideTitlebar = false
     ShowReducedInfo = false
     ScrollSpeed = Save.Read("scroll_speed")
-    ScrollSpeedMod = 1
-    ScrollSpeedModTarget = 1
-    ScrollSpeedModSmoothing = 0
     NoteSpeedMods = {}
     ViewOffsetFreeze = 0
     ViewOffsetMoveLine = true
@@ -258,6 +255,8 @@ function ResetEffects()
     TearingModifier:set(0)
     CurveModifier:set(1)
     ViewOffset:set(0)
+    ScrollSpeedModifier:set(1)
+    Waviness:set(0)
 
     NoteBrightness:set(1)
     BoardBrightness:set(1)
@@ -316,7 +315,7 @@ local function notePress(laneIndex)
                         accuracy = 0 -- 100%
                         local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
                         for _=1, 4 do
-                            local drawPos = GetNoteCellY(0, ScrollSpeed*ScrollSpeedMod, 1, ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0, 5, 15)
+                            local drawPos = GetNoteCellY(0, ScrollSpeed*ScrollSpeedModifier:get(), 1, ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0, 5, 15)
                             table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
                         end
                     end
@@ -593,7 +592,7 @@ function scene.update(dt)
                                     RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                                     local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
                                     for _=1, 4 do
-                                        local drawPos = GetNoteCellY(0, ScrollSpeed*ScrollSpeedMod, 1, ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0, 5, 15)
+                                        local drawPos = GetNoteCellY(0, ScrollSpeed*ScrollSpeedModifier:get(), 1, ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0, 5, 15)
                                         table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
                                     end
                                     Accuracy = Accuracy + 1
@@ -633,7 +632,7 @@ function scene.update(dt)
                             if (lastBeatCount % 0.5) > (scene.beatCount % 0.5) then
                                 local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
                                 for _=1, 4 do
-                                    local drawPos = GetNoteCellY(0, ScrollSpeed*ScrollSpeedMod, 1, ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0, 5, 15)
+                                    local drawPos = GetNoteCellY(0, ScrollSpeed*ScrollSpeedModifier:get(), 1, ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0, 5, 15)
                                     table.insert(Particles, {id = "holdgrind", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*32, vy = -(love.math.random()*2)*64, life = (love.math.random()*0.5+0.5)*0.25, color = NoteColors[note.lane+1][3], char = "¤"})
                                 end
                             end
@@ -786,36 +785,14 @@ function scene.update(dt)
     DisplayShear[1]:update(dt*EffectTimescale)
     DisplayShear[2]:update(dt*EffectTimescale)
     
+    ScrollSpeedModifier:update(dt*EffectTimescale)
+    Waviness:update(dt*EffectTimescale)
+    
     ViewOffset:update(dt*EffectTimescale)
 
     NoteBrightness:update(dt*EffectTimescale)
     BoardBrightness:update(dt*EffectTimescale)
     
-    do
-        if ScrollSpeedModSmoothing == 0 then
-            ScrollSpeedMod = ScrollSpeedModTarget
-        else
-            local blend = math.pow(1/ScrollSpeedModSmoothing,dt*EffectTimescale)
-            ScrollSpeedMod = blend*(ScrollSpeedMod-ScrollSpeedModTarget)+ScrollSpeedModTarget
-        end
-
-        for _,mod in ipairs(NoteSpeedMods) do
-            if mod[3] == 0 then
-                mod[1] = mod[2]
-            else
-                local blend = math.pow(1/mod[3],dt*EffectTimescale)
-                mod[1] = blend*(mod[1]-mod[2])+mod[2]
-            end
-        end
-    end
-    do
-        if WavinessSmoothing == 0 then
-            Waviness = WavinessTarget
-        else
-            local blend = math.pow(1/WavinessSmoothing,dt*EffectTimescale)
-            Waviness = blend*(Waviness-WavinessTarget)+WavinessTarget
-        end
-    end
 
     for i = 1, scene.chart.lanes do
         PressAmounts[i] = math.max(0, math.min(Autoplay and math.huge or 1, (PressAmounts[i] or 0) + dt*8*((Input.Held[i] and not Autoplay) and 1/dt or -1/dt)))
@@ -959,7 +936,7 @@ function scene.draw()
     local jlBrightness = math.max(BoardBrightness:get(),NoteBrightness:get())
     love.graphics.setColor(r3*jlBrightness,g3*jlBrightness,b3*jlBrightness,a3)
     do
-        local drawPos = GetNoteCellY(0, ScrollSpeed*ScrollSpeedMod, 1, ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0, 5, 15)
+        local drawPos = GetNoteCellY(0, ScrollSpeed*ScrollSpeedModifier:get(), 1, ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0, 5, 15)
         if drawPos >= 5 and drawPos <= 20 then
             DrawText("┈┈┈"..("╬┈┈┈"):rep(scene.chart.lanes-1), ((80-(scene.chart.lanes*4-1))/2 - 1+(1-1)*4 + 1)*8, drawPos*16-16)
 
@@ -982,7 +959,7 @@ function scene.draw()
             if t and type(t.draw) == "function" then
                 love.graphics.setFont(NoteFont)
                 love.graphics.setColor(NoteBrightness:get(),NoteBrightness:get(),NoteBrightness:get(),1)
-                t.draw(note,scene.chart.time - SystemSettings.video_offset,(ScrollSpeed*ScrollSpeedMod),nil,nil,((80-(scene.chart.lanes*4-1))/2)+1)
+                t.draw(note,scene.chart.time - SystemSettings.video_offset,(ScrollSpeed*ScrollSpeedModifier:get()),nil,nil,((80-(scene.chart.lanes*4-1))/2)+1)
                 love.graphics.setFont(Font)
             end
         end
