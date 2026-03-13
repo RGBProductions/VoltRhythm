@@ -184,6 +184,7 @@ function scene.load(args)
     scene.modifiers = args.modifiers or {}
     scene.chargeGate = args.chargeGate or 0.8
     scene.audioOffset = Showcase and 0 or SystemSettings.audio_offset or 0
+    scene.videoOffset = Showcase and 0 or SystemSettings.video_offset or 0
     scene.bpmChangeTime = 0
     scene.bpmChangeBeats = 0
     scene.bpm = scene.chart.bpm
@@ -741,7 +742,7 @@ function scene.update(dt)
     end
 
     if scene.song then
-        if scene.chart.time >= scene.song:getDuration("seconds") then
+        if scene.chart.time >= scene.song:getDuration("seconds") and (not FullComboAnimation.playing or FullComboAnimation.timer >= 2) and (not FullOverchargeAnimation.playing or FullOverchargeAnimation.timer >= 2) then
             if not SceneManager.TransitionState.Transitioning then
                 if FullOvercharge then
                     Charge = scene.chart.totalCharge
@@ -961,7 +962,7 @@ function scene.draw()
             if t and type(t.draw) == "function" then
                 love.graphics.setFont(NoteFont)
                 love.graphics.setColor(NoteBrightness:get(),NoteBrightness:get(),NoteBrightness:get(),1)
-                t.draw(note,scene.chart.time - SystemSettings.video_offset,(ScrollSpeed*ScrollSpeedModifier:get()),nil,nil,((80-(scene.chart.lanes*4-1))/2)+1)
+                t.draw(note,scene.chart.time - scene.videoOffset,(ScrollSpeed*ScrollSpeedModifier:get()),nil,nil,((80-(scene.chart.lanes*4-1))/2)+1)
                 love.graphics.setFont(Font)
             end
         end
