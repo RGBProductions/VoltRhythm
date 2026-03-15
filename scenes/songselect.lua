@@ -238,7 +238,7 @@ function scene.action(a)
             if preview then preview:stop() end
             Autoplay = love.keyboard.isDown("lshift")
             Showcase = Autoplay and love.keyboard.isDown("lctrl")
-            SceneManager.Transition("scenes/" .. scene.destination, {songData = data, difficulty = diff})
+            SceneManager.Transition("scenes/" .. scene.destination, {songData = data, difficulty = diff, scorePrefix = scene.selected.scorePrefix})
         end
     end
     if a == "show_more" then
