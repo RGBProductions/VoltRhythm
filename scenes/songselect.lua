@@ -143,6 +143,11 @@ function scene.load(args)
     end
 
     local set = SongSelectOvervoltMode and scene.disk.overvoltSongs or scene.disk.normalSongs
+    if #scene.disk.normalSongs < 1 then
+        set = scene.disk.overvoltSongs
+        SongSelectOvervoltMode = true
+        SongSelectDifficulty = 5
+    end
     scene.selected = set[SongSelectSelectedSong]
 
     SongSelectHasNormal = #scene.disk.normalSongs > 0
@@ -215,7 +220,7 @@ function scene.action(a)
         local choice = nextSet[scene.selected.linkedTo or scene.selected.identifier] or nextSet[1]
         if nextSet == scene.disk.overvoltSongs then
             SongSelectSetSelectedSong(choice.identifier, table.index(choice.difficulties, "overvolt") and "overvolt" or "hidden")
-        else
+        elseif #nextSet > 0 then
             SongSelectSetSelectedSong(choice.identifier, "extreme")
         end
     end
