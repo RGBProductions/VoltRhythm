@@ -158,7 +158,7 @@
     "vcalibration_instructions": "Press any key when the moving circle reaches the fourth circle.\nPress {1} to stop.\n\nOffset is {2}ms.",
     "vcalibration_instructions_gamepad": "Press any button when the moving circle reaches the fourth circle.\nPress {1} to stop.\n\nOffset is {2}ms.",
     "calibration_failed": "No inputs were made. Your offset has not changed.\n\nPress {1} to exit.",
-    "calibration_finished": "Your new offset is {1}ms.\n\nPress {1} to exit.",
+    "calibration_finished": "Your new offset is {1}ms.\n\nPress {2} to exit.",
     "photosensitivity_text": "VoltRhythm contains rapidly-moving patterns and flashing lights that could cause health complications for those with photosensitive conditions.\n\nIf you suffer from any of these conditions, please use extreme caution while playing or avoid playing entirely.",
     "photosensitivty_continue": "CONTINUE",
     "photosensitivty_no_fx": "CONTINUE (EFFECTS OFF)",
