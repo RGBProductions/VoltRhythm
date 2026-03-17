@@ -1091,7 +1091,6 @@ function scene.draw()
             local itmX = (640-128)/2+menuX
             love.graphics.setColor(TerminalColors[SettingsSelection == i-1 and ColorID.WHITE or ColorID.DARK_GRAY])
             love.graphics.printf(Localize(option.label) or "", itmX-144, itmY+16, 128, "center")
-            love.graphics.setFont(LegacyFont)
             for j = 1, 2 do
                 local text = KeyLabel(values[j])
                 if rebinding and (rebinding[1] == option and rebinding[2] == j-1) then
