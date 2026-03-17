@@ -55,14 +55,14 @@ end
 
 function scene.draw()
     local binds = {
-        confirm = HasGamepad and Save.Keybind("confirm")[2] or Save.Keybind("confirm")[1]
+        confirm = BindDisplayMode == 1 and Save.Keybind("confirm")[2] or Save.Keybind("confirm")[1]
     }
 
     if not scene.going and not scene.complete then
         DrawText(Localize("calibration_begin", KeyLabel(binds.confirm)), 0, 240-8, 640, "center")
     end
     if scene.going then
-        DrawText(Localize(HasGamepad and "vcalibration_instructions_gamepad" or "vcalibration_instructions", KeyLabel(binds.confirm), math.floor((scene.offset/scene.hits)*1000)), 0, 240-16-16, 640, "center")
+        DrawText(Localize(BindDisplayMode == 1 and "vcalibration_instructions_gamepad" or "vcalibration_instructions", KeyLabel(binds.confirm), math.floor((scene.offset/scene.hits)*1000)), 0, 240-16-16, 640, "center")
         for i = 0, 3 do
             local t = 1 - ((scene.time/SixteenthsToSeconds(4, 130) - i) % 4)
             love.graphics.setColor(TerminalColors[t >= 5/6 and ColorID.WHITE or (t >= 4/6 and ColorID.LIGHT_GRAY or ColorID.DARK_GRAY)])

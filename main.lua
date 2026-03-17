@@ -354,6 +354,7 @@ GamepadLastAxes = {}
 GamepadAxes = {}
 
 HasGamepad = false
+BindDisplayMode = 0
 
 KeyMap = {
     key = {
@@ -404,11 +405,16 @@ function KeyLabel(v)
     return mapped:upper()
 end
 
+function love.joystickadded(stick)
+    BindDisplayMode = 1
+end
+
 function love.gamepadaxis(stick,axis,value)
     GamepadAxes[axis] = value
     Input.GamepadAxis(stick,axis,value)
     if not SceneManager.GamepadAxis(stick,axis,value) then
         if math.abs(GamepadLastAxes[axis] or 0) < 0.5 and math.abs(value) >= 0.5 then
+            BindDisplayMode = 1
             if BindContains(Save.Keybind("pause"), "gtrigger", axis) then
                 SceneManager.Action("pause")
             end
@@ -465,6 +471,7 @@ function love.gamepadaxis(stick,axis,value)
 end
 
 function love.gamepadpressed(stick,button)
+    BindDisplayMode = 1
     Input.GamepadPressed(stick,button)
     if SceneManager.GamepadPressed(stick,button) then return end
 
@@ -518,6 +525,7 @@ function love.directorydropped(file)
 end
 
 function love.keypressed(k)
+    BindDisplayMode = 0
     if k == "f1" then
         SystemSettings.enable_screen_effects = not SystemSettings.enable_screen_effects
     end

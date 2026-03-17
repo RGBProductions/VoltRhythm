@@ -343,7 +343,7 @@ end
 function scene.draw()
     if scene.state == 0 then
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        local showKeyboard = HasGamepad
+        local showKeyboard = BindDisplayMode == 1
         local kboffset = (showKeyboard and 64 or 0)
         DrawBoxHalfWidth(26, 12.5-kboffset/16, 26, 3)
         DrawText(Localize("setup_name"), 0, 216 - kboffset, 640, "center")

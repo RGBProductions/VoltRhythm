@@ -1342,7 +1342,7 @@ function Lyrics:new(script)
             end
             if component.type == "key" then
                 local bind = Input.Binds[component.key+1] or {{"key","?"},{"gbutton","?"}}
-                local text = (KeyLabel(HasGamepad and bind[2] or bind[1])):upper()
+                local text = (KeyLabel(BindDisplayMode == 1 and bind[2] or bind[1])):upper()
                 local w,wrap = Font:getWrap(text, Font:getWidth(text))
                 local x1,y1,x2,y2 = component.x, component.y, component.x+w, component.y+(#wrap * Font:getHeight())
                 boundingBox[1] = math.min(boundingBox[1], x1, x2)
@@ -1403,7 +1403,7 @@ function Lyrics:draw(time)
             end
             if component.type == "key" then
                 local bind = Input.Binds[component.key+1] or {{"key","?"},{"gbutton","?"}}
-                local text = (KeyLabel(HasGamepad and bind[2] or bind[1])):upper()
+                local text = (KeyLabel(BindDisplayMode == 1 and bind[2] or bind[1])):upper()
                 local w = Font:getWidth(text)
                 love.graphics.printf(text, 16+component.x, 16+component.y, w, "center")
             end

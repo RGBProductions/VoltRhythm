@@ -62,8 +62,8 @@ end
 
 function scene.draw()
     local binds = {
-        confirm = HasGamepad and Save.Keybind("confirm")[2] or Save.Keybind("confirm")[1],
-        edit = HasGamepad and Save.Keybind("edit_profile")[2] or Save.Keybind("edit_profile")[1]
+        confirm = BindDisplayMode == 1 and Save.Keybind("confirm")[2] or Save.Keybind("confirm")[1],
+        edit = BindDisplayMode == 1 and Save.Keybind("edit_profile")[2] or Save.Keybind("edit_profile")[1]
     }
 
     local pos = 14-ProfilesView*6

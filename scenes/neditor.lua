@@ -1479,7 +1479,7 @@ function scene.load(args)
 
     love.keyboard.setKeyRepeat(true)
 
-    if HasGamepad then
+    if BindDisplayMode == 1 then
         table.insert(scene.dialogs, 1, {
             title = Localize("editor_dialog_gamepad_title"),
             width = 16,
@@ -1665,7 +1665,7 @@ function scene.wheelmoved(x,y)
 end
 
 function scene.action(a)
-    if a == "back" and HasGamepad then
+    if a == "back" and BindDisplayMode == 1 then
         exitEditor()
     end
 end

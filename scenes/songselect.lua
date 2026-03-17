@@ -253,10 +253,10 @@ end
 
 function scene.draw()
     local binds = {
-        back = HasGamepad and Save.Keybind("back")[2] or Save.Keybind("back")[1],
-        confirm = HasGamepad and Save.Keybind("confirm")[2] or Save.Keybind("confirm")[1],
-        show_more = HasGamepad and Save.Keybind("show_more")[2] or Save.Keybind("show_more")[1],
-        overvolt = HasGamepad and Save.Keybind("overvolt")[2] or Save.Keybind("overvolt")[1]
+        back = BindDisplayMode == 1 and Save.Keybind("back")[2] or Save.Keybind("back")[1],
+        confirm = BindDisplayMode == 1 and Save.Keybind("confirm")[2] or Save.Keybind("confirm")[1],
+        show_more = BindDisplayMode == 1 and Save.Keybind("show_more")[2] or Save.Keybind("show_more")[1],
+        overvolt = BindDisplayMode == 1 and Save.Keybind("overvolt")[2] or Save.Keybind("overvolt")[1]
     }
 
     local set = SongSelectOvervoltMode and scene.disk.overvoltSongs or scene.disk.normalSongs

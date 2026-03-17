@@ -1066,8 +1066,8 @@ local settingsText = love.graphics.newImage("images/title/settings.png")
 
 function scene.draw()
     local binds = {
-        back = HasGamepad and Save.Keybind("back")[2] or Save.Keybind("back")[1],
-        confirm = HasGamepad and Save.Keybind("confirm")[2] or Save.Keybind("confirm")[1]
+        back = BindDisplayMode == 1 and Save.Keybind("back")[2] or Save.Keybind("back")[1],
+        confirm = BindDisplayMode == 1 and Save.Keybind("confirm")[2] or Save.Keybind("confirm")[1]
     }
 
     local labelStack = {}

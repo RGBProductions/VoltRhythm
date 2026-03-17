@@ -59,14 +59,14 @@ end
 
 function scene.draw()
     local binds = {
-        confirm = HasGamepad and Save.Keybind("confirm")[2] or Save.Keybind("confirm")[1]
+        confirm = BindDisplayMode == 1 and Save.Keybind("confirm")[2] or Save.Keybind("confirm")[1]
     }
 
     if not scene.going and not scene.complete then
         DrawText(Localize("calibration_begin", KeyLabel(binds.confirm)), 0, 240-8, 640, "center")
     end
     if scene.going then
-        DrawText(Localize(HasGamepad and "calibration_instructions_gamepad" or "calibration_instructions", KeyLabel(binds.confirm), math.floor((scene.offset/scene.hits)*1000)), 0, 240-16-16, 640, "center")
+        DrawText(Localize(BindDisplayMode == 1 and "calibration_instructions_gamepad" or "calibration_instructions", KeyLabel(binds.confirm), math.floor((scene.offset/scene.hits)*1000)), 0, 240-16-16, 640, "center")
     end
     if scene.complete then
         if scene.hits == 0 then
