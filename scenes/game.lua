@@ -219,6 +219,7 @@ function scene.load(args)
     ViewOffsetMoveLine = true
     ChartFrozen = false
     LastRating = 0
+    RatingTime = 0
     scene.lastTime = scene.chart.time
     if scene.video then
         scene.video:pause()
@@ -312,6 +313,7 @@ local function notePress(laneIndex)
                     end
                     local accValue = (1-accuracy)
                     LastRating = GetRating(accValue)
+                    RatingTime = 1
                     RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                     if LastRating ~= 1 then FullOvercharge = false end
                     if LastRating == 1 then
@@ -527,6 +529,7 @@ function scene.update(dt)
         ViewOffsetFreeze = 0
     end
 
+    RatingTime = math.max(0, RatingTime - dt * 8 * EffectTimescale)
     scene.lastTime = scene.lastTime + dt*EffectTimescale
 
     for _,note in ipairs(scene.chart.notes) do
@@ -592,6 +595,7 @@ function scene.update(dt)
                                     Combo = Combo + 1
                                     MaxCombo = math.max(Combo, MaxCombo)
                                     LastRating = 1
+                                    RatingTime = 1
                                     RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                                     local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
                                     for _=1, 4 do
@@ -674,6 +678,7 @@ function scene.update(dt)
                             Combo = 0
                             ComboBreaks = ComboBreaks + 1
                             LastRating = #NoteRatings
+                            RatingTime = 1
                             RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                             FullOvercharge = false
                         else
@@ -683,6 +688,7 @@ function scene.update(dt)
                                     Combo = 0
                                     ComboBreaks = ComboBreaks + 1
                                     LastRating = #NoteRatings
+                                    RatingTime = 1
                                     RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                                     FullOvercharge = false
                                 end
@@ -702,6 +708,7 @@ function scene.update(dt)
                                                 Combo = 0
                                                 ComboBreaks = ComboBreaks + 1
                                                 LastRating = #NoteRatings
+                                                RatingTime = 1
                                                 RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                                                 FullOvercharge = false
                                             end
@@ -717,6 +724,7 @@ function scene.update(dt)
                                         Combo = 0
                                         ComboBreaks = ComboBreaks + 1
                                         LastRating = #NoteRatings
+                                        RatingTime = 1
                                         RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                                         FullOvercharge = false
                                     end
@@ -970,13 +978,13 @@ function scene.draw()
 
     -- Last rating and combo
     if NoteRatings[LastRating] then
-        local x,y = 40*8, 6*16
+        local x,y = 40*8, 6*16-RatingTime^2*4
         x = x + AnaglyphSide*0.75
         NoteRatings[LastRating].draw(x,y,true)
     end
     local comboString = tostring(Combo)
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    DrawText(comboString, ((80-(#comboString))/2)*8 + AnaglyphSide*0.75, 7*16)
+    DrawText(comboString, ((80-(#comboString))/2)*8 + AnaglyphSide*0.75, 7*16-RatingTime^2*4)
 
     -- Judgements
     if Save.Read("show_judgements") then
