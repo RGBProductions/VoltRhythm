@@ -544,7 +544,7 @@ function scene.update(dt)
         end
     end
 
-    if not Autoplay then
+    if not (Autoplay or TempAutoplay) then
         for i = 1, 4 do
             if not lastHeld[i] and Input.Held[i] then
                 notePress(i)
@@ -567,7 +567,7 @@ function scene.update(dt)
                     i = num
                     break
                 end
-                if Autoplay then
+                if (Autoplay or TempAutoplay) then
                     if pos <= 0 then
                         local t = NoteTypes[note.type]
                         if t and not t.autoplayIgnores then
@@ -624,15 +624,15 @@ function scene.update(dt)
                                 else
                                     note.holding = true
                                 end
-                                if not Autoplay then PressAmounts[note.lane+1] = 1 end
+                                if not (Autoplay or TempAutoplay) then PressAmounts[note.lane+1] = 1 end
                             end
                         end
                     end
                 end
                 if note.holding and pos <= 0 then
                     if note.length > 0 then
-                        -- if love.keyboard.isDown((Keybinds[scene.chart.lanes] or Keybinds[8])[note.lane+1]) or Autoplay then
-                        if Input.Held[note.lane+1] or Autoplay then
+                        -- if love.keyboard.isDown((Keybinds[scene.chart.lanes] or Keybinds[8])[note.lane+1]) or (Autoplay or TempAutoplay) then
+                        if Input.Held[note.lane+1] or (Autoplay or TempAutoplay) then
                             local lastHeldFor = note.heldFor or 0
                             note.heldFor = math.min(note.length, lastHeldFor + dt)
                             Charge = Charge + (note.heldFor-lastHeldFor)
@@ -653,7 +653,7 @@ function scene.update(dt)
                                 end
                             end
                         end
-                        if Autoplay then
+                        if (Autoplay or TempAutoplay) then
                             PressAmounts[note.lane+1] = 32
                         end
                     end
@@ -699,8 +699,8 @@ function scene.update(dt)
                                     i = i - 1
                                 end
                             else
-                                -- if not love.keyboard.isDown((Keybinds[scene.chart.lanes] or Keybinds[8])[note.lane+1]) and not Autoplay then
-                                if not Input.Held[note.lane+1] and not Autoplay then
+                                -- if not love.keyboard.isDown((Keybinds[scene.chart.lanes] or Keybinds[8])[note.lane+1]) and not (Autoplay or TempAutoplay) then
+                                if not Input.Held[note.lane+1] and not (Autoplay or TempAutoplay) then
                                     if pos <= -0.25-(note.length-0.4) then
                                         if note.heldFor == 0 or not note.heldFor then
                                             if (lastBeatCount % 0.5) > (scene.beatCount % 0.5) then
@@ -806,7 +806,7 @@ function scene.update(dt)
     
 
     for i = 1, scene.chart.lanes do
-        PressAmounts[i] = math.max(0, math.min(Autoplay and math.huge or 1, (PressAmounts[i] or 0) + dt*8*((Input.Held[i] and not Autoplay) and 1/dt or -1/dt)))
+        PressAmounts[i] = math.max(0, math.min((Autoplay or TempAutoplay) and math.huge or 1, (PressAmounts[i] or 0) + dt*8*((Input.Held[i] and not (Autoplay or TempAutoplay)) and 1/dt or -1/dt)))
         HitAmounts[i] = math.max(0, math.min(1, (HitAmounts[i] or 0) - dt*8))
     end
     if scene.background and scene.background.update then
@@ -865,7 +865,7 @@ function scene.draw()
         love.graphics.setColor(r1*BoardBrightness:get(),g1*BoardBrightness:get(),b1*BoardBrightness:get(),a1)
     end
 
-    if Autoplay then
+    if (Autoplay or TempAutoplay) then
         local text = Localize(Showcase and "game_showcase" or "game_autoplay")
         local width = math.floor(Font:getWidth(text)/8)
         local c = width > 13 and "┌┐" or (width == 13 and "├┤" or "┬┬")

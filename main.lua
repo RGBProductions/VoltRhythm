@@ -349,6 +349,7 @@ MissTime = 0
 
 Autoplay = false
 Showcase = false
+TempAutoplay = false
 
 GamepadLastAxes = {}
 GamepadAxes = {}
@@ -430,6 +431,9 @@ function love.gamepadaxis(stick,axis,value)
             if BindContains(Save.Keybind("overvolt"), "gtrigger", axis) then
                 SceneManager.Action("overvolt")
             end
+            if BindContains(Save.Keybind("sort"), "gtrigger", axis) then
+                SceneManager.Action("sort")
+            end
             if BindContains(Save.Keybind("show_more"), "gtrigger", axis) then
                 SceneManager.Action("show_more")
             end
@@ -489,6 +493,9 @@ function love.gamepadpressed(stick,button)
     end
     if BindContains(Save.Keybind("overvolt"), "gbutton", button) then
         SceneManager.Action("overvolt")
+    end
+    if BindContains(Save.Keybind("sort"), "gbutton", button) then
+        SceneManager.Action("sort")
     end
     if BindContains(Save.Keybind("show_more"), "gbutton", button) then
         SceneManager.Action("show_more")
@@ -571,6 +578,9 @@ function love.keypressed(k)
     end
     if BindContains(Save.Keybind("overvolt"), "key", k) then
         SceneManager.Action("overvolt")
+    end
+    if BindContains(Save.Keybind("sort"), "key", k) then
+        SceneManager.Action("sort")
     end
     if BindContains(Save.Keybind("show_more"), "key", k) then
         SceneManager.Action("show_more")

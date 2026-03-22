@@ -12,16 +12,64 @@ local songselectText = love.graphics.newImage("images/title/songselect.png")
 local askToDelete = nil
 local askToDeleteDiff = nil
 
+local sortDisplayTime = 0
+
 local versionWarning = nil
 
 local overvoltWarning = false
 local shouldOvervoltWarning = love.filesystem.getInfo("hideovwarning") == nil
 
+local sortMethods = {
+    {"default", function(a,b)
+        return (table.index(scene.disk.normalSongs, a) or table.index(scene.disk.overvoltSongs, a)) < (table.index(scene.disk.normalSongs, b) or table.index(scene.disk.overvoltSongs, b))
+    end, false},
+    {"title", function(a,b)
+        return ((a.songData or {}).name or "") < ((b.songData or {}).name or "")
+    end, false},
+    {"difficulty", function(a,b)
+        local diff1 = SongDifficultyOrder[SongSelectDifficulty]
+        local diff2 = SongDifficultyOrder[SongSelectDifficulty]
+        do
+            if not table.index(a.difficulties, diff1) then
+                for i = 1, 6 do
+                    local i1 = table.index(a.difficulties, SongDifficultyOrder[SongSelectDifficulty+i])
+                    if i1 then
+                        diff1 = a.difficulties[i1]
+                        break
+                    end
+                    local i2 = table.index(a.difficulties, SongDifficultyOrder[SongSelectDifficulty-i])
+                    if i2 then
+                        diff1 = a.difficulties[i2]
+                        break
+                    end
+                end
+            end
+        end
+        do
+            if not table.index(b.difficulties, diff2) then
+                for i = 1, 6 do
+                    local i1 = table.index(b.difficulties, SongDifficultyOrder[SongSelectDifficulty+i])
+                    if i1 then
+                        diff2 = b.difficulties[i1]
+                        break
+                    end
+                    local i2 = table.index(b.difficulties, SongDifficultyOrder[SongSelectDifficulty-i])
+                    if i2 then
+                        diff2 = b.difficulties[i2]
+                        break
+                    end
+                end
+            end
+        end
+        return a.songData:getLevel(diff1) < b.songData:getLevel(diff2)
+    end, true}
+}
+
 function SongSelectSetSelectedSong(song, difficulty)
     local last = scene.selected.identifier
     
     difficulty = difficulty or SongDifficultyOrder[SongSelectDifficulty]
-    local set = (difficulty == "overvolt" or difficulty == "hidden") and scene.disk.overvoltSongs or scene.disk.normalSongs
+    local set = (difficulty == "overvolt" or difficulty == "hidden") and scene.sortedOvervolt or scene.sortedNormal
     local item = set[song]
     if not item then
         return
@@ -80,7 +128,7 @@ function SongSelectSetSelectedSong(song, difficulty)
         end
     end
     
-    set = SongSelectOvervoltMode and scene.disk.overvoltSongs or scene.disk.normalSongs
+    set = SongSelectOvervoltMode and scene.sortedOvervolt or scene.sortedNormal
     scene.selected = set[SongSelectSelectedSong]
 
     local hide = (scene.selected.lock or {}).hideUntilUnlocked and not scene.selected.unlocks[difficulty].passed
@@ -101,6 +149,25 @@ function SongSelectSetSelectedSong(song, difficulty)
             local t = math.max(0, math.min(1, stopTime/(times[2]-times[1])))
             local T = t*(previewTimes[2]-previewTimes[1])
             preview:seek(T, "seconds")
+        end
+    end
+end
+
+function SongSelectSortSongs(method)
+    table.sort(scene.sortedNormal, method[2])
+    table.sort(scene.sortedOvervolt, method[2])
+    for i,itm in ipairs(scene.sortedNormal) do
+        itm.position = i-1
+    end
+    for i,itm in ipairs(scene.sortedOvervolt) do
+        itm.position = i-1
+    end
+    local set = SongSelectOvervoltMode and scene.sortedOvervolt or scene.sortedNormal
+    for i = 1, #set do
+        if set[i] == scene.selected then
+            SongSelectSelectedSong = i
+            SongSelectOffsetView:start(scene.selected.position * 128, "outExpo", 0.5)
+            break
         end
     end
 end
@@ -131,6 +198,9 @@ function scene.load(args)
     scene.source = args.source or "songdiskselect"
     scene.destination = args.destination or "game"
 
+    scene.sortedNormal = {}
+    scene.sortedOvervolt = {}
+
     for _,song in ipairs(scene.disk.allSongs) do
         song.unlocks = {}
         for _,diff in ipairs(SongDifficultyOrder) do
@@ -142,12 +212,19 @@ function scene.load(args)
         end
     end
 
-    local set = SongSelectOvervoltMode and scene.disk.overvoltSongs or scene.disk.normalSongs
+    for i,song in pairs(scene.disk.normalSongs) do scene.sortedNormal[i] = song end
+    for i,song in pairs(scene.disk.overvoltSongs) do scene.sortedOvervolt[i] = song end
+
+    SongSelectSortMethod = SongSelectSortMethod or 1
+
+    local set = SongSelectOvervoltMode and scene.sortedOvervolt or scene.sortedNormal
     if #scene.disk.normalSongs < 1 then
-        set = scene.disk.overvoltSongs
+        set = scene.sortedOvervolt
         SongSelectOvervoltMode = true
         SongSelectDifficulty = 5
     end
+
+    SongSelectSortSongs(sortMethods[SongSelectSortMethod])
     scene.selected = set[SongSelectSelectedSong]
 
     SongSelectHasNormal = #scene.disk.normalSongs > 0
@@ -179,6 +256,11 @@ end
 function scene.action(a)
     if SceneManager.TransitionState.Transitioning then return end
     
+    if a == "sort" then
+        SongSelectSortMethod = (SongSelectSortMethod % #sortMethods) + 1
+        SongSelectSortSongs(sortMethods[SongSelectSortMethod])
+        sortDisplayTime = 1
+    end
     if a == "back" then
         if overvoltWarning then
             overvoltWarning = false
@@ -191,12 +273,16 @@ function scene.action(a)
         if preview then preview:stop() end
         SceneManager.Transition("scenes/" .. scene.source)
     end
-    local set = SongSelectOvervoltMode and scene.disk.overvoltSongs or scene.disk.normalSongs
+    local set = SongSelectOvervoltMode and scene.sortedOvervolt or scene.sortedNormal
     if a == "right" then
+        local lastDiff = SongSelectDifficulty
         SongSelectSetSelectedSong(set[(SongSelectSelectedSong % #set) + 1].identifier, SongDifficultyOrder[SongSelectDifficulty])
+        if SongSelectDifficulty ~= lastDiff and sortMethods[SongSelectSortMethod][3] then SongSelectSortSongs(sortMethods[SongSelectSortMethod]) end
     end
     if a == "left" then
+        local lastDiff = SongSelectDifficulty
         SongSelectSetSelectedSong(set[((SongSelectSelectedSong - 2) % #set) + 1].identifier, SongDifficultyOrder[SongSelectDifficulty])
+        if SongSelectDifficulty ~= lastDiff and sortMethods[SongSelectSortMethod][3] then SongSelectSortSongs(sortMethods[SongSelectSortMethod]) end
     end
     -- local selected = set[SongSelectSelectedSong]
     if a == "up" then
@@ -206,6 +292,7 @@ function scene.action(a)
             SongSelectDifficulty = table.index(SongDifficultyOrder, scene.selected.difficulties[diff])
         end
         SongSelectDifficultyView:start(SongSelectDifficulty, "outExpo", 0.3)
+        if sortMethods[SongSelectSortMethod][3] then SongSelectSortSongs(sortMethods[SongSelectSortMethod]) end
     end
     if a == "down" then
         if scene.selected.songData then
@@ -214,11 +301,12 @@ function scene.action(a)
             SongSelectDifficulty = table.index(SongDifficultyOrder, scene.selected.difficulties[diff])
         end
         SongSelectDifficultyView:start(SongSelectDifficulty, "outExpo", 0.3)
+        if sortMethods[SongSelectSortMethod][3] then SongSelectSortSongs(sortMethods[SongSelectSortMethod]) end
     end
-    if a == "overvolt" and #scene.disk.overvoltSongs > 0 then
-        local nextSet = set == scene.disk.normalSongs and scene.disk.overvoltSongs or scene.disk.normalSongs
+    if a == "overvolt" and #scene.sortedOvervolt > 0 then
+        local nextSet = set == scene.sortedNormal and scene.sortedOvervolt or scene.sortedNormal
         local choice = nextSet[scene.selected.linkedTo or scene.selected.identifier] or nextSet[1]
-        if nextSet == scene.disk.overvoltSongs then
+        if nextSet == scene.sortedOvervolt then
             SongSelectSetSelectedSong(choice.identifier, table.index(choice.difficulties, "overvolt") and "overvolt" or "hidden")
         elseif #nextSet > 0 then
             SongSelectSetSelectedSong(choice.identifier, "extreme")
@@ -249,6 +337,7 @@ end
 function scene.update(dt)
     SongSelectOffsetView:update(dt)
     SongSelectDifficultyView:update(dt)
+    sortDisplayTime = sortDisplayTime - dt
 end
 
 function scene.draw()
@@ -259,7 +348,7 @@ function scene.draw()
         overvolt = BindDisplayMode == 1 and Save.Keybind("overvolt")[2] or Save.Keybind("overvolt")[1]
     }
 
-    local set = SongSelectOvervoltMode and scene.disk.overvoltSongs or scene.disk.normalSongs
+    local set = SongSelectOvervoltMode and scene.sortedOvervolt or scene.sortedNormal
     -- local selected = set[SongSelectSelectedSong]
 
     local function drawSong(song)
@@ -495,6 +584,13 @@ function scene.draw()
 
     for i,song in ipairs(set) do
         drawSong(song)
+    end
+
+    if sortDisplayTime > 0 then
+        local text = Localize("sorted", Localize("sort_" .. sortMethods[SongSelectSortMethod][1]))
+        local w = Font:getWidth(text)
+        DrawBoxHalfWidth(40-w/16-2, 15.5, w/8+2, 1)
+        DrawText(text, 0, 264, 640, "center")
     end
 
     if askToDelete then

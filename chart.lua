@@ -787,7 +787,7 @@ EffectTypes = {
     },
     autoplay = {
         apply = function(self)
-            Autoplay = self.data.autoplay
+            TempAutoplay = self.data.autoplay
         end,
         editor = function(self,container)
             local autoIn = DialogToggle:new(0,0,container.width,16,Localize("effect_data_autoplay"))
