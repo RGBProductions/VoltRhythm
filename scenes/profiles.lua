@@ -82,7 +82,7 @@ function scene.draw()
         end
         local progress
         if profile.scores then
-            progress = math.floor(profile.scores.percentCompleted*100)
+            progress = math.floor(profile.scores.unlockPercentage*100)
         end
         love.graphics.setColor(TerminalColors[ProfilesSelection == i-1 and ColorID.WHITE or ColorID.DARK_GRAY])
         DrawBoxHalfWidth(40-16, pos, 32, 4)

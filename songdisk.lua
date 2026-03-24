@@ -193,3 +193,24 @@ function SongDisk.RecalculateScores()
         end
     end
 end
+
+function SongDisk.GetTotalProgress()
+    local progress = {unlockPercentage = 0, totalUnlocked = 0, totalUnlockable = 0}
+    for _,disk in ipairs(SongDisk.Disks) do
+        if not disk.unscored then
+            for _,song in ipairs(disk.allSongs) do
+                if song.lock then
+                    progress.totalUnlockable = progress.totalUnlockable + #song.difficulties
+                    for _,diff in ipairs(song.difficulties) do
+                        local test = song.lock:check(disk, diff)
+                        if test.passed then
+                            progress.totalUnlocked = progress.totalUnlocked + 1
+                        end
+                    end
+                end
+            end
+        end
+    end
+    progress.unlockPercentage = progress.totalUnlocked / math.max(1, progress.totalUnlockable)
+    return progress
+end
