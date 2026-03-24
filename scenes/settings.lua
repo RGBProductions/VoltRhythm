@@ -483,6 +483,16 @@ SettingsRoot = SettingsRoot or {
                     end
                 },
                 {
+                    label = "settings_key_sort",
+                    type = "key",
+                    read = function(i)
+                        return Save.Keybind("sort")[i]
+                    end,
+                    write = function(value,t,i)
+                        Save.Write("keybinds.sort."..i, {t, value})
+                    end
+                },
+                {
                     label = "settings_key_show_more",
                     type = "key",
                     read = function(i)
