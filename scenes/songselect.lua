@@ -26,6 +26,14 @@ local sortMethods = {
     {"title", function(a,b)
         return ((a.songData or {}).name or "") < ((b.songData or {}).name or "")
     end, false},
+    {"artist", function(a,b)
+        local author1 = ((a.songData or {}).author or "")
+        local author2 = ((b.songData or {}).author or "")
+        if author1 == author2 then
+            return (table.index(scene.disk.normalSongs, a) or table.index(scene.disk.overvoltSongs, a)) < (table.index(scene.disk.normalSongs, b) or table.index(scene.disk.overvoltSongs, b))
+        end
+        return author1 < author2
+    end, false},
     {"difficulty", function(a,b)
         local diff1 = SongDifficultyOrder[SongSelectDifficulty]
         local diff2 = SongDifficultyOrder[SongSelectDifficulty]
@@ -62,7 +70,16 @@ local sortMethods = {
             end
         end
         return a.songData:getLevel(diff1) < b.songData:getLevel(diff2)
-    end, true}
+    end, true},
+    {"duration", function(a,b)
+        local source1 = Assets.Source((a.songData or {}).songPath)
+        local source2 = Assets.Source((b.songData or {}).songPath)
+        local dur1 = 0
+        local dur2 = 0
+        if source1 then dur1 = source1:getDuration("seconds") end
+        if source2 then dur2 = source2:getDuration("seconds") end
+        return dur1 < dur2
+    end, false}
 }
 
 function SongSelectSetSelectedSong(song, difficulty)

@@ -823,7 +823,7 @@ function scene.draw()
         scene.background.draw()
     end
     if scene.video then
-        if SongStarted then
+        if scene.video:isPlaying() then
             love.graphics.setColor(1,1,1)
             local s = math.max(640/scene.video:getWidth(), 480/scene.video:getHeight())
             love.graphics.draw(scene.video, (640-scene.video:getWidth()*s)/2, (480-scene.video:getHeight()*s)/2, 0, s, s)
