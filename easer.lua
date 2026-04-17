@@ -32,6 +32,17 @@ function Easer:start(target, method, duration)
     self.time = 0
 end
 
+---Pulses the Easer, causing it to return to its original value immediately.
+---@param value number
+---@param method easingmethod
+---@param duration number
+function Easer:pulse(value, method, duration)
+    self.base = value
+    self.method = method or "linear"
+    self.duration = duration or 1
+    self.time = 0
+end
+
 ---Gets the current value of the Easer.
 ---@return number
 function Easer:get()

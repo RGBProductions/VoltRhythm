@@ -23,7 +23,7 @@ NoteTypes = {
                 local barPos = mainpos+i/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1))
                 if not isEditor then barPos = barPos+math.sin(barPos*8)*Waviness:get()/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1)) end
                 local extPos = GetNoteCellY(barPos, speed, (NoteSpeedMods[self.lane+1] or {})[1] or 1, ViewOffset:get()+(ViewOffsetFreeze or 0), chartPos, chartHeight)
-                if extPos >= chartPos and extPos-(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*ScrollSpeedModifier:get() < chartPos+(chartHeight-1) then
+                if extPos >= chartPos and extPos < chartPos+(chartHeight-1) then
                     love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][3]])
                     local R,G,B,A = love.graphics.getColor()
                     love.graphics.setColor(r*R,g*G,b*B,a*A)
@@ -293,7 +293,7 @@ NoteTypes = {
                 for i = 0.5, cells do
                     local barPos = mainpos-i/speed
                     local extPos = GetNoteCellY(barPos, speed, (NoteSpeedMods[self.lane+1] or {})[1] or 1, ViewOffset:get()+(ViewOffsetFreeze or 0), chartPos, chartHeight)
-                    if extPos >= chartPos and extPos-(ViewOffset:get()+(ViewOffsetFreeze or 0))*(ScrollSpeed or 25)*ScrollSpeedModifier:get() < chartPos+(chartHeight-1) then
+                    if extPos >= chartPos and extPos < chartPos+(chartHeight-1) then
                         love.graphics.print("┊", (chartX+visualLane*4)*8+4, math.floor(extPos*16-8-0), 0, 1, 1, NoteFont:getWidth("┊")/2)
                     end
                 end
@@ -338,7 +338,11 @@ EffectTypes = {
             if self.data.smoothing then
                 CurveModifier:fromSmoothing(self.data.strength, self.data.smoothing)
             else
-                CurveModifier:start(self.data.strength, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                if self.data.pulse then
+                    CurveModifier:pulse(self.data.strength, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                else
+                    CurveModifier:start(self.data.strength, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                end
             end
         end,
         editor = function(self,container)
@@ -353,6 +357,7 @@ EffectTypes = {
                 effect.data.strength = tonumber(strengthIn.content) or effect.data.strength
                 effect.data.easeMethod = self.data.easeMethod
                 effect.data.easeDuration = self.data.easeDuration
+                effect.data.pulse = self.data.pulse
             end
         end
     },
@@ -361,7 +366,11 @@ EffectTypes = {
             if self.data.smoothing then
                 ChromaticModifier:fromSmoothing(self.data.strength, self.data.smoothing)
             else
-                ChromaticModifier:start(self.data.strength, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                if self.data.pulse then
+                    ChromaticModifier:pulse(self.data.strength, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                else
+                    ChromaticModifier:start(self.data.strength, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                end
             end
         end,
         editor = function(self,container)
@@ -376,6 +385,7 @@ EffectTypes = {
                 effect.data.strength = tonumber(strengthIn.content) or effect.data.strength
                 effect.data.easeMethod = self.data.easeMethod
                 effect.data.easeDuration = self.data.easeDuration
+                effect.data.pulse = self.data.pulse
             end
         end
     },
@@ -384,7 +394,11 @@ EffectTypes = {
             if self.data.smoothing then
                 TearingModifier:fromSmoothing(self.data.strength, self.data.smoothing)
             else
-                TearingModifier:start(self.data.strength, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                if self.data.pulse then
+                    TearingModifier:pulse(self.data.strength, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                else
+                    TearingModifier:start(self.data.strength, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                end
             end
         end,
         editor = function(self,container)
@@ -399,6 +413,7 @@ EffectTypes = {
                 effect.data.strength = tonumber(strengthIn.content) or effect.data.strength
                 effect.data.easeMethod = self.data.easeMethod
                 effect.data.easeDuration = self.data.easeDuration
+                effect.data.pulse = self.data.pulse
             end
         end
     },
@@ -407,7 +422,11 @@ EffectTypes = {
             if self.data.smoothing then
                 BoardBrightness:fromSmoothing(self.data.brightness, self.data.smoothing)
             else
-                BoardBrightness:start(self.data.brightness, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                if self.data.pulse then
+                    BoardBrightness:pulse(self.data.brightness, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                else
+                    BoardBrightness:start(self.data.brightness, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                end
             end
         end,
         editor = function(self,container)
@@ -422,6 +441,7 @@ EffectTypes = {
                 effect.data.brightness = tonumber(strengthIn.content) or effect.data.brightness
                 effect.data.easeMethod = self.data.easeMethod
                 effect.data.easeDuration = self.data.easeDuration
+                effect.data.pulse = self.data.pulse
             end
         end
     },
@@ -430,7 +450,11 @@ EffectTypes = {
             if self.data.smoothing then
                 NoteBrightness:fromSmoothing(self.data.brightness, self.data.smoothing)
             else
-                NoteBrightness:start(self.data.brightness, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                if self.data.pulse then
+                    NoteBrightness:pulse(self.data.brightness, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                else
+                    NoteBrightness:start(self.data.brightness, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                end
             end
         end,
         editor = function(self,container)
@@ -445,6 +469,7 @@ EffectTypes = {
                 effect.data.brightness = tonumber(strengthIn.content) or effect.data.brightness
                 effect.data.easeMethod = self.data.easeMethod
                 effect.data.easeDuration = self.data.easeDuration
+                effect.data.pulse = self.data.pulse
             end
         end
     },
@@ -453,7 +478,11 @@ EffectTypes = {
             if self.data.smoothing then
                 BloomStrengthModifier:fromSmoothing(self.data.strength, self.data.smoothing)
             else
-                BloomStrengthModifier:start(self.data.strength, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                if self.data.pulse then
+                    BloomStrengthModifier:pulse(self.data.strength, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                else
+                    BloomStrengthModifier:start(self.data.strength, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                end
             end
         end,
         editor = function(self,container)
@@ -468,6 +497,7 @@ EffectTypes = {
                 effect.data.strength = tonumber(strengthIn.content) or effect.data.strength
                 effect.data.easeMethod = self.data.easeMethod
                 effect.data.easeDuration = self.data.easeDuration
+                effect.data.pulse = self.data.pulse
             end
         end
     },
@@ -476,7 +506,11 @@ EffectTypes = {
             if self.data.smoothing then
                 ZoomBlurStrengthModifier:fromSmoothing(self.data.strength, self.data.smoothing)
             else
-                ZoomBlurStrengthModifier:start(self.data.strength, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                if self.data.pulse then
+                    ZoomBlurStrengthModifier:pulse(self.data.strength, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                else
+                    ZoomBlurStrengthModifier:start(self.data.strength, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                end
             end
         end,
         editor = function(self,container)
@@ -491,6 +525,7 @@ EffectTypes = {
                 effect.data.strength = tonumber(strengthIn.content) or effect.data.strength
                 effect.data.easeMethod = self.data.easeMethod
                 effect.data.easeDuration = self.data.easeDuration
+                effect.data.pulse = self.data.pulse
             end
         end
     },
@@ -499,7 +534,11 @@ EffectTypes = {
             if self.data.smoothing then
                 Waviness:fromSmoothing(self.data.strength, self.data.smoothing)
             else
-                Waviness:start(self.data.strength, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                if self.data.pulse then
+                    Waviness:pulse(self.data.strength, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                else
+                    Waviness:start(self.data.strength, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                end
             end
         end,
         editor = function(self,container)
@@ -514,6 +553,7 @@ EffectTypes = {
                 effect.data.strength = tonumber(strengthIn.content) or effect.data.strength
                 effect.data.easeMethod = self.data.easeMethod
                 effect.data.easeDuration = self.data.easeDuration
+                effect.data.pulse = self.data.pulse
             end
         end
     },
@@ -522,7 +562,11 @@ EffectTypes = {
             if self.data.smoothing then
                 ScrollSpeedModifier:fromSmoothing(self.data.speed, self.data.smoothing)
             else
-                ScrollSpeedModifier:start(self.data.speed, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                if self.data.pulse then
+                    ScrollSpeedModifier:pulse(self.data.speed, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                else
+                    ScrollSpeedModifier:start(self.data.speed, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                end
             end
         end,
         editor = function(self,container)
@@ -537,6 +581,7 @@ EffectTypes = {
                 effect.data.speed = tonumber(strengthIn.content) or effect.data.speed
                 effect.data.easeMethod = self.data.easeMethod
                 effect.data.easeDuration = self.data.easeDuration
+                effect.data.pulse = self.data.pulse
             end
         end
     },
@@ -563,6 +608,7 @@ EffectTypes = {
                 effect.data.speed = tonumber(strengthIn.content) or effect.data.speed
                 effect.data.easeMethod = self.data.easeMethod
                 effect.data.easeDuration = self.data.easeDuration
+                effect.data.pulse = self.data.pulse
             end
         end
     },
@@ -571,7 +617,11 @@ EffectTypes = {
             if self.data.smoothing then
                 ViewOffset:fromSmoothing(self.data.offset, self.data.smoothing)
             else
-                ViewOffset:start(self.data.offset, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                if self.data.pulse then
+                    ViewOffset:pulse(self.data.offset, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                else
+                    ViewOffset:start(self.data.offset, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                end
             end
             ViewOffsetMoveLine = not self.data.keep_line
         end,
@@ -590,6 +640,7 @@ EffectTypes = {
                 effect.data.offset = tonumber(offsetIn.content) or effect.data.offset
                 effect.data.easeMethod = self.data.easeMethod
                 effect.data.easeDuration = self.data.easeDuration
+                effect.data.pulse = self.data.pulse
                 effect.data.keep_line = keepIn.active or effect.data.keep_line
             end
         end
@@ -687,6 +738,7 @@ EffectTypes = {
                 effect.data.type = typeIn.content or effect.data.type
                 effect.data.easeMethod = self.data.easeMethod
                 effect.data.easeDuration = self.data.easeDuration
+                effect.data.pulse = self.data.pulse
             end
         end
     },
@@ -697,8 +749,13 @@ EffectTypes = {
                     if self.data.shift[1] then DisplayShift[1]:fromSmoothing(self.data.shift[1], self.data.smoothing) end
                     if self.data.shift[2] then DisplayShift[2]:fromSmoothing(self.data.shift[2], self.data.smoothing) end
                 else
-                    if self.data.shift[1] then DisplayShift[1]:start(self.data.shift[1], self.data.easeMethod or "linear", self.data.easeDuration or 0) end
-                    if self.data.shift[2] then DisplayShift[2]:start(self.data.shift[2], self.data.easeMethod or "linear", self.data.easeDuration or 0) end
+                    if self.data.pulse then
+                        if self.data.shift[1] then DisplayShift[1]:pulse(self.data.shift[1], self.data.easeMethod or "linear", self.data.easeDuration or 0) end
+                        if self.data.shift[2] then DisplayShift[2]:pulse(self.data.shift[2], self.data.easeMethod or "linear", self.data.easeDuration or 0) end
+                    else
+                        if self.data.shift[1] then DisplayShift[1]:start(self.data.shift[1], self.data.easeMethod or "linear", self.data.easeDuration or 0) end
+                        if self.data.shift[2] then DisplayShift[2]:start(self.data.shift[2], self.data.easeMethod or "linear", self.data.easeDuration or 0) end
+                    end
                 end
             end
             if self.data.scale then
@@ -706,15 +763,24 @@ EffectTypes = {
                     if self.data.scale[1] then DisplayScale[1]:fromSmoothing(self.data.scale[1], self.data.smoothing) end
                     if self.data.scale[2] then DisplayScale[2]:fromSmoothing(self.data.scale[2], self.data.smoothing) end
                 else
-                    if self.data.scale[1] then DisplayScale[1]:start(self.data.scale[1], self.data.easeMethod or "linear", self.data.easeDuration or 0) end
-                    if self.data.scale[2] then DisplayScale[2]:start(self.data.scale[2], self.data.easeMethod or "linear", self.data.easeDuration or 0) end
+                    if self.data.pulse then
+                        if self.data.scale[1] then DisplayScale[1]:pulse(self.data.scale[1], self.data.easeMethod or "linear", self.data.easeDuration or 0) end
+                        if self.data.scale[2] then DisplayScale[2]:pulse(self.data.scale[2], self.data.easeMethod or "linear", self.data.easeDuration or 0) end
+                    else
+                        if self.data.scale[1] then DisplayScale[1]:start(self.data.scale[1], self.data.easeMethod or "linear", self.data.easeDuration or 0) end
+                        if self.data.scale[2] then DisplayScale[2]:start(self.data.scale[2], self.data.easeMethod or "linear", self.data.easeDuration or 0) end
+                    end
                 end
             end
             if self.data.rotation then
                 if self.data.smoothing then
                     DisplayRotation:fromSmoothing(self.data.rotation, self.data.smoothing)
                 else
-                    DisplayRotation:start(self.data.rotation, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                    if self.data.pulse then
+                        DisplayRotation:pulse(self.data.rotation, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                    else
+                        DisplayRotation:start(self.data.rotation, self.data.easeMethod or "linear", self.data.easeDuration or 0)
+                    end
                 end
             end
             if self.data.shear then
@@ -722,8 +788,13 @@ EffectTypes = {
                     if self.data.shear[1] then DisplayShear[1]:fromSmoothing(self.data.shear[1], self.data.smoothing) end
                     if self.data.shear[2] then DisplayShear[2]:fromSmoothing(self.data.shear[2], self.data.smoothing) end
                 else
-                    if self.data.shear[1] then DisplayShear[1]:start(self.data.shear[1], self.data.easeMethod or "linear", self.data.easeDuration or 0) end
-                    if self.data.shear[2] then DisplayShear[2]:start(self.data.shear[2], self.data.easeMethod or "linear", self.data.easeDuration or 0) end
+                    if self.data.pulse then
+                        if self.data.shear[1] then DisplayShear[1]:pulse(self.data.shear[1], self.data.easeMethod or "linear", self.data.easeDuration or 0) end
+                        if self.data.shear[2] then DisplayShear[2]:pulse(self.data.shear[2], self.data.easeMethod or "linear", self.data.easeDuration or 0) end
+                    else
+                        if self.data.shear[1] then DisplayShear[1]:start(self.data.shear[1], self.data.easeMethod or "linear", self.data.easeDuration or 0) end
+                        if self.data.shear[2] then DisplayShear[2]:start(self.data.shear[2], self.data.easeMethod or "linear", self.data.easeDuration or 0) end
+                    end
                 end
             end
         end,
@@ -772,6 +843,7 @@ EffectTypes = {
                 effect.data.rotation = tonumber(rotationIn.content) or effect.data.rotation
                 effect.data.easeMethod = self.data.easeMethod
                 effect.data.easeDuration = self.data.easeDuration
+                effect.data.pulse = self.data.pulse
             end
         end
     },

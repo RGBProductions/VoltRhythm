@@ -339,25 +339,29 @@ function EasingDialog(effect)
         display.duration = duration
         self.content = tostring(math.floor(duration*10000)/10000)
     end)
+    local pulseIn = DialogToggle:new(0, 96, 360, 16, Localize("editor_label_pulse"))
+    pulseIn.active = effect.data.pulse
     durationIn.content = tostring(display.duration or 1)
     local dialog = {
         title = Localize("editor_dialog_easing_title"),
         width = 24,
-        height = 10,
+        height = 13,
         contents = {
             display,
             methodButton,
             durationIn,
-            DialogButton:new(168+32, 96, 64, 16, Localize("editor_action_cancel"), function ()
+            pulseIn,
+            DialogButton:new(168+32, 144, 64, 16, Localize("editor_action_cancel"), function ()
                 table.remove(scene.dialogs, 1)
             end),
-            DialogButton:new(72+32, 96, 64, 16, Localize("editor_action_apply"), function ()
+            DialogButton:new(72+32, 144, 64, 16, Localize("editor_action_apply"), function ()
                 effect.data.easeMethod = method
                 if effect.data.easeMethod then
                     effect.data.easeDuration = duration
                 else
                     effect.data.easeDuration = nil
                 end
+                effect.data.pulse = pulseIn.active
                 table.remove(scene.dialogs, 1)
             end)
         }
