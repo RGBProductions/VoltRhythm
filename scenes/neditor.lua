@@ -1764,7 +1764,11 @@ function scene.keypressed(k)
     if k == "h" then
         for _,note in ipairs(scene.selectedNotes) do
             note.lane = 3-note.lane
+            if note.extra.dir then
+                note.extra.dir = -note.extra.dir
+            end
         end
+        findOverlaps()
         EditorDirty = true
     end
 end
