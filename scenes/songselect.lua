@@ -12,6 +12,9 @@ local songselectText = love.graphics.newImage("images/title/songselect.png")
 local askToDelete = nil
 local askToDeleteDiff = nil
 
+local askToDeleteInvalid = false
+local askToDeleteInvalidTime = 0
+
 local sortDisplayTime = 0
 
 local versionWarning = nil
@@ -218,6 +221,9 @@ function scene.load(args)
     scene.sortedNormal = {}
     scene.sortedOvervolt = {}
 
+    scene.invalidScores = {}
+    scene.invalidChartsText = ""
+
     for _,song in ipairs(scene.disk.allSongs) do
         song.unlocks = {}
         for _,diff in ipairs(SongDifficultyOrder) do
@@ -226,7 +232,24 @@ function scene.load(args)
             else
                 song.unlocks[diff] = song.lock:check(scene.disk, diff)
             end
+            local score = Save.Read("songs."..(song.scorePrefix or "")..song.identifier.."."..diff)
+            if score and song.songData then
+                local chart = song.songData:loadChart(diff)
+                if chart then
+                    if score.key ~= chart.scoreKey then
+                        local name = song.songData.name .. " - " .. Localize("difficulty_" .. diff)
+                        table.insert(scene.invalidScores, {song, diff, name, chart.scoreKey})
+                        scene.invalidChartsText = scene.invalidChartsText .. name .. "\n"
+                    end
+                end
+            end
         end
+    end
+    
+    if #scene.invalidScores > 0 then
+        scene.invalidChartsText = scene.invalidChartsText:sub(1,-2)
+        askToDeleteInvalid = true
+        askToDeleteInvalidTime = 0
     end
 
     for i,song in pairs(scene.disk.normalSongs) do scene.sortedNormal[i] = song end
@@ -273,6 +296,24 @@ end
 function scene.action(a)
     if SceneManager.TransitionState.Transitioning then return end
     
+    if askToDeleteInvalid then
+        if askToDeleteInvalidTime >= 3 then
+            if a == "confirm" then
+                for _,entry in ipairs(scene.invalidScores) do
+                    Save.Write("songs."..(entry[1].scorePrefix or "")..entry[1].identifier.."."..entry[2], nil)
+                end
+                askToDeleteInvalid = false
+            end
+            if a == "back" then
+                for _,entry in ipairs(scene.invalidScores) do
+                    Save.Write("songs."..(entry[1].scorePrefix or "")..entry[1].identifier.."."..entry[2]..".key", entry[4])
+                end
+                askToDeleteInvalid = false
+            end
+        end
+        return
+    end
+
     if a == "sort" then
         SongSelectSortMethod = (SongSelectSortMethod % #sortMethods) + 1
         SongSelectSortSongs(sortMethods[SongSelectSortMethod])
@@ -355,6 +396,7 @@ function scene.update(dt)
     SongSelectOffsetView:update(dt)
     SongSelectDifficultyView:update(dt)
     sortDisplayTime = sortDisplayTime - dt
+    askToDeleteInvalidTime = askToDeleteInvalidTime + dt
 end
 
 function scene.draw()
@@ -646,6 +688,25 @@ function scene.draw()
         DrawText(Localize("warning_version", Localize(versionWarning.old and "warning_version_old" or (versionWarning.new and "warning_version_new" or "warning_version_client")), ((versionWarning.version.name ~= nil and versionWarning.version.version ~= nil) and (versionWarning.version.name .. " v" .. versionWarning.version.version) or "Unknown"), Version.name .. " v" .. Version.version), x*8+16, 184, w*8-16, "center")
         DrawText(Localize("nav_back", KeyLabel(binds.back)), x*8+16, 312, w*8-16, "left")
         DrawText(Localize("nav_play_anyway", KeyLabel(binds.confirm)), x*8+16, 312, w*8-16, "right")
+    end
+
+    if askToDeleteInvalid then
+        local w = 40
+        local body = Localize("warning_invalid_scores", scene.invalidChartsText)
+        local max,wrap = Font:getWrap(body, w*8-16)
+        local h = #wrap+4
+        local x = 40-w/2-1
+        local y = (30-h-2)/2
+        love.graphics.setColor(0,0,0,0.75)
+        love.graphics.rectangle("fill", 0, 0, 640, 480)
+        love.graphics.setColor(1,1,1)
+        DrawBoxHalfWidth(x, y, w, h)
+        DrawText(Localize("warning_invalid_scores_title"), 0, y*16+16, 640, "center")
+        DrawText(body, x*8+16, y*16+48, w*8-16, "center")
+        love.graphics.setColor(TerminalColors[askToDeleteInvalidTime >= 3 and ColorID.WHITE or ColorID.DARK_GRAY])
+        DrawText(Localize("nav_no", KeyLabel(binds.back)), x*8+16, y*16+h*16, w*8-16, "left")
+        love.graphics.setColor(TerminalColors[askToDeleteInvalidTime >= 3 and ColorID.LIGHT_RED or ColorID.DARK_GRAY])
+        DrawText(Localize("nav_yes", KeyLabel(binds.confirm)), x*8+16, y*16+h*16, w*8-16, "right")
     end
 end
 

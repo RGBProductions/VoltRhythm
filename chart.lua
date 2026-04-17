@@ -1095,6 +1095,7 @@ end
 ---@field charter string
 ---@field hideDifficulty boolean
 ---@field spoiler boolean?
+---@field scoreKey any
 Chart = {}
 Chart.__index = Chart
 
@@ -1143,6 +1144,8 @@ function Chart:new(data)
     chart.version = data.version or {code = 1}
     chart.isOld = chart.version.code < Version.chart_version
     chart.isNew = chart.version.code > Version.chart_version
+
+    chart.scoreKey = data.scoreKey
 
     return chart
 end
@@ -1240,7 +1243,8 @@ function Chart:save(path)
         charter = self.charter,
         hideDifficulty = self.hideDifficulty,
         spoiler = self.spoiler,
-        version = self.version
+        version = self.version,
+        scoreKey = self.scoreKey
     }))
 end
 

@@ -49,7 +49,8 @@ function scene.load(args)
             rank = scene.rank,
             plus = scene.plus,
             fullCombo = scene.fullCombo,
-            fullOvercharge = scene.fullOvercharge
+            fullOvercharge = scene.fullOvercharge,
+            key = scene.chart.scoreKey
         })
     end
     SongDisk.RecalculateScores()

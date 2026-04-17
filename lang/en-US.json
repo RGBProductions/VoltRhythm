@@ -182,6 +182,8 @@
     "warning_delete_score": "Are you sure?",
     "warning_delete_scores": "Are you sure you want to delete ALL of your profile's scores?\n\nTHIS IS IRREVERSIBLE!!!",
     "warning_delete_data": "Are you sure you want to delete ALL of your VoltRhythm data?\n\nTHIS IS IRREVERSIBLE!!!\n\nVoltRhythm will restart after all data is deleted.",
+    "warning_invalid_scores_title": "CHARTS UPDATED",
+    "warning_invalid_scores": "Some charts were updated since you last played them:\n\n{1}\n\nWould you like to invalidate your previous scores for these charts?\n\nTHIS IS IRREVERSIBLE!!",
     "editor_action_cancel": "CANCEL",
     "editor_action_save": "SAVE",
     "editor_action_open": "OPEN",
