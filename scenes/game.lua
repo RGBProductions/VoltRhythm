@@ -261,6 +261,7 @@ function ResetEffects()
     ViewOffset:set(0)
     ScrollSpeedModifier:set(1)
     Waviness:set(0)
+    ZoomBlurStrengthModifier:set(0)
 
     NoteBrightness:set(1)
     BoardBrightness:set(1)
