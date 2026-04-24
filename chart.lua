@@ -9,25 +9,31 @@ NoteTypes = {
             chartX = chartX + AnaglyphSide/8*0.5
             local mainpos = self.time-time
             local pos = mainpos
+            local endpos = (self.time+(self.length or 0))-time
             chartHeight = chartHeight or 15
             chartPos = chartPos or 5
-            if not isEditor then pos = pos+math.sin(pos*8)*Waviness:get()/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1)) end
+            if not isEditor then
+                pos = pos+math.sin(pos*8)*Waviness:get()/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1))
+                endpos = endpos+math.sin(endpos*8)*Waviness:get()/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1))
+            end
             local drawPos = GetNoteCellY(pos, speed, (NoteSpeedMods[self.lane+1] or {})[1] or 1, ViewOffset:get()+(ViewOffsetFreeze or 0), chartPos, chartHeight)
             local visualLane = self.visualLane or self.lane
             if useSteps then drawPos = math.floor(drawPos) end
 
             local r,g,b,a = love.graphics.getColor()
             
-            local cells = self.length * math.abs(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1))
-            for i = 0.5, cells do
-                local barPos = mainpos+i/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1))
-                if not isEditor then barPos = barPos+math.sin(barPos*8)*Waviness:get()/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1)) end
-                local extPos = GetNoteCellY(barPos, speed, (NoteSpeedMods[self.lane+1] or {})[1] or 1, ViewOffset:get()+(ViewOffsetFreeze or 0), chartPos, chartHeight)
-                if extPos >= chartPos and extPos < chartPos+(chartHeight-1) then
+            if (self.length or 0) > 0 then
+                local holdStartPos = math.min(chartPos+chartHeight, GetNoteCellY(math.max(0,pos), speed, (NoteSpeedMods[self.lane+1] or {})[1] or 1, ViewOffset:get()+(ViewOffsetFreeze or 0), chartPos, chartHeight)-(isEditor and 0 or (self.holding and 1 or 0.5)))
+                local holdEndPos = math.max(chartPos, GetNoteCellY(endpos, speed, (NoteSpeedMods[self.lane+1] or {})[1] or 1, ViewOffset:get()+(ViewOffsetFreeze or 0), chartPos, chartHeight))
+
+                if holdStartPos > holdEndPos then
+                    local holdSize = math.abs((holdStartPos*16)-(holdEndPos*16))
+                    local holdY = math.min(holdStartPos, holdEndPos)
+
                     love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][3]])
                     local R,G,B,A = love.graphics.getColor()
                     love.graphics.setColor(r*R,g*G,b*B,a*A)
-                    love.graphics.print("║", (chartX+visualLane*4)*8+4, math.floor(extPos*16-8-0), 0, 1, 1, NoteFont:getWidth("║")/2)
+                    love.graphics.print("║", (chartX+visualLane*4)*8+4, holdY*16, 0, 1, holdSize/NoteFont:getHeight(), NoteFont:getWidth("║")/2)
                 end
             end
 
@@ -60,9 +66,13 @@ NoteTypes = {
         draw = function (self,time,speed,chartPos,chartHeight,chartX,isEditor)
             local mainpos = self.time-time
             local pos = mainpos
+            local endpos = (self.time+(self.length or 0))-time
             chartHeight = chartHeight or 15
             chartPos = chartPos or 5
-            if not isEditor then pos = pos+math.sin(pos*8)*Waviness:get()/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1)) end
+            if not isEditor then
+                pos = pos+math.sin(pos*8)*Waviness:get()/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1))
+                endpos = endpos+math.sin(endpos*8)*Waviness:get()/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1))
+            end
             local drawPos = GetNoteCellY(pos, speed, (NoteSpeedMods[self.lane+1] or {})[1] or 1, ViewOffset:get()+(ViewOffsetFreeze or 0), chartPos, chartHeight)
             local laneOffset = isEditor and 1 or math.max(0,math.min(1, ((pos*(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1)))-7)/4))
             local visualLane = (self.visualLane or self.lane) - self.extra.dir*laneOffset
@@ -71,16 +81,18 @@ NoteTypes = {
 
             local r,g,b,a = love.graphics.getColor()
 
-            local cells = self.length * speed
-            for i = 0.5, cells do
-                local barPos = mainpos+i/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1))
-                if not isEditor then barPos = barPos+math.sin(barPos*8)*Waviness:get()/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1)) end
-                local extPos = GetNoteCellY(barPos, speed, (NoteSpeedMods[self.lane+1] or {})[1] or 1, ViewOffset:get()+(ViewOffsetFreeze or 0), chartPos, chartHeight)
-                if extPos >= chartPos and extPos < chartPos+(chartHeight-1) then
+            if (self.length or 0) > 0 then
+                local holdStartPos = math.min(chartPos+chartHeight, GetNoteCellY(math.max(0,pos), speed, (NoteSpeedMods[self.lane+1] or {})[1] or 1, ViewOffset:get()+(ViewOffsetFreeze or 0), chartPos, chartHeight)-(isEditor and 0 or (self.holding and 1 or 0.5)))
+                local holdEndPos = math.max(chartPos, GetNoteCellY(endpos, speed, (NoteSpeedMods[self.lane+1] or {})[1] or 1, ViewOffset:get()+(ViewOffsetFreeze or 0), chartPos, chartHeight))
+
+                if holdStartPos > holdEndPos then
+                    local holdSize = math.abs((holdStartPos*16)-(holdEndPos*16))
+                    local holdY = math.min(holdStartPos, holdEndPos)
+
                     love.graphics.setColor(TerminalColors[NoteColors[((self.lane)%(#NoteColors))+1][3]])
                     local R,G,B,A = love.graphics.getColor()
                     love.graphics.setColor(r*R,g*G,b*B,a*A)
-                    love.graphics.print("║", (chartX+visualLane*4)*8+4, math.floor(extPos*16-8-(isEditor and 0 or 4)), 0, 1, 1, NoteFont:getWidth("║")/2)
+                    love.graphics.print("║", (chartX+visualLane*4)*8+4, holdY*16, 0, 1, holdSize/NoteFont:getHeight(), NoteFont:getWidth("║")/2)
                 end
             end
 
