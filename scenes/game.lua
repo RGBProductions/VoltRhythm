@@ -145,9 +145,10 @@ function TryPlayFCOrFO()
     end
 end
 
----@param args {songData: SongData, scorePrefix: string?, difficulty: string, modifiers: table, isEditor?: boolean, forced?: boolean, masquerade?: string, chargeGate?: number, next?: {path: string, args?: table}}
+---@param args {songData: SongData, scorePrefix: string?, difficulty: string, modifiers: table, isEditor?: boolean, forced?: boolean, preventRestart?: boolean, masquerade?: string, chargeGate?: number, next?: {path: string, args?: table}, startTime?: number, from?: string}
 function scene.load(args)
     scene.next = args.next
+    scene.from = args.from or "songselect"
     ResetEffects()
     for _,hitSound in ipairs(hitSounds) do
         hitSound:setVolume(SystemSettings.sound_volume)
@@ -157,13 +158,14 @@ function scene.load(args)
     LastOffset = nil
     scene.isEditor = args.isEditor
     scene.forced = args.forced
+    scene.preventRestart = args.preventRestart
     if args.songData then
         scene.songData = args.songData
         scene.scorePrefix = args.scorePrefix
         scene.difficulty = args.difficulty
         scene.chart = scene.songData:loadChart(args.difficulty or "easy")
         if scene.chart then
-            scene.chart.time = SixteenthsToSeconds(-16,scene.chart.bpm)
+            scene.chart.time = args.startTime or SixteenthsToSeconds(-16,scene.chart.bpm)
         end
     end
     scene.masquerade = args.masquerade or scene.difficulty or "hidden"
@@ -171,7 +173,7 @@ function scene.load(args)
         scene.song = Assets.Source(scene.chart.song)
         if scene.song then
             scene.song:setVolume(SystemSettings.song_volume)
-            scene.song:seek(0, "seconds")
+            scene.song:seek(args.startTime or 0, "seconds")
         end
         scene.video = Assets.Video(scene.chart.video)
         scene.background = Assets.Background(scene.chart.background) or defaultBg
@@ -227,6 +229,10 @@ function scene.load(args)
         scene.video:pause()
         scene.video:rewind()
         scene.video:getSource():setVolume(0)
+        scene.video:getSource():seek(args.startTime or 0, "seconds")
+        if scene.chart.time >= 0 then
+            scene.video:play()
+        end
     end
 
     RatingCounts = {}
@@ -244,7 +250,7 @@ function scene.load(args)
 
     PauseTimer = 0
     Paused = false
-    SongStarted = false
+    SongStarted = scene.chart.time >= 0
     PauseSelection = 0
 
     HandleChartEffects()
@@ -278,6 +284,7 @@ function PauseGame()
 end
 
 function Restart()
+    if scene.preventRestart then return end
     if scene.song then scene.song:stop() end
     scene.chart:resetAllNotes()
     SceneManager.Transition("scenes/game", {songData = scene.songData, scorePrefix = scene.scorePrefix, difficulty = scene.difficulty, isEditor = scene.isEditor, forced = scene.forced, chargeGate = scene.chargeGate})
@@ -293,7 +300,7 @@ function Exit()
         Charge = 0
         SceneManager.Transition("scenes/neditor", {songData = scene.songData, scorePrefix = scene.scorePrefix, difficulty = scene.difficulty})
     else
-        SceneManager.Transition("scenes/songselect")
+        SceneManager.Transition("scenes/" .. scene.from)
     end
 end
 
@@ -382,7 +389,7 @@ function scene.action(a)
             if PauseSelection == 0 then
                 Paused = false
             end
-            if PauseSelection == 1 then
+            if PauseSelection == 1 and not scene.preventRestart then
                 Restart()
             end
             if PauseSelection == 2 and not scene.forced then
@@ -390,13 +397,13 @@ function scene.action(a)
             end
         end
         if a == "left" then
-            PauseSelection = (PauseSelection-1)%(scene.forced and 2 or 3)
+            PauseSelection = (scene.preventRestart and (2-PauseSelection) or (PauseSelection-1))%(scene.forced and 2 or 3)
         end
         if a == "right" then
-            PauseSelection = (PauseSelection+1)%(scene.forced and 2 or 3)
+            PauseSelection = (scene.preventRestart and (2-PauseSelection) or (PauseSelection+1))%(scene.forced and 2 or 3)
         end
     end
-    if a == "restart" then
+    if a == "restart" and not scene.preventRestart then
         Restart()
     end
     if a == "editor" then
@@ -828,11 +835,13 @@ function scene.draw()
         scene.background.draw()
     end
     if scene.video then
-        if scene.video:isPlaying() then
-            love.graphics.setColor(1,1,1)
+        local dur = scene.video:getSource():getDuration("seconds")
+        local fade = math.max(0, math.min(1, (scene.chart.time < 0) and (scene.chart.time+1) or (dur-scene.chart.time+1)))
+        -- if SongStarted then
+            love.graphics.setColor(1,1,1,fade)
             local s = math.max(640/scene.video:getWidth(), 480/scene.video:getHeight())
             love.graphics.draw(scene.video, (640-scene.video:getWidth()*s)/2, (480-scene.video:getHeight()*s)/2, 0, s, s)
-        end
+        -- end
     end
 
     love.graphics.push()
@@ -1043,7 +1052,7 @@ function scene.draw()
             love.graphics.draw(PausedText, 320, 240-16, 0, 1, 1, PausedText:getWidth()/2, PausedText:getHeight()/2)
             love.graphics.setColor(TerminalColors[PauseSelection == 0 and ColorID.LIGHT_BLUE or ColorID.WHITE])
             DrawText(Localize("game_resume"), 320-96, 240+16, 96, "center", nil, 0, 1, 1, 48, 8)
-            love.graphics.setColor(TerminalColors[PauseSelection == 1 and ColorID.LIGHT_BLUE or ColorID.WHITE])
+            love.graphics.setColor(TerminalColors[scene.preventRestart and ColorID.DARK_GRAY or (PauseSelection == 1 and ColorID.LIGHT_BLUE or ColorID.WHITE)])
             DrawText(Localize("game_restart"), 320, 240+16, 96, "center", nil, 0, 1, 1, 48, 8)
             love.graphics.setColor(TerminalColors[scene.forced and ColorID.DARK_GRAY or (PauseSelection == 2 and ColorID.LIGHT_BLUE or ColorID.WHITE)])
             DrawText(Localize("game_quit"), 320+96, 240+16, 96, "center", nil, 0, 1, 1, 48, 8)
