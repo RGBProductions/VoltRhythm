@@ -74,7 +74,7 @@ NoteTypes = {
                 endpos = endpos+math.sin(endpos*8)*Waviness:get()/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1))
             end
             local drawPos = GetNoteCellY(pos, speed, (NoteSpeedMods[self.lane+1] or {})[1] or 1, ViewOffset:get()+(ViewOffsetFreeze or 0), chartPos, chartHeight)
-            local laneOffset = isEditor and 1 or math.max(0,math.min(1, ((pos*(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1)))-7)/4))
+            local laneOffset = isEditor and 1 or math.max(0,math.min(1, (((pos-(ViewOffset:get()+(ViewOffsetFreeze or 0)))*(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1)))-7)/4))
             local visualLane = (self.visualLane or self.lane) - self.extra.dir*laneOffset
             local symbol = isEditor and ((self.extra.dir >= 1 and "▷") or (self.extra.dir <= -1 and "◁") or "◇") or ((math.abs(visualLane-self.lane) <= 1/4 and "○") or (math.abs(visualLane-(self.lane-self.extra.dir)) <= 1/4 and (self.extra.dir >= 1 and "▷" or "◁")) or "◇")
             if useSteps then drawPos = math.floor(drawPos) end
