@@ -1316,8 +1316,8 @@ function Chart:save(path)
     love.filesystem.write(path, json.encode({
         lanes = self.lanes,
         song = self.song:sub(#getPathOf(self.song)+2, -1),
-        video = self.video,
-        background = self.background,
+        video = self.video and (self.video:sub(#getPathOf(self.video)+2, -1)) or nil,
+        background = self.background and (self.background:sub(#getPathOf(self.background)+2, -1)) or nil,
         backgroundInit = self.backgroundInit,
         bpm = self.bpm,
         notes = notes,
