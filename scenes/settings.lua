@@ -632,6 +632,7 @@ SettingsRoot = SettingsRoot or {
                     min = 1,
                     max = #BorderOptions,
                     step = 1,
+                    noFineStep = true,
                     text = function(value)
                         return BorderOptions[value]:upper():gsub("_", " ")
                     end,
@@ -648,6 +649,7 @@ SettingsRoot = SettingsRoot or {
                     min = 1,
                     max = #NoteFontOptions,
                     step = 1,
+                    noFineStep = true,
                     text = function(value)
                         return NoteFontOptions[value]:upper():gsub("_", " ")
                     end,
@@ -668,6 +670,49 @@ SettingsRoot = SettingsRoot or {
                     write = function(value)
                         Save.Write("show_judgements", value)
                     end
+                },
+                {
+                    label = "settings_particles",
+                    type = "toggle",
+                    read = function()
+                        return Save.Read("particles")
+                    end,
+                    write = function(value)
+                        Save.Write("particles", value)
+                    end
+                },
+                {
+                    label = "settings_hit_particles",
+                    type = "number",
+                    min = 0,
+                    max = #NoteRatings,
+                    step = 1,
+                    noFineStep = true,
+                    enable = function()
+                        return Save.Read("particles")
+                    end,
+                    text = function(value)
+                        return Localize(value == 0 and "settings_off" or "judgement_"..NoteRatings[value].name)
+                    end,
+                    read = function()
+                        return Save.Read("particle_judgement")
+                    end,
+                    write = function(value)
+                        Save.Write("particle_judgement", value)
+                    end
+                },
+                {
+                    label = "settings_hold_particles",
+                    type = "toggle",
+                    enable = function()
+                        return Save.Read("particles")
+                    end,
+                    read = function()
+                        return Save.Read("hold_particles")
+                    end,
+                    write = function(value)
+                        Save.Write("hold_particles", value)
+                    end
                 }
             }
         },
@@ -681,6 +726,7 @@ SettingsRoot = SettingsRoot or {
                     min = RPCLevels.OFF,
                     max = RPCLevels.FULL,
                     step = 1,
+                    noFineStep = true,
                     enable = function()
                         return Discord.hasRPC()
                     end,
@@ -842,11 +888,13 @@ function scene.action(a)
         end
         if t == "number" then
             local m,M,s = cur.min or 0, cur.max or 1, cur.step or 0.1
-            if love.keyboard.isDown("lshift") then
-                s = s * 2
-            end
-            if love.keyboard.isDown("lctrl") then
-                s = s / 5
+            if not cur.noFineStep then
+                if love.keyboard.isDown("lshift") then
+                    s = s * 2
+                end
+                if love.keyboard.isDown("lctrl") then
+                    s = s / 5
+                end
             end
             if a == "right" then
                 write(math.max(m,math.min(M, read() + s)))
@@ -995,10 +1043,12 @@ function scene.update(dt)
                                     pressAmounts[l+1] = 32
                                     hitAmounts[l+1] = 1
                                     if (note.heldFor or 0) <= 0 then
-                                        local x = chartX + (l)*4 + 1
-                                        for _=1, 4 do
-                                            local drawPos = (8)+(15)
-                                            table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
+                                        if Save.Read("particle_judgement") > 0 then
+                                            local x = chartX + (l)*4 + 1
+                                            for _=1, 4 do
+                                                local drawPos = (8)+(15)
+                                                table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
+                                            end
                                         end
                                     end
                                 end
@@ -1006,7 +1056,7 @@ function scene.update(dt)
                             end
                         end
                         if hit then
-                            if note.holding and (lastBeatCount%0.5) > (beatCount%0.5) then
+                            if note.holding and (lastBeatCount%0.5) > (beatCount%0.5) and Save.Read("hold_particles") then
                                 local x = chartX + (note.lane)*4 + 1
                                 for _=1, 4 do
                                     local drawPos = (8)+(15)
@@ -1193,12 +1243,14 @@ function scene.draw()
         end
         love.graphics.setFont(Font)
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        love.graphics.setFont(LegacyFont)
-        for _,particle in ipairs(Particles) do
-            love.graphics.setColor(TerminalColors[particle.color])
-            love.graphics.print(particle.char, particle.x-4, particle.y-8 + menuY)
+        if Save.Read("particles") then
+            love.graphics.setFont(LegacyFont)
+            for _,particle in ipairs(Particles) do
+                love.graphics.setColor(TerminalColors[particle.color])
+                love.graphics.print(particle.char, particle.x-4, particle.y-8 + menuY)
+            end
+            love.graphics.setFont(Font)
         end
-        love.graphics.setFont(Font)
     end
 
     love.graphics.setColor(TerminalColors[ColorID.WHITE])

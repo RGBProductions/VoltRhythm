@@ -200,6 +200,8 @@ function scene.load(args)
         ColorTransitionTable[colorIndexes[4]]
     }
     NoteFont = NoteFonts[Save.Read("note_skin")] or NoteFonts.dots
+    scene.particleJudgement = Save.Read("particle_judgement")
+    scene.holdParticles = Save.Read("hold_particles")
     Input.ReadBinds()
     HitOffset = 0
     RealHits = 0
@@ -317,12 +319,12 @@ local function notePress(laneIndex)
                     RatingTime = 1
                     RatingCounts[LastRating] = RatingCounts[LastRating] + 1
                     if LastRating ~= 1 then FullOvercharge = false end
-                    if LastRating == 1 then
-                        accuracy = 0 -- 100%
+                    if LastRating == 1 then accuracy = 0 end -- 100%
+                    if LastRating <= scene.particleJudgement then
                         local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
                         for _=1, 4 do
                             local drawPos = GetNoteCellY(0, ScrollSpeed*ScrollSpeedModifier:get(), 1, ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0, 5, 15)
-                            table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
+                            table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = NoteRatings[LastRating].sampleColor(), char = "¤"})
                         end
                     end
                     Charge = Charge + (1-accuracy)
@@ -598,10 +600,12 @@ function scene.update(dt)
                                     LastRating = 1
                                     RatingTime = 1
                                     RatingCounts[LastRating] = RatingCounts[LastRating] + 1
-                                    local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
-                                    for _=1, 4 do
-                                        local drawPos = GetNoteCellY(0, ScrollSpeed*ScrollSpeedModifier:get(), 1, ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0, 5, 15)
-                                        table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = OverchargeColors[love.math.random(1,#OverchargeColors)], char = "¤"})
+                                    if LastRating <= scene.particleJudgement then
+                                        local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
+                                        for _=1, 4 do
+                                            local drawPos = GetNoteCellY(0, ScrollSpeed*ScrollSpeedModifier:get(), 1, ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0, 5, 15)
+                                            table.insert(Particles, {id = "powerhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = NoteRatings[LastRating].sampleColor(), char = "¤"})
+                                        end
                                     end
                                     Accuracy = Accuracy + 1
                                     Hits = Hits + 1
@@ -637,7 +641,7 @@ function scene.update(dt)
                             local lastHeldFor = note.heldFor or 0
                             note.heldFor = math.min(note.length, lastHeldFor + dt)
                             Charge = Charge + (note.heldFor-lastHeldFor)
-                            if (lastBeatCount % 0.5) > (scene.beatCount % 0.5) then
+                            if (lastBeatCount % 0.5) > (scene.beatCount % 0.5) and scene.holdParticles then
                                 local x = (80-(scene.chart.lanes*4-1))/2 - 1+(note.lane)*4 + 1
                                 for _=1, 4 do
                                     local drawPos = GetNoteCellY(0, ScrollSpeed*ScrollSpeedModifier:get(), 1, ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0, 5, 15)
@@ -999,12 +1003,14 @@ function scene.draw()
     end
 
     -- Particles
-    love.graphics.setFont(LegacyFont)
-    for _,particle in ipairs(Particles) do
-        love.graphics.setColor(TerminalColors[particle.color])
-        love.graphics.print(particle.char, particle.x-4, particle.y-8)
+    if Save.Read("particles") then
+        love.graphics.setFont(LegacyFont)
+        for _,particle in ipairs(Particles) do
+            love.graphics.setColor(TerminalColors[particle.color])
+            love.graphics.print(particle.char, particle.x-4, particle.y-8)
+        end
+        love.graphics.setFont(Font)
     end
-    love.graphics.setFont(Font)
 
     love.graphics.pop()
 

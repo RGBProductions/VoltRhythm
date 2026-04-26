@@ -2121,12 +2121,12 @@ function scene.draw()
         end
     end
 
-    for _,particle in ipairs(Particles) do
-        love.graphics.setColor(TerminalColors[particle.color])
-        DrawText(particle.char, particle.x-4, particle.y-8)
+    if Save.Read("particles") then
+        for _,particle in ipairs(Particles) do
+            love.graphics.setColor(TerminalColors[particle.color])
+            DrawText(particle.char, particle.x-4, particle.y-8)
+        end
     end
-
-
 
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     DrawBox(2, 1, 37, 1)

@@ -38,7 +38,10 @@ local defaultSave = {
     note_skin = "dots",
     scroll_speed = 25,
     enable_hit_sounds = false,
-    show_judgements = false
+    show_judgements = false,
+    particle_judgement = 1,
+    hold_particles = true,
+    particles = true
 }
 
 function Save.Flush()

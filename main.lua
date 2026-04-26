@@ -41,6 +41,7 @@ WindowFocused = true
 
 NoteRatings = {
     {
+        name = "overcharge",
         draw = function(ox,oy,center)
             local txt = Localize("judgement_overcharge")
             for x = 1, utf8.len(txt) do
@@ -54,6 +55,7 @@ NoteRatings = {
         max = math.huge
     },
     {
+        name = "surge",
         draw = function(ox,oy,center)
             love.graphics.setColor(TerminalColors[ColorID.YELLOW])
             local txt = Localize("judgement_surge")
@@ -64,6 +66,7 @@ NoteRatings = {
         max = 1 - (40 / 200)
     },
     {
+        name = "amp",
         draw = function(ox,oy,center)
             love.graphics.setColor(TerminalColors[ColorID.GOLD])
             local txt = Localize("judgement_amp")
@@ -74,6 +77,7 @@ NoteRatings = {
         max = 1 - (75 / 200)
     },
     {
+        name = "flux",
         draw = function(ox,oy,center)
             love.graphics.setColor(TerminalColors[ColorID.GREEN])
             local txt = Localize("judgement_flux")
@@ -84,6 +88,7 @@ NoteRatings = {
         max = 1 - (110 / 200)
     },
     {
+        name = "null",
         draw = function(ox,oy,center)
             love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
             local txt = Localize("judgement_null")
@@ -94,6 +99,7 @@ NoteRatings = {
         max = 1 - (145 / 200)
     },
     {
+        name = "break",
         draw = function(ox,oy,center)
             love.graphics.setColor(TerminalColors[ColorID.RED])
             local txt = Localize("judgement_break")
