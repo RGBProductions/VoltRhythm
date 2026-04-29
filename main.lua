@@ -1,5 +1,13 @@
 love.graphics.setDefaultFilter("nearest", "nearest")
 
+-- Change this to enable or disable debug features
+-- Features affected by this flag:
+-- - Scene hot reloading
+-- - Shift to speed up game
+-- - ] to skip to results in game
+-- - F8 to open chart in editor
+Debug = true
+
 function table.index(t,v)
     for k,n in pairs(t) do
         if n == v then

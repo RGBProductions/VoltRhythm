@@ -315,13 +315,13 @@ function scene.action(a)
 end
 
 function scene.keypressed(k)
-    if k == "f8" then
+    if Debug and k == "f8" then
         SceneManager.Action("editor")
     end
     if k == "backspace" and Paused and not scene.forced then
         SceneManager.Action("quit")
     end
-    if k == "]" then
+    if Debug and k == "]" then
         SceneManager.Action("skip")
     end
 end
@@ -371,7 +371,7 @@ function scene.update(dt)
         end
         return
     end
-    scene.modifiers.speed = love.keyboard.isDown("lshift") and 16 or 1
+    scene.modifiers.speed = (Debug and love.keyboard.isDown("lshift")) and 16 or 1
     EffectTimescale = scene.modifiers.speed
     -- Update chart time and scroll chart
     local lastTime = scene.chart.time

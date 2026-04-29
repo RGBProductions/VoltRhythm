@@ -631,11 +631,11 @@ local editorMenu = {
                         easy = 1, medium = 6, hard = 11, extreme = 16, overvolt = 21
                     }
                     local dialog = {
-                        width = 20,
+                        width = 25,
                         height = 19,
                         title = "DIFFICULTIES",
                         contents = {
-                            DialogButton:new(88, 240, 128, 16, "CLOSE", function ()
+                            DialogButton:new(128, 240, 128, 16, "CLOSE", function ()
                                 table.remove(scene.dialogs, 1)
                             end)
                         }
@@ -651,7 +651,7 @@ local editorMenu = {
                         end)
                         levelInput.content = tostring(level)
 
-                        local charterInput = DialogInput:new(216,48*(i-1),80,16,"CHARTER",10,nil,function(self)
+                        local charterInput = DialogInput:new(216,48*(i-1),160,16,"CHARTER",20,nil,function(self)
                             (scene.songData.charts[difficulty] or {}).charter = self.content
                         end)
                         charterInput.content = (scene.songData.charts[difficulty] or {}).charter or ""
@@ -850,21 +850,24 @@ local editorMenu = {
                 end
             }
         }
-    },
-    {
+    }
+}
+
+if Debug then
+    table.insert(editorMenu, {
         label = "                          ",
         type = "action",
         onclick = function() end
-    },
-    {
+    })
+    table.insert(editorMenu, {
         id = "hotreload",
         label = "HOT RELOAD",
         type = "action",
         onclick = function()
             SceneManager.Transition("scenes/neditor", {songData = scene.songData, difficulty = scene.difficulty})
         end
-    }
-}
+    })
+end
 
 local function closeMenu(tab)
     if tab.type ~= "menu" then return end

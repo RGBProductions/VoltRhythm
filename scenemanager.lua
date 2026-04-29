@@ -16,22 +16,38 @@ function SceneManager.LoadScene(fn, args)
     }
     if not sceneLoadEvent.cancelled then
         if love.filesystem.getInfo(fn .. ".lua") ~= nil then
-            local c,e = love.filesystem.load(fn..".lua")
-            if c then
-                local s,nextScene = pcall(c)
-                if s then
-                    if SceneManager.ActiveScene.unload ~= nil then
-                        SceneManager.ActiveScene.unload()
-                    end
-                    SceneManager.ActiveScene = nextScene
-                    if SceneManager.ActiveScene.load ~= nil then
-                        SceneManager.ActiveScene.load(args or {})
+            local nextScene = nil
+            local err = ""
+            if Debug then
+                local c,e = love.filesystem.load(fn..".lua")
+                if c then
+                    local s,v = pcall(c)
+                    if s then
+                        nextScene = v
+                    else
+                        err = v
                     end
                 else
-                    print("Error loading scene: " .. tostring(nextScene))
+                    err = e
                 end
             else
-                print("Error loading scene: " .. tostring(e))
+                local s,r = pcall(require,fn)
+                if s then
+                    nextScene = r
+                else
+                    err = r
+                end
+            end
+            if nextScene then
+                if SceneManager.ActiveScene.unload ~= nil then
+                    SceneManager.ActiveScene.unload()
+                end
+                SceneManager.ActiveScene = nextScene
+                if SceneManager.ActiveScene.load ~= nil then
+                    SceneManager.ActiveScene.load(args or {})
+                end
+            else
+                print("Error loading scene: " .. err)
             end
         end
     end

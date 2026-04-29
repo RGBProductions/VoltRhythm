@@ -269,13 +269,18 @@ function DialogInput:textinput(t)
 end
 
 function DialogInput:keypressed(k)
-    if self.selected and k == "backspace" then
-        local offset = utf8.offset(self.content, -1)
-        if offset then
-            self.content = self.content:sub(1, offset-1)
-            if type(self.oninput) == "function" then
-                self:oninput()
+    if self.selected then
+        if k == "backspace" then
+            local offset = utf8.offset(self.content, -1)
+            if offset then
+                self.content = self.content:sub(1, offset-1)
+                if type(self.oninput) == "function" then
+                    self:oninput()
+                end
             end
+        end
+        if k == "v" and love.keyboard.isDown("lctrl") then
+            self.content = self.content .. love.system.getClipboardText()
         end
     end
 end
