@@ -91,9 +91,14 @@ local function writeChart(name)
     local songName = splitSong[#splitSong]
     local splitPath = scene.songData.path:split("/")
     name = name or splitPath[#splitPath]
-    scene.chart.version.name = Version.name
-    scene.chart.version.version = Version.version
-    scene.chart.version.code = Version.chart_version
+    for _,chart in pairs(scene.songData.charts) do
+        if not chart.version then
+            chart.version = {}
+        end
+        chart.version.name = Version.name
+        chart.version.version = Version.version
+        chart.version.code = Version.chart_version
+    end
     scene.songData:save("editor_save/" .. name)
     if oSongPath ~= "editor_save/"..name.."/"..songName then
         local contents_s,size_s = love.filesystem.read(oSongPath)
@@ -502,7 +507,13 @@ local editorMenu = {
                                 local splitName = songInput.filename:split(getDirectorySeparator())
                                 love.filesystem.createDirectory("editor_chart")
                                 if coverInput.file ~= nil then
-                                    love.filesystem.write("editor_chart/cover.png", coverInput.file:read())
+                                    local fd,size = coverInput.file:read("data")
+                                    if fd then
+                                        local s,img = pcall(love.image.newImageData,fd)
+                                        if s then
+                                            img:encode("png", "editor_chart/cover.png")
+                                        end
+                                    end
                                 end
                                 love.filesystem.write("editor_chart/" .. splitName[#splitName], songInput.file:read())
                                 love.filesystem.write("editor_chart/info.json", json.encode({
@@ -979,6 +990,7 @@ function scene.load(args)
 
     SetCursor("🮰", 0, 0)
 
+    love.keyboard.setTextInput(true)
     love.keyboard.setKeyRepeat(true)
 
     if HasGamepad then
@@ -1880,6 +1892,7 @@ end
 function scene.unload()
     Particles = {}
     love.keyboard.setKeyRepeat(false)
+    love.keyboard.setTextInput(false)
 end
 
 return scene
