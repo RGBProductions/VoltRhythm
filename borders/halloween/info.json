@@ -1,0 +1,9 @@
+{
+    "name": "SPOOKY PUMPKINS",
+    "categories": ["SEASONAL"],
+    "images": {
+        "f1": "halloween1.png",
+        "f2": "halloween2.png",
+        "f3": "halloween3.png"
+    }
+}

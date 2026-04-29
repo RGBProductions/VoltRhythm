@@ -22,6 +22,7 @@ require "util"
 require "colors"
 require "chart"
 require "songdisk"
+require "border"
 require "input"
 require "save"
 json = require "json"
@@ -254,13 +255,13 @@ end
 
 -- SceneManager.LoadScene("scenes/game", {chart = "songs/cute/hard.json"})
 
-BorderOptions = {"none", "overcharged", "spooky_pumpkins"}
+-- BorderOptions = {"none", "overcharged", "spooky_pumpkins"}
 
-Borders = {
-    none = nil,
-    overcharged = require("borders.overcharged"),
-    spooky_pumpkins = require("borders.halloween")
-}
+-- Borders = {
+--     none = nil,
+--     overcharged = require("borders.overcharged"),
+--     spooky_pumpkins = require("borders.halloween")
+-- }
 
 -- border = nil
 
@@ -436,6 +437,8 @@ function KeyLabel(v)
 end
 
 SongDisk.Retrieve()
+Borders.Retrieve()
+BorderPreview = nil
 
 function love.gamepadaxis(stick,axis,value)
     GamepadAxes[axis] = value
@@ -663,8 +666,8 @@ function love.update(dt)
     end
     love.audio.setVolume(SystemSettings.master_volume)
     
-    local border = Borders[Save.Read("border")]
-    if border and border.update then border.update(dt) end
+    local border = Borders.Borders[BorderPreview or Save.Read("border")]
+    if (border or {}).script and border.script.update then border.script.update(dt) end
 
     do
         if CurveModifierSmoothing == 0 then
@@ -732,8 +735,8 @@ function love.draw()
     love.graphics.setColor(1,1,1)
     SceneManager.DrawTransition()
     love.graphics.setColor(1,1,1)
-    local border = Borders[Save.Read("border")]
-    if border and not SuppressBorder and border.draw then border.draw() end
+    local border = Borders.Borders[BorderPreview or Save.Read("border")]
+    if (border or {}).script and not SuppressBorder and border.script.draw then border.script.draw() end
     love.graphics.setColor(1,1,1)
     love.graphics.print(Version.name .. " v" .. Version.version .. (SystemSettings.show_fps and (" - " .. love.timer.getFPS() .. " FPS") or ""), 16, 480-16-16)
     if Cursor then
@@ -753,7 +756,7 @@ function love.draw()
         love.graphics.setColor(1,1,1)
         SceneManager.DrawTransition()
         love.graphics.setColor(1,1,1)
-        if border and not SuppressBorder and border.draw then border.draw() end
+        if (border or {}).script and not SuppressBorder and border.script.draw then border.script.draw() end
         love.graphics.setColor(1,1,1)
         love.graphics.print(Version.name .. " v" .. Version.version .. (SystemSettings.show_fps and (" - " .. love.timer.getFPS() .. " FPS") or ""), 16, 480-16-16)
     
