@@ -6,7 +6,7 @@ love.graphics.setDefaultFilter("nearest", "nearest")
 -- - Shift to speed up game
 -- - ] to skip to results in game
 -- - F8 to open chart in editor
-Debug = true
+Debug = false
 
 function table.index(t,v)
     for k,n in pairs(t) do
