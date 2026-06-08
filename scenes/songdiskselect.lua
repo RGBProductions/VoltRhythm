@@ -5,6 +5,7 @@ local scene = {}
 local options = {}
 
 function scene.load(args)
+    options = {}
     SongDiskSelectIndex = SongDiskSelectIndex or 1
     CampaignView = CampaignView or 0
     CampaignViewTarget = CampaignViewTarget or 0
