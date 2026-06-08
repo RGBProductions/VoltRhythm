@@ -283,6 +283,7 @@ local function testLock(lock)
 end
 
 function scene.load(args)
+    preview = nil
     scene.source = args.source or "songdiskselect"
     scene.destination = args.destination or "game"
 
