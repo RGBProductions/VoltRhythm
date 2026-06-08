@@ -43,6 +43,9 @@ for _,row in ipairs(keyboard.keys) do
 end
 
 function scene.load(args)
+    keyboard.pos = {1,1}
+    keyboard.shift = 0
+    
     scene.destination = args.destination
     scene.transition = args.transition
     scene.set = args.set
