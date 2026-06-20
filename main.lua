@@ -23,6 +23,7 @@ require "colors"
 require "chart"
 require "lock"
 require "songdisk"
+require "border"
 require "input"
 require "save"
 require "easer"
@@ -219,16 +220,6 @@ function EnterMainGame(transition)
     SceneManager[transition and "Transition" or "LoadScene"]("scenes/startup")
 end
 
-BorderOptions = {"none", "overcharged", "spooky_pumpkins"}
-
-Borders = {
-    none = nil,
-    overcharged = require("borders.overcharged"),
-    spooky_pumpkins = require("borders.halloween")
-}
-
--- border = nil
-
 SystemSettings = {
     master_volume = 0.5,
     song_volume = 0.75,
@@ -415,6 +406,9 @@ end
 function love.joystickadded(stick)
     BindDisplayMode = 1
 end
+
+Borders.Retrieve()
+BorderPreview = nil
 
 function love.gamepadaxis(stick,axis,value)
     GamepadAxes[axis] = value
@@ -657,8 +651,8 @@ function love.update(dt)
     end
     love.audio.setVolume(SystemSettings.master_volume)
     
-    local border = Borders[Save.Read("border")]
-    if border and border.update then border.update(dt) end
+    local border = Borders.Borders[BorderPreview or Save.Read("border")]
+    if (border or {}).script and border.script.update then border.script.update(dt) end
 
     CurveModifier:update(dt*EffectTimescale)
     ChromaticModifier:update(dt*EffectTimescale)
@@ -704,8 +698,8 @@ function love.draw()
     love.graphics.setColor(1,1,1)
     SceneManager.DrawTransition()
     love.graphics.setColor(1,1,1)
-    local border = Borders[Save.Read("border")]
-    if border and not SuppressBorder and border.draw then border.draw() end
+    local border = Borders.Borders[BorderPreview or Save.Read("border")]
+    if (border or {}).script and not SuppressBorder and border.script.draw then border.script.draw() end
     love.graphics.setColor(1,1,1)
     DrawText(Version.name .. " v" .. Version.version .. (SystemSettings.show_fps and (" - " .. love.timer.getFPS() .. " FPS") or ""), 16, 480-16-16)
     if Cursor then

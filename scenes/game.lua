@@ -480,7 +480,7 @@ function scene.update(dt)
         rpcUpdateTime = 5
     end
 
-    EffectTimescale = PauseTimer > 0 and 0 or (love.keyboard.isDown("lshift") and 16 or (scene.modifiers.speed or 1))
+    EffectTimescale = PauseTimer > 0 and 0 or (Debug and love.keyboard.isDown("lshift") and 16 or (scene.modifiers.speed or 1))
     if not WindowFocused and PauseTimer <= 0 and SystemSettings.pause_on_lost_focus then
         PauseGame()
     end

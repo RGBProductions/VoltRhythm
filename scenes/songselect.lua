@@ -193,6 +193,7 @@ function SongSelectSortSongs(method)
 end
 
 function scene.load(args)
+    preview = nil
     ---@type Easer
     SongSelectOffsetView = SongSelectOffsetView or Easer:new(0)
     SongSelectSelectedSong = SongSelectSelectedSong or 1

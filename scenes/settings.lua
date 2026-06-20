@@ -628,19 +628,9 @@ SettingsRoot = SettingsRoot or {
                 },
                 {
                     label = "settings_border",
-                    type = "number",
-                    min = 1,
-                    max = #BorderOptions,
-                    step = 1,
-                    noFineStep = true,
-                    text = function(value)
-                        return BorderOptions[value]:upper():gsub("_", " ")
-                    end,
-                    read = function()
-                        return table.index(BorderOptions, Save.Read("border")) or 1
-                    end,
-                    write = function(value)
-                        Save.Write("border", BorderOptions[value])
+                    type = "action",
+                    run = function()
+                        SceneManager.Transition("scenes/border")
                     end
                 },
                 {

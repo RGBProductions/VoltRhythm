@@ -765,7 +765,13 @@ local editorMenu = {
                                     local splitName = songInput.filename:split(getDirectorySeparator())
                                     love.filesystem.createDirectory("editor_chart")
                                     if coverInput.file ~= nil then
-                                        love.filesystem.write("editor_chart/cover.png", coverInput.file:read())
+                                        local fd,size = coverInput.file:read("data")
+                                        if fd then
+                                            local s,img = pcall(love.image.newImageData,fd)
+                                            if s then
+                                                img:encode("png", "editor_chart/cover.png")
+                                            end
+                                        end
                                     end
                                     love.filesystem.write("editor_chart/" .. splitName[#splitName], songInput.file:read())
                                     love.filesystem.write("editor_chart/info.json", json.encode({
@@ -886,11 +892,11 @@ local editorMenu = {
                         easy = 1, medium = 6, hard = 11, extreme = 16, overvolt = 21
                     }
                     local dialog = {
-                        width = 20,
+                        width = 25,
                         height = 19,
                         title = Localize("editor_dialog_difficulties_title"),
                         contents = {
-                            DialogButton:new(88, 240, 128, 16, Localize("editor_action_close"), function ()
+                            DialogButton:new(128, 240, 128, 16, Localize("editor_action_close"), function ()
                                 table.remove(scene.dialogs, 1)
                             end)
                         }
@@ -909,7 +915,7 @@ local editorMenu = {
                         end)
                         levelInput.content = tostring(level)
 
-                        local charterInput = DialogInput:new(216,48*(i-1),80,16,Localize("editor_label_chart_designer"),10,nil,function(self)
+                        local charterInput = DialogInput:new(216,48*(i-1),160,16,Localize("editor_label_chart_designer"),20,nil,function(self)
                             (scene.songData.charts[difficulty] or {}).charter = self.content
                         end)
                         charterInput.content = (scene.songData.charts[difficulty] or {}).charter or ""
@@ -1322,8 +1328,11 @@ local editorMenu = {
                 end
             }
         }
-    },
-    {
+    }
+}
+
+if Debug then
+    table.insert(editorMenu, {
         id = "hotreload",
         label = Localize("editor_menu_hot_reload"),
         type = "action",
@@ -1333,8 +1342,8 @@ local editorMenu = {
             SavedEditorZoom = scene.zoom
             SceneManager.Transition("scenes/neditor", {songData = scene.songData, difficulty = scene.difficulty})
         end
-    }
-}
+    })
+end
 
 local function closeMenu(tab)
     if tab.type ~= "menu" then return end
@@ -1421,6 +1430,7 @@ end
 local scrollbarX = 472
 
 function scene.load(args)
+    scene.chart = nil
     scene.audioOffset = Save.Read("audio_offset") or 0
     scene.songData = args.songData
     scene.difficulty = args.difficulty
@@ -1481,6 +1491,7 @@ function scene.load(args)
 
     SetCursor("🮰", 0, 0)
 
+    love.keyboard.setTextInput(true)
     love.keyboard.setKeyRepeat(true)
 
     if BindDisplayMode == 1 then
@@ -2520,6 +2531,7 @@ end
 function scene.unload()
     Particles = {}
     love.keyboard.setKeyRepeat(false)
+    love.keyboard.setTextInput(false)
 end
 
 return scene
