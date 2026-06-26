@@ -1,18 +1,22 @@
 local scene = {}
 
 local credits = json.decode(love.filesystem.read("credits.json"))
-local maxX = 0
-local maxY = 0
+
+local objects = {}
+local objpos = 0
+local objwidth = 0
 for _,credit in ipairs(credits) do
-    maxY = math.max(maxY, #credit.items)
-    maxX = math.max(maxX, utf8.len(credit.name)+2)
+    local object = {y = objpos, height = #credit.items+2, credit = credit}
+    objwidth = math.max(objwidth, Font:getWidth(credit.name)/8+2)
     for _,item in ipairs(credit.items) do
-        maxX = math.max(maxX, utf8.len(item)+2)
+        objwidth = math.max(objwidth, Font:getWidth(item)/8+2)
     end
+    objpos = objpos + object.height+4
+    table.insert(objects, object)
 end
 
 CreditsSelection = 0
-CreditsView = 0
+CreditsView = objects[CreditsSelection+1].y + objects[CreditsSelection+1].height/2
 
 function scene.action(a)
     if a == "back" then
@@ -31,25 +35,26 @@ end
 
 function scene.update(dt)
     local blend = math.pow(1/((5/4)^60), dt)
-    CreditsView = blend*(CreditsView-CreditsSelection)+CreditsSelection
-    if math.abs(CreditsSelection-CreditsView) <= 8/128 then
-        CreditsView = CreditsSelection
+    local cvtarget = objects[CreditsSelection+1].y + objects[CreditsSelection+1].height/2
+    CreditsView = blend*(CreditsView-cvtarget)+cvtarget
+    if math.abs(cvtarget-CreditsView) <= 8/128 then
+        CreditsView = cvtarget
     end
 end
 
 local creditsText = love.graphics.newImage("images/title/credits.png")
 
 function scene.draw()
-    local y = CreditsView
-    for i,credit in ipairs(credits) do
+    local itmX = (640-objwidth*8)/2
+    for i,object in ipairs(objects) do
+        local credit = object.credit
         love.graphics.setColor(TerminalColors[CreditsSelection == i-1 and ColorID.WHITE or ColorID.DARK_GRAY])
-        local itmY = (i-y)*(64+16*maxY)+16*((maxY-#credit.items)/2+1)
-        local itmX = (640-maxX*8)/2
-        DrawBoxHalfWidth(itmX/8-1, itmY/16-1, maxX, #credit.items+2)
-        DrawText(credit.name .. (credit.url and " 🔗" or ""), itmX, itmY+((credit.type == "menu" or credit.type == "action") and 16 or 0), maxX*8, "center")
+        local itmY = object.y*16 - CreditsView*16 + 240
+        DrawBoxHalfWidth(itmX/8-1, itmY/16-1, objwidth, object.height)
+        DrawText(credit.name .. (credit.url and " 🔗" or ""), itmX, itmY+((credit.type == "menu" or credit.type == "action") and 16 or 0), objwidth*8, "center")
         love.graphics.setColor(TerminalColors[CreditsSelection == i-1 and ColorID.LIGHT_GRAY or ColorID.DARK_GRAY])
         for j,itm in ipairs(credit.items) do
-            DrawText(itm, itmX, itmY+16*(j+1), maxX*8, "center")
+            DrawText(itm, itmX, itmY+16*(j+1), objwidth*8, "center")
         end
     end
 
