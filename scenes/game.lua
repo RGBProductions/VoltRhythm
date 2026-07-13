@@ -178,7 +178,7 @@ function scene.load(args)
         scene.video = Assets.Video(scene.chart.video)
         scene.background = Assets.Background(scene.chart.background) or defaultBg
         if scene.background and type(scene.background.init) == "function" then
-            scene.background.init(scene.chart.backgroundInit or {})
+            scene.background.init(scene.chart.backgroundInit or {}, scene.chart)
         end
         scene.chart:recalculateCharge()
         scene.chart:resetAllNotes()
@@ -287,7 +287,7 @@ function Restart()
     if scene.preventRestart then return end
     if scene.song then scene.song:stop() end
     scene.chart:resetAllNotes()
-    SceneManager.Transition("scenes/game", {songData = scene.songData, scorePrefix = scene.scorePrefix, difficulty = scene.difficulty, isEditor = scene.isEditor, forced = scene.forced, chargeGate = scene.chargeGate})
+    SceneManager.Transition("scenes/game", {songData = scene.songData, scorePrefix = scene.scorePrefix, difficulty = scene.difficulty, isEditor = scene.isEditor, forced = scene.forced, chargeGate = scene.chargeGate, from = scene.from, next = scene.next})
 end
 
 function Exit()
@@ -822,7 +822,7 @@ function scene.update(dt)
         HitAmounts[i] = math.max(0, math.min(1, (HitAmounts[i] or 0) - dt*8))
     end
     if scene.background and scene.background.update then
-        scene.background.update(dt)
+        scene.background.update(dt, scene.chart)
     end
 end
 
@@ -832,7 +832,7 @@ function scene.draw()
     love.graphics.clear(0,0,0)
     -- Backgrounds
     if scene.background and scene.background.draw and SystemSettings.enable_background then
-        scene.background.draw()
+        scene.background.draw(scene.chart)
     end
     if scene.video then
         local dur = scene.video:getSource():getDuration("seconds")

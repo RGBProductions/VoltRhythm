@@ -53,7 +53,8 @@ local videos = {}
 ---@return love.Video?
 function Assets.Video(path)
     if not path then return nil end
-    if videos[path] then return videos[path] end
+    -- TODO: Figure out how to make videos restart properly on chart reload instead of just reloading from disk every time
+    -- if videos[path] then return videos[path] end
     if not love.filesystem.getInfo(path) then return nil end
     local s,r = pcall(love.graphics.newVideo, path)
     if not s then return nil end
@@ -73,6 +74,7 @@ function Assets.Background(path)
     local s,r = pcall(c)
     if not s then return nil end
     backgrounds[path] = r
+    if type(r) == "table" then r.dir = getPathOf(path) end
     return backgrounds[path]
 end
 
