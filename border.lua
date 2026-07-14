@@ -86,6 +86,18 @@ function Borders.Retrieve()
         end)
         table.insert(category.borders, 1, "none")
     end
+    for id,border in pairs(Borders.Borders) do
+        AddLanguageEntries("en-US", {["border_"..id.."_name"] = border.info.name})
+        if border.info.lang then
+            for lang,entries in pairs(border.info.lang) do
+                local submit = {}
+                for entry,value in pairs(entries) do
+                    submit["border_"..id.."_"..entry] = value
+                end
+                AddLanguageEntries(lang, submit)
+            end
+        end
+    end
 end
 
 function Borders.Get(id)

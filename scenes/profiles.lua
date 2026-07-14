@@ -23,10 +23,12 @@ function scene.action(a)
     if a == "up" then
         ProfilesSelection = (ProfilesSelection - 1) % (#scene.profiles + 1)
         ProfilesViewTarget = (ProfilesViewTarget - 1) % (#scene.profiles + 1)
+        PlayNavSound()
     end
     if a == "down" then
         ProfilesSelection = (ProfilesSelection + 1) % (#scene.profiles + 1)
         ProfilesViewTarget = (ProfilesViewTarget + 1) % (#scene.profiles + 1)
+        PlayNavSound()
     end
     if a == "edit_profile" then
         if ProfilesSelection < #scene.profiles then

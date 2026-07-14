@@ -86,7 +86,7 @@ local sortMethods = {
 }
 
 function SongSelectSetSelectedSong(song, difficulty)
-    local last = scene.selected.identifier
+    local last = (scene.selected or {}).identifier
     
     difficulty = difficulty or SongDifficultyOrder[SongSelectDifficulty]
     local set = (difficulty == "overvolt" or difficulty == "hidden") and scene.sortedOvervolt or scene.sortedNormal
@@ -151,7 +151,7 @@ function SongSelectSetSelectedSong(song, difficulty)
     set = SongSelectOvervoltMode and scene.sortedOvervolt or scene.sortedNormal
     scene.selected = set[SongSelectSelectedSong]
 
-    local hide = (scene.selected.lock or {}).hideUntilUnlocked and not scene.selected.unlocks[difficulty].passed
+    local hide = ((scene.selected or {}).lock or {}).hideUntilUnlocked and not ((scene.selected or {}).unlocks or {})[difficulty].passed
     local nextPreview = hide and hiddenAmbience or Assets.Preview(data.songPath, data.songPreview)
     if nextPreview and nextPreview ~= preview then
         local times = {previewTimes[1], previewTimes[2]}
@@ -165,7 +165,7 @@ function SongSelectSetSelectedSong(song, difficulty)
         preview:setLooping(true)
         preview:setVolume(SystemSettings.song_volume)
         preview:play()
-        if data.keepPreview and last == scene.selected.linkedTo then
+        if data.keepPreview and last == (scene.selected or {}).linkedTo then
             local t = math.max(0, math.min(1, stopTime/(times[2]-times[1])))
             local T = t*(previewTimes[2]-previewTimes[1])
             preview:seek(T, "seconds")
@@ -282,7 +282,14 @@ function scene.load(args)
         if SongSelectOvervoltUnlocked then break end
     end
 
-    SongSelectSetSelectedSong(scene.selected.identifier, SongDifficultyOrder[SongSelectDifficulty])
+    if scene.selected then
+        SongSelectSetSelectedSong(scene.selected.identifier, SongDifficultyOrder[SongSelectDifficulty])
+    else
+        preview = hiddenAmbience
+        preview:setLooping(true)
+        preview:setVolume(SystemSettings.song_volume)
+        preview:play()
+    end
 
     if SystemSettings.discord_rpc_level > RPCLevels.PLAYING then
         if SystemSettings.discord_rpc_level == RPCLevels.FULL then
@@ -335,16 +342,22 @@ function scene.action(a)
     local set = SongSelectOvervoltMode and scene.sortedOvervolt or scene.sortedNormal
     if a == "right" then
         local lastDiff = SongSelectDifficulty
-        SongSelectSetSelectedSong(set[(SongSelectSelectedSong % #set) + 1].identifier, SongDifficultyOrder[SongSelectDifficulty])
-        if SongSelectDifficulty ~= lastDiff and sortMethods[SongSelectSortMethod][3] then SongSelectSortSongs(sortMethods[SongSelectSortMethod]) end
+        local sel = set[(SongSelectSelectedSong % #set) + 1]
+        if sel then
+            SongSelectSetSelectedSong(sel.identifier, SongDifficultyOrder[SongSelectDifficulty])
+            if SongSelectDifficulty ~= lastDiff and sortMethods[SongSelectSortMethod][3] then SongSelectSortSongs(sortMethods[SongSelectSortMethod]) end
+        end
     end
     if a == "left" then
         local lastDiff = SongSelectDifficulty
-        SongSelectSetSelectedSong(set[((SongSelectSelectedSong - 2) % #set) + 1].identifier, SongDifficultyOrder[SongSelectDifficulty])
-        if SongSelectDifficulty ~= lastDiff and sortMethods[SongSelectSortMethod][3] then SongSelectSortSongs(sortMethods[SongSelectSortMethod]) end
+        local sel = set[((SongSelectSelectedSong - 2) % #set) + 1]
+        if sel then
+            SongSelectSetSelectedSong(sel.identifier, SongDifficultyOrder[SongSelectDifficulty])
+            if SongSelectDifficulty ~= lastDiff and sortMethods[SongSelectSortMethod][3] then SongSelectSortSongs(sortMethods[SongSelectSortMethod]) end
+        end
     end
     -- local selected = set[SongSelectSelectedSong]
-    if a == "up" then
+    if a == "up" and scene.selected then
         if scene.selected.songData then
             local diff = table.index(scene.selected.difficulties, SongDifficultyOrder[SongSelectDifficulty])
             diff = diff % #scene.selected.difficulties + 1
@@ -353,7 +366,7 @@ function scene.action(a)
         SongSelectDifficultyView:start(SongSelectDifficulty, "outExpo", 0.3)
         if sortMethods[SongSelectSortMethod][3] then SongSelectSortSongs(sortMethods[SongSelectSortMethod]) end
     end
-    if a == "down" then
+    if a == "down" and scene.selected then
         if scene.selected.songData then
             local diff = table.index(scene.selected.difficulties, SongDifficultyOrder[SongSelectDifficulty])
             diff = (diff - 2) % #scene.selected.difficulties +1
@@ -364,14 +377,14 @@ function scene.action(a)
     end
     if a == "overvolt" and #scene.sortedOvervolt > 0 then
         local nextSet = set == scene.sortedNormal and scene.sortedOvervolt or scene.sortedNormal
-        local choice = nextSet[scene.selected.linkedTo or scene.selected.identifier] or nextSet[1]
+        local choice = nextSet[(scene.selected or {}).linkedTo or scene.selected.identifier] or nextSet[1]
         if nextSet == scene.sortedOvervolt then
             SongSelectSetSelectedSong(choice.identifier, table.index(choice.difficulties, "overvolt") and "overvolt" or "hidden")
         elseif #nextSet > 0 then
             SongSelectSetSelectedSong(choice.identifier, "extreme")
         end
     end
-    if a == "confirm" then
+    if a == "confirm" and scene.selected then
         ---@type SongData
         local data = scene.selected.songData
         local diff = SongDifficultyOrder[SongSelectDifficulty]
@@ -465,15 +478,20 @@ function scene.draw()
     DrawBoxHalfWidth(2, 1, 74, 3)
     love.graphics.draw(songselectText, 320, 32, 0, 2, 2, songselectText:getWidth()/2, 0)
 
+    local nosongs = #set <= 0
+
     DrawBoxHalfWidth(2, 6, 74, 6)
-    local difficulty = SongSelectOvervoltMode and (table.index(SongDifficultyOrder, scene.selected.difficulties[#scene.selected.difficulties]) or 5) or SongSelectDifficulty
+    local selected = scene.selected or {difficulties = {}, scorePrefix = "", identifier = "", unlocks = {}}
+    local songdata = selected.songData or {}
+    local difficulty = SongSelectOvervoltMode and (table.index(SongDifficultyOrder, selected.difficulties[#selected.difficulties]) or 5) or SongSelectDifficulty
     local diffname = SongDifficultyOrder[difficulty]
-    local savedRating = Save.Read("songs."..(scene.selected.scorePrefix or "")..scene.selected.identifier.."."..SongDifficultyOrder[difficulty])
-    local unlocked = scene.selected.unlocks[diffname].passed
+    local savedRating = Save.Read("songs."..(selected.scorePrefix or "")..selected.identifier.."."..SongDifficultyOrder[difficulty])
+    local lock = selected.unlocks[diffname] or {passed = true}
+    local unlocked = lock.passed
     if not unlocked then
-        local numReqs = #scene.selected.unlocks[diffname].conditions
+        local numReqs = #(lock.conditions or {})
         local y = 152-((numReqs-1)*16)/2
-        for i,condition in ipairs(scene.selected.unlocks[diffname].conditions) do
+        for i,condition in ipairs(lock.conditions or {}) do
             love.graphics.setColor(TerminalColors[ColorID.WHITE])
             if condition.passed then
                 love.graphics.setColor(TerminalColors[ColorID.LIGHT_GREEN])
@@ -529,8 +547,8 @@ function scene.draw()
             DrawText(math.floor((savedRating.accuracy or 0)*100*100)/100 .. "%", 64+8*(19-#tostring(math.floor((savedRating.accuracy or 0)*100*100)/100)), 176-16)
         else
             local ratings = {}
-            for _,diff in ipairs(scene.selected.difficulties) do
-                ratings[diff] = Save.Read("songs."..(scene.selected.scorePrefix or "")..scene.selected.identifier.."."..diff) or {}
+            for _,diff in ipairs(selected.difficulties) do
+                ratings[diff] = Save.Read("songs."..(selected.scorePrefix or "")..selected.identifier.."."..diff) or {}
             end
             local c,o,x = 0,0,0
             for diff,rating in pairs(ratings) do
@@ -568,42 +586,42 @@ function scene.draw()
 
     DrawBoxHalfWidth(2, 21, 74, 3)
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    local hide = (scene.selected.lock or {}).hideUntilUnlocked and not unlocked
-    local emblem = Assets.Emblem(scene.selected.songData.emblem)
+    local hide = ((selected.lock or {}).hideUntilUnlocked and not unlocked) or nosongs
+    local emblem = Assets.Emblem(songdata.emblem)
     local emblemSize = hide and 0 or (emblem and (emblem:getWidth() + 8) or 0)
-    local songName = hide and Localize("songselect_nodata") or ((scene.selected.songData or {}).name or "Unrecognized Song")
+    local songName = hide and Localize("songselect_nodata") or (songdata.name or "Unrecognized Song")
     DrawText(songName, (640-(utf8.len(songName)*8 + emblemSize))/2 + emblemSize, 352 + (hide and 16 or 0))
     if emblem and not hide then love.graphics.draw(emblem, (640-(utf8.len(songName)*8 + emblemSize))/2, 360, 0, 1, 1, 0, emblem:getHeight()/2) end
     love.graphics.setColor(TerminalColors[ColorID.LIGHT_GRAY])
     if not hide then
-        DrawText((scene.selected.songData or {}).author or "???", 0, 368, 640, "center")
-        local source = Assets.Source((scene.selected.songData or {}).songPath)
+        DrawText(songdata.author or "???", 0, 368, 640, "center")
+        local source = Assets.Source(songdata.songPath)
         if source then
             local time = ReadableTime(source:getDuration("seconds"))
-            DrawText(((scene.selected.songData or {}).bpm or "?") .. " BPM - " .. time, 0, 384, 640, "center")
+            DrawText((songdata.bpm or "?") .. " BPM - " .. time, 0, 384, 640, "center")
         end
     end
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     local charter = "???"
-    if scene.selected.songData then
-        local chart = scene.selected.songData:loadChart(SongDifficultyOrder[difficulty])
+    if selected.songData then
+        local chart = selected.songData:loadChart(SongDifficultyOrder[difficulty])
         if chart then
             charter = chart.charter or "???"
         end
     end
-    if unlocked then
+    if unlocked and not nosongs then
         DrawText(Localize("songselect_charter", charter), 32, 360, 640, "left")
-        DrawText(Localize("songselect_cover", ((scene.selected.songData or {}).coverArtist or "???")), 32, 376, 640, "left")
+        DrawText(Localize("songselect_cover", (songdata.coverArtist or "???")), 32, 376, 640, "left")
 
         ---@type SongData?
-        local data = scene.selected.songData
-        for _,diff in ipairs(scene.selected.difficulties) do
+        local data = selected.songData
+        for _,diff in ipairs(selected.difficulties) do
             local index = table.index(SongDifficultyOrder, diff)
             local p = (index - SongSelectDifficultyView:get())
             if p >= -1.5 and p <= 1.5 and ((SongSelectOvervoltMode and (diff == "overvolt" or diff == "hidden")) or (not SongSelectOvervoltMode and not (diff == "overvolt" or diff == "hidden"))) then
                 local difficultyLevel = 0
-                if scene.selected.songData then
-                    difficultyLevel = scene.selected.songData:getLevel(diff)
+                if selected.songData then
+                    difficultyLevel = selected.songData:getLevel(diff)
                 end
                 love.graphics.setColor(index == SongSelectDifficulty and {1,1,1} or {0.5,0.5,0.5})
                 PrintDifficulty(592,368 - p*16,diff,difficultyLevel,"right")
@@ -617,12 +635,12 @@ function scene.draw()
             end
         end
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        if #scene.selected.difficulties > 1 then DrawText("🡙", 600, 368) end
+        if #selected.difficulties > 1 then DrawText("🡙", 600, 368) end
     end
 
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
     DrawText(Localize("nav_exit", KeyLabel(binds.back)), 32, 416, 576, "left")
-    local canPlay = unlocked and (scene.selected.songData and scene.selected.songData:loadChart(SongDifficultyOrder[difficulty]) ~= nil)
+    local canPlay = unlocked and (selected.songData and selected.songData:loadChart(SongDifficultyOrder[difficulty]) ~= nil)
     if not canPlay then
         love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
     end
@@ -644,6 +662,10 @@ function scene.draw()
 
     for i,song in ipairs(set) do
         drawSong(song)
+    end
+
+    if nosongs then
+        DrawText(Localize("songselect_nosongs"), 0, 272, 640, "center")
     end
 
     if sortDisplayTime > 0 then

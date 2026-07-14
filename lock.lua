@@ -10,6 +10,7 @@ end
 
 local mergers = {
     play_song = ignoreMerger,
+    clear_song = ignoreMerger,
     charge = function(a,b)
         a.amount = math.max(a.amount or 0, b.amount or 0)
         return a
@@ -30,6 +31,20 @@ local unlockers = {
         if not diffs then return 0, 1 end
         if not condition.difficulty then return 1, 0 end
         return (diffs[condition.difficulty] ~= nil) and 1 or 0, 1
+    end,
+    clear_song = function(condition, disk)
+        local diffs = Save.Read("songs."..condition.song)
+        if not diffs then return 0, 1 end
+        if not condition.difficulty then
+            for _,diff in pairs(diffs) do
+                if diff.charge >= 160 then
+                    return 1, 1
+                end
+            end
+            return 0, 1
+        end
+        if not diffs[condition.difficulty] then return 0, 1 end
+        return diffs[condition.difficulty].charge >= 160 and 1 or 0, 1
     end,
     charge = function(condition, disk)
         local required = condition.amount
@@ -100,6 +115,10 @@ local displays = {
     play_song = function(condition, disk)
         -- return "Play " .. songName(condition.song) .. " on " .. (condition.difficulty ~= nil and condition.difficulty:upper() or "any difficulty")
         local key = condition.difficulty ~= nil and "lock_play_song" or "lock_play_song_any"
+        return Localize(key, songName(condition.song), (condition.difficulty ~= nil and condition.difficulty:upper() or "any difficulty"))
+    end,
+    clear_song = function(condition, disk)
+        local key = condition.difficulty ~= nil and "lock_clear_song" or "lock_clear_song_any"
         return Localize(key, songName(condition.song), (condition.difficulty ~= nil and condition.difficulty:upper() or "any difficulty"))
     end,
     charge = function(condition, disk)

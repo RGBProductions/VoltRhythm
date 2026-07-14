@@ -223,6 +223,7 @@ end
 SystemSettings = {
     master_volume = 0.5,
     song_volume = 0.75,
+    bgm_volume = 0.75,
     sound_volume = 1,
     audio_offset = 0,
     video_offset = 0,
@@ -553,6 +554,7 @@ function love.keypressed(k)
     end
     if k == "f4" then
         LoadLanguages()
+        Borders.Retrieve()
     end
     if k == "f5" then
         love.mouse.setRelativeMode(not love.mouse.getRelativeMode())
@@ -641,8 +643,32 @@ Anaglyph = love.graphics.newShader("shaders/anaglyph.frag")
 Anaglyph:send("left", Display2)
 AnaglyphSide = 0
 AnaglyphOn = false
+local navSound = love.audio.newSource("sounds/menunav.ogg", "stream")
+local menuBGM = love.audio.newSource("sounds/menu_bgm_test2.ogg", "stream")
+menuBGM:setLooping(true)
+menuBGM:setVolume(0)
+menuBGM:play()
+
+local menuBGMVolume = 0
+local menuBGMFadeDir = 0
+
+function StartMenuBGM()
+    menuBGMFadeDir = 0.5
+end
+
+function StopMenuBGM()
+    menuBGMFadeDir = -2
+end
+
+function PlayNavSound()
+    navSound:stop()
+    navSound:play()
+end
 
 function love.update(dt)
+    menuBGMVolume = math.max(0, math.min(1, menuBGMVolume + dt*menuBGMFadeDir))
+    menuBGM:setVolume((menuBGMVolume^2)*SystemSettings.bgm_volume)
+    navSound:setVolume(SystemSettings.sound_volume*0.75)
     HasGamepad = false
     for _,joystick in ipairs(love.joystick.getJoysticks()) do
         if joystick:isGamepad() then

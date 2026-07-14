@@ -138,6 +138,7 @@ SettingsRoot = SettingsRoot or {
                     label = "settings_calibrate_audio_offset",
                     type = "action",
                     run = function()
+                        StopMenuBGM()
                         SceneManager.Transition("scenes/vcalibration")
                     end
                 },
@@ -330,6 +331,25 @@ SettingsRoot = SettingsRoot or {
                     end
                 },
                 {
+                    label = "settings_bgm_volume",
+                    type = "number",
+                    min = 0,
+                    max = 20,
+                    step = 1,
+                    text = function(value)
+                        return value*5 .. "%"
+                    end,
+                    read = function()
+                        return SystemSettings.bgm_volume*20
+                    end,
+                    write = function(value)
+                        SystemSettings.bgm_volume = value/20
+                        soundprev:stop()
+                        soundprev:setVolume(SystemSettings.bgm_volume)
+                        soundprev:play()
+                    end
+                },
+                {
                     label = "settings_sound_volume",
                     type = "number",
                     min = 0,
@@ -383,6 +403,7 @@ SettingsRoot = SettingsRoot or {
                     label = "settings_calibrate_audio_offset",
                     type = "action",
                     run = function()
+                        StopMenuBGM()
                         SceneManager.Transition("scenes/calibration")
                     end
                 }
@@ -803,9 +824,11 @@ function scene.action(a)
     end
     if a == "up" then
         SettingsSelection = (SettingsSelection - 1) % #SettingsCurrent.options
+        PlayNavSound()
     end
     if a == "down" then
         SettingsSelection = (SettingsSelection + 1) % #SettingsCurrent.options
+        PlayNavSound()
     end
     if SettingsCurrent.options[SettingsSelection+1] then
         local cur = SettingsCurrent.options[SettingsSelection+1]
@@ -824,9 +847,11 @@ function scene.action(a)
         if t == "key" then
             if a == "right" then
                 SettingsSelection2 = (SettingsSelection2 + 1) % 2
+                PlayNavSound()
             end
             if a == "left" then
                 SettingsSelection2 = (SettingsSelection2 - 1) % 2
+                PlayNavSound()
             end
         end
 
@@ -939,6 +964,7 @@ function scene.keypressed(k)
 end
 
 function scene.load(args)
+    StartMenuBGM()
     if not args.stay then
         SettingsSelection = 0
         SettingsSelection2 = 0

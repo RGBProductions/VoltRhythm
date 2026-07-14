@@ -36,8 +36,8 @@ function scene.draw()
         local id = Borders.Categories[BordersCategorySelection].borders[i]
         local border = Borders.Borders[id] or {info = {name = "UNDEFINED"}, script = nil}
         love.graphics.setColor(TerminalColors[Save.Read("border") == id and (BordersBorderSelection == i and ColorID.LIGHT_GREEN or ColorID.GREEN) or (BordersBorderSelection == i and ColorID.WHITE or ColorID.DARK_GRAY)])
-        DrawBoxHalfWidth(27, ((i-BordersBorderView)*64+240-8)/16-1, 24, 1)
-        love.graphics.printf(border.info.name, 320-96, (i-BordersBorderView)*64+240-8, 192, "center")
+        DrawBoxHalfWidth(23, ((i-BordersBorderView)*64+240-8)/16-1, 32, 1)
+        love.graphics.printf(Localize("border_"..id.."_name"), 320-128, (i-BordersBorderView)*64+240-8, 256, "center")
     end
     for i = 1, #Borders.Categories do
         love.graphics.setColor(TerminalColors[BordersCategorySelection == i and ColorID.WHITE or ColorID.DARK_GRAY])
@@ -68,17 +68,21 @@ function scene.action(a)
             local border = Borders.Categories[BordersCategorySelection].borders[BordersBorderSelection]
             BordersCategorySelection = (BordersCategorySelection - 2) % #Borders.Categories + 1
             resetBorderView(border)
+            PlayNavSound()
         end
         if a == "right" then
             local border = Borders.Categories[BordersCategorySelection].borders[BordersBorderSelection]
             BordersCategorySelection = BordersCategorySelection % #Borders.Categories + 1
             resetBorderView(border)
+            PlayNavSound()
         end
         if a == "up" then
             BordersBorderSelection = (BordersBorderSelection - 2) % #Borders.Categories[BordersCategorySelection].borders + 1
+            PlayNavSound()
         end
         if a == "down" then
             BordersBorderSelection = BordersBorderSelection % #Borders.Categories[BordersCategorySelection].borders + 1
+            PlayNavSound()
         end
         BorderPreview = Borders.Categories[BordersCategorySelection].borders[BordersBorderSelection]
     end

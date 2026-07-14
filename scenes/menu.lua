@@ -2,29 +2,7 @@ local scene = {}
 
 local logo = love.graphics.newImage("images/logo.png")
 
-local options = {
-    {"menu_sp", love.graphics.newImage("images/menu/sp.png"), function()
-        SceneManager.Transition("scenes/songdiskselect")
-    end},
-    {"menu_edit", love.graphics.newImage("images/menu/edit.png"), function()
-        SceneManager.Transition("scenes/neditor")
-    end},
-    {"menu_prof", love.graphics.newImage("images/menu/prof.png"), function()
-        SceneManager.Transition("scenes/profiles")
-    end},
-    {"menu_cfg", love.graphics.newImage("images/menu/cfg.png"), function()
-        SceneManager.Transition("scenes/settings")
-    end},
-    {"menu_cred", love.graphics.newImage("images/menu/mp.png"), function()
-        SceneManager.Transition("scenes/credits")
-    end},
-    {"menu_bug", love.graphics.newImage("images/menu/bug.png"), function()
-        love.system.openURL("https://github.com/RGBProductions/VoltRhythm/issues")
-    end},
-    {"menu_exit", love.graphics.newImage("images/menu/exit.png"), function()
-        love.event.push("quit")
-    end}
-}
+local options = {}
 
 MenuView = MenuView or 0
 MenuViewTarget = MenuViewTarget or 0
@@ -34,6 +12,35 @@ MenuSelection = MenuSelection or 0
 local bg = Assets.Background("boxesbg.lua") or {}
 
 function scene.load()
+    StartMenuBGM()
+    options = {
+        {"menu_sp", love.graphics.newImage("images/menu/sp.png"), function()
+            SceneManager.Transition("scenes/songdiskselect")
+        end},
+        {"menu_edit", love.graphics.newImage("images/menu/edit.png"), function()
+            StopMenuBGM()
+            SceneManager.Transition("scenes/neditor")
+        end},
+        {"menu_prof", love.graphics.newImage("images/menu/prof.png"), function()
+            SceneManager.Transition("scenes/profiles")
+        end},
+        {"menu_cfg", love.graphics.newImage("images/menu/cfg.png"), function()
+            SceneManager.Transition("scenes/settings")
+        end},
+        {"menu_cred", love.graphics.newImage("images/menu/mp.png"), function()
+            SceneManager.Transition("scenes/credits")
+        end},
+        {"menu_bug", love.graphics.newImage("images/menu/bug.png"), function()
+            love.system.openURL("https://github.com/RGBProductions/VoltRhythm/issues")
+        end},
+        {"menu_exit", love.graphics.newImage("images/menu/exit.png"), function()
+            love.event.push("quit")
+        end}
+    }
+
+    MenuViewTarget = MenuSelection
+    MenuView = MenuSelection
+
     bg.init()
 
     local colorIndexes = Save.Read("note_colors") or {ColorID.LIGHT_RED, ColorID.YELLOW, ColorID.LIGHT_GREEN, ColorID.LIGHT_BLUE}
@@ -68,13 +75,17 @@ function scene.update(dt)
 end
 
 function scene.action(a)
+    if SceneManager.TransitionState.Transitioning then return end
+    
     if a == "right" then
         MenuSelection = (MenuSelection + 1) % #options
         MenuViewTarget = MenuViewTarget + 1
+        PlayNavSound()
     end
     if a == "left" then
         MenuSelection = (MenuSelection - 1) % #options
         MenuViewTarget = MenuViewTarget - 1
+        PlayNavSound()
     end
     if a == "confirm" then
         options[MenuSelection+1][3]()

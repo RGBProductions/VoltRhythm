@@ -24,9 +24,11 @@ function scene.action(a)
     end
     if a == "up" then
         CreditsSelection = (CreditsSelection - 1) % #credits
+        PlayNavSound()
     end
     if a == "down" then
         CreditsSelection = (CreditsSelection + 1) % #credits
+        PlayNavSound()
     end
     if a == "confirm" and credits[CreditsSelection+1].url then
         love.system.openURL(credits[CreditsSelection+1].url)

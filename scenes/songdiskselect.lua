@@ -3,6 +3,7 @@ local scene = {}
 local options = {}
 
 function scene.load(args)
+    StartMenuBGM()
     options = {}
     SongDiskSelectIndex = SongDiskSelectIndex or 1
     CampaignView = CampaignView or 0
@@ -37,19 +38,24 @@ function scene.update(dt)
 end
 
 function scene.action(a)
+    if SceneManager.TransitionState.Transitioning then return end
+
     if a == "left" then
         SongDiskSelectIndex = ((SongDiskSelectIndex-2) % #SongDisk.Disks) + 1
         scene.disk = SongDisk.Disks[SongDiskSelectIndex]
         scene.scores = scene.disk.metrics
         CampaignViewTarget = CampaignViewTarget - 1
+        PlayNavSound()
     end
     if a == "right" then
         SongDiskSelectIndex = ((SongDiskSelectIndex) % #SongDisk.Disks) + 1
         scene.disk = SongDisk.Disks[SongDiskSelectIndex]
         scene.scores = scene.disk.metrics
         CampaignViewTarget = CampaignViewTarget + 1
+        PlayNavSound()
     end
     if a == "confirm" then
+        StopMenuBGM()
         SceneManager.Transition("scenes/songselect", {campaign = options[SongDiskSelectIndex][1], source = "songdiskselect", destination = "game"})
     end
     if a == "back" then
@@ -68,12 +74,15 @@ function scene.draw()
     love.graphics.draw(songdiskselectText, 320, 32, 0, 2, 2, songdiskselectText:getWidth()/2, 0)
 
     if not scene.disk.unscored then
+        local chargem = scene.scores.totalCharge
+        local ochargem = scene.scores.totalOvercharge
+        local xchargem = scene.scores.totalXCharge
         local charge = scene.scores.charge
         local ocharge = scene.scores.overcharge
         local xcharge = scene.scores.xcharge
-        local chargep = scene.scores.charge / math.max(1,scene.scores.totalCharge)
-        local ochargep = scene.scores.overcharge / math.max(1,scene.scores.totalOvercharge)
-        local xchargep = scene.scores.xcharge / math.max(1,scene.scores.totalXCharge)
+        local chargep = charge / math.max(1,chargem)
+        local ochargep = ocharge / math.max(1,ochargem)
+        local xchargep = xcharge / math.max(1,xchargem)
 
         local chargeTxt = math.floor(charge) .. "¤"
         local ochargeTxt = math.floor(ocharge) .. "¤"
@@ -84,34 +93,35 @@ function scene.draw()
 
         local mx = math.max(utf8.len(chargeTxt),utf8.len(ochargeTxt),utf8.len(xchargeTxt))
 
-        DrawText("┌─────────────────────────────────────────────┬──────┬──────┐", 15*8,  8*16)
-        DrawText("│                                             │      │      │", 15*8,  9*16)
+        DrawText("┌────────────────────────────────────────────┬──────┬───────┐", 15*8,  8*16)
+        DrawText("│                                            │      │       │", 15*8,  9*16)
+        DrawText("├────────────────────────────────────────────┼──────┼───────┤", 15*8, 10*16)
+        DrawText("│                                            │      │       │", 15*8, 11*16)
+        DrawText("├────────────────────────────────────────────┼──────┼───────┤", 15*8, 12*16)
+        DrawText("│                                            │      │       │", 15*8, 13*16)
+        DrawText("└────────────────────────────────────────────┴──────┴───────┘", 15*8, 14*16)
+
         DrawText(Localize("score_charge"), 4*8,  9*16, 10*8, "right")
-        DrawText("├─────────────────────────────────────────────┼──────┼──────┤", 15*8, 10*16)
-        DrawText("│                                             │      │      │", 15*8, 11*16)
         DrawText(Localize("score_overcharge"), 4*8,  11*16, 10*8, "right")
-        DrawText("├─────────────────────────────────────────────┼──────┼──────┤", 15*8, 12*16)
-        DrawText("│                                             │      │      │", 15*8, 13*16)
         DrawText(Localize("score_xcharge"), 4*8,  13*16, 10*8, "right")
-        DrawText("└─────────────────────────────────────────────┴──────┴──────┘", 15*8, 14*16)
         
         love.graphics.setColor(TerminalColors[ColorID.LIGHT_GREEN])
-        DrawText(("█"):rep(45*chargep), 16*8, 9*16)
-        local ocChunks = math.floor(45*ochargep)
+        DrawText(("█"):rep(44*chargep), 16*8, 9*16)
+        local ocChunks = math.floor(44*ochargep)
         for i = 1, ocChunks do
             local chunkColor = (math.floor(-love.timer.getTime()*#OverchargeColors)+i-1)%#OverchargeColors
             love.graphics.setColor(TerminalColors[OverchargeColors[chunkColor+1]])
             DrawText("█", (15+i)*8, 11*16)
         end
         love.graphics.setColor(TerminalColors[ColorID.MAGENTA])
-        DrawText(("█"):rep(45*xchargep), 16*8, 13*16)
+        DrawText(("█"):rep(44*xchargep), 16*8, 13*16)
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        DrawText(chargeTxt, (74-utf8.len(chargeTxt))*8, 9*16, utf8.len(chargeTxt)*8, "right")
-        DrawText(ochargeTxt, (74-utf8.len(ochargeTxt))*8, 11*16, utf8.len(ochargeTxt)*8, "right")
-        DrawText(xchargeTxt, (74-utf8.len(xchargeTxt))*8, 13*16, utf8.len(xchargeTxt)*8, "right")
-        DrawText(chargepTxt, (67-utf8.len(chargepTxt))*8, 9*16, utf8.len(chargepTxt)*8, "right")
-        DrawText(ochargepTxt, (67-utf8.len(ochargepTxt))*8, 11*16, utf8.len(ochargepTxt)*8, "right")
-        DrawText(xchargepTxt, (67-utf8.len(xchargepTxt))*8, 13*16, utf8.len(xchargepTxt)*8, "right")
+        DrawText(chargeTxt, (69)*8, 9*16, 5*8, "right")
+        DrawText(ochargeTxt, (69)*8, 11*16, 5*8, "right")
+        DrawText(xchargeTxt, (69)*8, 13*16, 5*8, "right")
+        DrawText(chargepTxt, (62)*8, 9*16, 4*8, "right")
+        DrawText(ochargepTxt, (62)*8, 11*16, 4*8, "right")
+        DrawText(xchargepTxt, (62)*8, 13*16, 4*8, "right")
     end
 
     for i = CampaignViewTarget-2, CampaignViewTarget+2 do

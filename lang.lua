@@ -12,6 +12,15 @@ end
 
 LoadLanguages()
 
+function AddLanguageEntries(lang, entries)
+    if not languages[lang] then
+        languages[lang] = {}
+    end
+    for k,v in pairs(entries) do
+        languages[lang][k] = v
+    end
+end
+
 function GetLanguages()
     local res = {}
     for code,lang in pairs(languages) do

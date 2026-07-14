@@ -23,9 +23,11 @@ end
 function scene.action(a)
     if a == "up" then
         LanguageSelection = (LanguageSelection - 1) % #langs
+        PlayNavSound()
     end
     if a == "down" then
         LanguageSelection = (LanguageSelection + 1) % #langs
+        PlayNavSound()
     end
     if a == "confirm" then
         SystemSettings.language = langs[LanguageSelection+1].code
