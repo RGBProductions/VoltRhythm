@@ -1053,7 +1053,7 @@ function LoadSongData(path)
     songData.emblem = songInfo.emblem
     local S,mainlyrics = pcall(json.decode, love.filesystem.read(path.."/lyrics.json"))
     if S then
-        songData.lyrics.main = Lyrics:new(mainlyrics)
+        songData.lyrics.main = Lyrics:new(mainlyrics, path)
     end
     for name,chart in pairs(songData.charts or {}) do
         songData.levels[name] = chart.level
@@ -1404,7 +1404,7 @@ function Chart:getBalance()
     return balance / #self.notes
 end
 
----@alias LyricComponent {type: "text"|"image"|"key", color?: integer, text?: string, key?: 0|1|2|3, path?: string, x?: number, y?: number, width?: number, height?: number}
+---@alias LyricComponent {type: "text"|"image"|"key", color?: integer, text?: string, key?: 0|1|2|3, path?: string, x?: number, y?: number, width?: number, height?: number, frames?: integer, speed?: number, sheet?: love.Image, quads?: love.Quad[]}
 ---@alias Transformation {shift?: {[1]: number, [2]: number}, scale?: {[1]: number, [2]: number}, shear?: {[1]: number, [2]: number}, rotation?: number}
 ---@alias Lyric {startTime: number, endTime: number, components: LyricComponent[], transformation?: Transformation, followChart?: boolean, hideBox?: boolean, boxWidth?: number, boxHeight?: number, boxColor?: integer}
 
@@ -1413,7 +1413,7 @@ end
 Lyrics = {}
 Lyrics.__index = Lyrics
 
-function Lyrics:new(script)
+function Lyrics:new(script, dir)
     local lyrics = setmetatable({}, self)
 
     lyrics.script = script or {}
@@ -1433,6 +1433,32 @@ function Lyrics:new(script)
                 local text = (KeyLabel(BindDisplayMode == 1 and bind[2] or bind[1])):upper()
                 local w,wrap = Font:getWrap(text, Font:getWidth(text))
                 local x1,y1,x2,y2 = component.x, component.y, component.x+w, component.y+(#wrap * Font:getHeight())
+                boundingBox[1] = math.min(boundingBox[1], x1, x2)
+                boundingBox[2] = math.min(boundingBox[2], y1, y2)
+                boundingBox[3] = math.max(boundingBox[3], x1, x2)
+                boundingBox[4] = math.max(boundingBox[4], y1, y2)
+            end
+            if component.type == "image" then
+                if love.filesystem.getInfo(dir .. "/" .. component.path) then
+                    component.sheet = love.graphics.newImage(dir .. "/" .. component.path)
+                elseif love.filesystem.getInfo("images/" .. component.path) then
+                    component.sheet = love.graphics.newImage("images/" .. component.path)
+                end
+                local width = component.width
+                local height = component.height
+                if component.sheet then
+                    component.quads = {}
+                    local frames = component.frames or 1
+                    local fw = component.sheet:getWidth()/frames
+                    width = width or fw
+                    height = height or component.sheet:getHeight()
+                    for i = 1, frames do
+                        table.insert(component.quads, love.graphics.newQuad((i-1)*fw, 0, fw, component.sheet:getHeight(), component.sheet))
+                    end
+                else
+                    print("Lyrics image component could not retrieve its image (" .. component.path .. ")")
+                end
+                local x1,y1,x2,y2 = component.x, component.y, component.x+width, component.y+height
                 boundingBox[1] = math.min(boundingBox[1], x1, x2)
                 boundingBox[2] = math.min(boundingBox[2], y1, y2)
                 boundingBox[3] = math.max(boundingBox[3], x1, x2)
@@ -1494,6 +1520,15 @@ function Lyrics:draw(time)
                 local text = (KeyLabel(BindDisplayMode == 1 and bind[2] or bind[1])):upper()
                 local w = Font:getWidth(text)
                 love.graphics.printf(text, 16+component.x, 16+component.y, w, "center")
+            end
+            if component.type == "image" and component.sheet and component.quads then
+                local reltime = time-lyric.startTime
+                local frame = (math.floor(reltime * (component.speed or 1)) % #component.quads)+1
+                local quad = component.quads[frame]
+                local fw = component.sheet:getWidth()/(component.frames or 1)
+                local width = component.width or fw
+                local height = component.height or component.sheet:getHeight()
+                love.graphics.draw(component.sheet, quad, 16+component.x, 16+component.y, 0, width / fw, height / component.sheet:getHeight())
             end
         end
         love.graphics.pop()
