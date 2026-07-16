@@ -222,6 +222,7 @@ function scene.load(args)
     scene.sortedNormal = {}
     scene.sortedOvervolt = {}
 
+    scene.invalidScoresFound = {}
     scene.invalidScores = {}
     scene.invalidChartsText = ""
 
@@ -237,9 +238,10 @@ function scene.load(args)
             if score and song.songData then
                 local chart = song.songData:loadChart(diff)
                 if chart then
-                    if score.key ~= chart.scoreKey then
+                    if score.key ~= chart.scoreKey and not scene.invalidScoresFound[song.identifier.."."..diff] then
                         local name = song.songData.name .. " - " .. Localize("difficulty_" .. diff)
                         table.insert(scene.invalidScores, {song, diff, name, chart.scoreKey})
+                        scene.invalidScoresFound[song.identifier.."."..diff] = true
                         scene.invalidChartsText = scene.invalidChartsText .. name .. "\n"
                     end
                 end
