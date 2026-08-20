@@ -246,6 +246,8 @@ NoteTypes = {
                     local drawPos = GetNoteCellY(0, ScrollSpeed*ScrollSpeedModifier:get(), 1, ViewOffsetMoveLine and (ViewOffset:get()+(ViewOffsetFreeze or 0)) or 0, 5, 15)
                     table.insert(Particles, {id = "badhit", x = x*8+12, y = drawPos*16-16, vx = (love.math.random()*2-1)*64, vy = -(love.math.random()*2)*32, life = (love.math.random()*0.5+0.5)*0.25, color = ColorID.RED, char = "¤"})
                 end
+                NotesDestroyed = NotesDestroyed + 1
+                TryPlayFCOrFO()
                 return false
             end
             return false
@@ -267,6 +269,8 @@ NoteTypes = {
             Combo = Combo + 1
             LastRating = 1
             RatingCounts[LastRating] = RatingCounts[LastRating] + 1
+            NotesDestroyed = NotesDestroyed + 1
+            TryPlayFCOrFO()
             return true
         end,
         getDifficulty = function(self)

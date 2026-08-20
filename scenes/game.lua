@@ -43,7 +43,6 @@ FullComboAnimation = {
 function DrawFC()
     if not FullComboAnimation.playing then return end
     local bracketSymbol = FullComboAnimation.timer < 0.5 and "[]" or (FullComboAnimation.timer < 0.6 and "==" or (FullComboAnimation.timer < 0.7 and "--"))
-    local showBrackets = FullComboAnimation.timer < 0.7
     local dist = (FullComboAnimation.timer^2 / 0.4) * 10
     local textAmount = math.floor(math.max(0, math.min(10, dist)))
     local text = "FULL COMBO"
@@ -58,7 +57,7 @@ function DrawFC()
         end
     end
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    if showBrackets then
+    if bracketSymbol then
         DrawText(bracketSymbol:sub(1,1), 320-math.floor(math.floor(dist)/2+1)*8-8, 232)
         DrawText(bracketSymbol:sub(2,2), 320+math.floor(math.floor(dist)/2+1)*8, 232)
     end
@@ -92,7 +91,6 @@ FullOverchargeAnimation = {
 function DrawFO()
     if not FullOverchargeAnimation.playing then return end
     local bracketSymbol = FullOverchargeAnimation.timer < 0.5 and "[]" or (FullOverchargeAnimation.timer < 0.6 and "==" or (FullOverchargeAnimation.timer < 0.7 and "--"))
-    local showBrackets = FullOverchargeAnimation.timer < 0.7
     local dist = (FullOverchargeAnimation.timer^2 / 0.4) * 15
     local textAmount = math.floor(math.max(0, math.min(15, dist)))
     local text = "FULL OVERCHARGE"
@@ -108,7 +106,7 @@ function DrawFO()
         end
     end
     love.graphics.setColor(TerminalColors[ColorID.WHITE])
-    if showBrackets then
+    if bracketSymbol then
         DrawText(bracketSymbol:sub(1,1), 320-math.floor(math.floor(dist)/2+1)*8-8, 232)
         DrawText(bracketSymbol:sub(2,2), 320+math.floor(math.floor(dist)/2+1)*8, 232)
     end
@@ -137,7 +135,7 @@ function UpdateFO(dt)
 end
 
 function TryPlayFCOrFO()
-    if scene.notesDestroyed < #scene.chart.notes then return end
+    if NotesDestroyed < #scene.chart.notes then return end
     if FullOvercharge then
         FullOverchargeAnimation.playing = true
     elseif ComboBreaks == 0 then
@@ -147,6 +145,12 @@ end
 
 ---@param args {songData: SongData, scorePrefix: string?, difficulty: string, modifiers: table, isEditor?: boolean, forced?: boolean, preventRestart?: boolean, masquerade?: string, chargeGate?: number, next?: {path: string, args?: table}, startTime?: number, from?: string}
 function scene.load(args)
+    FullOverchargeAnimation.playing = false
+    FullOverchargeAnimation.particleTimer = 0
+    FullOverchargeAnimation.timer = 0
+    FullComboAnimation.playing = false
+    FullComboAnimation.particleTimer = 0
+    FullComboAnimation.timer = 0
     scene.next = args.next
     scene.from = args.from or "songselect"
     ResetEffects()
@@ -191,7 +195,7 @@ function scene.load(args)
     scene.bpmChangeBeats = 0
     scene.bpm = scene.chart.bpm
     scene.beatCount = SecondsToSixteenths(scene.chart.time - scene.bpmChangeTime, scene.bpm) / 4 + scene.bpmChangeBeats
-    scene.notesDestroyed = 0
+    NotesDestroyed = 0
     scene.nextComment = 1
     scene.comment = nil
     local colorIndexes = Save.Read("note_colors") or {ColorID.LIGHT_RED, ColorID.YELLOW, ColorID.LIGHT_GREEN, ColorID.LIGHT_BLUE}
@@ -349,7 +353,7 @@ local function notePress(laneIndex)
                     if note.length <= 0 then
                         if not note.destroyed then
                             note.destroyed = true
-                            scene.notesDestroyed = scene.notesDestroyed + 1
+                            NotesDestroyed = NotesDestroyed + 1
                             TryPlayFCOrFO()
                         end
                     else
@@ -629,7 +633,7 @@ function scene.update(dt)
                                 if note.length <= 0 then
                                     if not note.destroyed then
                                         note.destroyed = true
-                                        scene.notesDestroyed = scene.notesDestroyed + 1
+                                        NotesDestroyed = NotesDestroyed + 1
                                         TryPlayFCOrFO()
                                         i = i - 1
                                     end
@@ -659,7 +663,7 @@ function scene.update(dt)
                             if note.heldFor >= note.length then
                                 if not note.destroyed then
                                     note.destroyed = true
-                                    scene.notesDestroyed = scene.notesDestroyed + 1
+                                    NotesDestroyed = NotesDestroyed + 1
                                     TryPlayFCOrFO()
                                     i = i - 1
                                 end
@@ -681,7 +685,7 @@ function scene.update(dt)
                         if note.length <= 0 then
                             if not note.destroyed then
                                 note.destroyed = true
-                                scene.notesDestroyed = scene.notesDestroyed + 1
+                                NotesDestroyed = NotesDestroyed + 1
                                 TryPlayFCOrFO()
                                 i = i - 1
                             end
@@ -706,7 +710,7 @@ function scene.update(dt)
                                 end
                                 if not note.destroyed then
                                     note.destroyed = true
-                                    scene.notesDestroyed = scene.notesDestroyed + 1
+                                    NotesDestroyed = NotesDestroyed + 1
                                     TryPlayFCOrFO()
                                     i = i - 1
                                 end
@@ -727,7 +731,7 @@ function scene.update(dt)
                                         end
                                         if not note.destroyed then
                                             note.destroyed = true
-                                            scene.notesDestroyed = scene.notesDestroyed + 1
+                                            NotesDestroyed = NotesDestroyed + 1
                                             TryPlayFCOrFO()
                                             i = i - 1
                                         end
