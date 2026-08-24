@@ -58,6 +58,8 @@ function Borders.LoadAll(dir)
 end
 
 function Borders.Retrieve()
+    Borders.Borders = {none = {info = {name = "NONE"}, script = nil}}
+    Borders.Categories = {}
     local allcat = {
         name = "ALL",
         borders = {}
