@@ -11,10 +11,19 @@ float rand(float n){return fract(sin(n) * 43758.5453123);}
 
 vec4 effect(vec4 c, Image t, vec2 tc, vec2 sc) {
     vec2 centered = 2.0 * tc - 1.0;
-    vec2 curved = vec2(
-        centered.x * sqrt(1.0 + curveStrength * pow(length(centered),2.0)) / sqrt(1.0 + curveStrength),
-        centered.y * sqrt(1.0 + curveStrength * pow(length(centered),2.0)) / sqrt(1.0 + curveStrength)
-    );
+    float cs = sign(curveStrength) * sqrt(abs(curveStrength));
+    vec2 curved = centered;
+    if (cs < 0) {
+        curved = vec2(
+            (centered.x / length(vec3(centered.xy, 1.0 / cs))) / (1.0 / sqrt(1.0 + pow(-1.0 / cs, 2.0))),
+            (centered.y / length(vec3(centered.xy, 1.0 / cs))) / (1.0 / sqrt(1.0 + pow(-1.0 / cs, 2.0)))
+        );
+    } else if (cs > 0) {
+        curved = vec2(
+            centered.x * length(vec3(centered.xy, 1.0 / cs)) * (1.0 / sqrt(1.0 + pow(1.0 / cs, 2.0))),
+            centered.y * length(vec3(centered.xy, 1.0 / cs)) * (1.0 / sqrt(1.0 + pow(1.0 / cs, 2.0)))
+        );
+    }
     vec2 samplePos = (curved + 1.0) * 0.5;
     float tearing = (rand(tearTime+floor(samplePos.y*texSize.y/8.0))*2.0-1.0)*tearStrength;
     samplePos.x += tearing;
