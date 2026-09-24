@@ -628,10 +628,10 @@ function scene.action(a)
         end
         if t == "number" then
             local m,M,s = cur.min or 0, cur.max or 1, cur.step or 0.1
-            if love.keyboard.isDown("lshift") then
+            if love.keyboard.isDown("lshift") or love.keyboard.isDown("rshift") then
                 s = s * 2
             end
-            if love.keyboard.isDown("lctrl") then
+            if love.keyboard.isDown("lctrl") or love.keyboard.isDown("rctrl") then
                 s = s / 5
             end
             if a == "right" then

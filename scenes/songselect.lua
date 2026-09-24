@@ -91,8 +91,8 @@ function scene.action(a)
                         preview:stop()
                         preview:setLooping(false)
                     end
-                    Autoplay = love.keyboard.isDown("lshift")
-                    Showcase = love.keyboard.isDown("lctrl") and Autoplay
+                    Autoplay = love.keyboard.isDown("lshift") or love.keyboard.isDown("rshift")
+                    Showcase = (love.keyboard.isDown("lctrl") or love.keyboard.isDown("rctrl")) and Autoplay
                     SceneManager.Transition("scenes/" .. scene.destination, {songData = songData, scorePrefix = scorePrefix, difficulty = SongDifficultyOrder[difficulty]})
                 end
             end
