@@ -28,3 +28,10 @@ function table.merge(a,b)
     end
     return a
 end
+
+function GetNoteCellY(time, speed, laneMod, offset, chartY, chartHeight, upscroll)
+    if upscroll then
+        return chartY + 2 + (time * laneMod + offset) * speed
+    end
+    return chartY + chartHeight - (time * laneMod + offset) * speed
+end
