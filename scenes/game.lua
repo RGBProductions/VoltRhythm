@@ -371,11 +371,11 @@ function scene.update(dt)
         end
         return
     end
-    scene.modifiers.speed = (Debug and love.keyboard.isDown("lshift")) and 16 or 1
-    EffectTimescale = scene.modifiers.speed
+
+    EffectTimescale = PauseTimer > 0 and 0 or (Debug and love.keyboard.isDown("lshift") and 16 or (scene.modifiers.speed or 1))
     -- Update chart time and scroll chart
     local lastTime = scene.chart.time
-    scene.chart.time = scene.chart.time + dt*(scene.modifiers.speed or 1)
+    scene.chart.time = scene.chart.time + dt*EffectTimescale
     if scene.chart.time > -scene.audioOffset then
         if scene.lastTime <= -scene.audioOffset then
             SongStarted = true
@@ -388,12 +388,12 @@ function scene.update(dt)
                 local drift = st-scene.chart.time
                 -- Only fix drift if we're NOT at the end of song AND we are too much offset
                 if math.abs(drift) >= 0.05 and drift > -scene.song:getDuration("seconds") then
-                    scene.chart.time = scene.song:tell("seconds")
+                    scene.chart.time = scene.song:tell("seconds")-scene.audioOffset
                 end
             end
         end
-        if scene.song then scene.song:setPitch(scene.modifiers.speed or 1) end
-        if scene.video then scene.video:getSource():setPitch(scene.modifiers.speed or 1) end
+        if scene.song then scene.song:setPitch(EffectTimescale) end
+        if scene.video then scene.video:getSource():setPitch(EffectTimescale) end
     end
 
     -- remember this for later
@@ -422,7 +422,7 @@ function scene.update(dt)
         ViewOffsetFreeze = 0
     end
 
-    scene.lastTime = scene.lastTime + dt*(scene.modifiers.speed or 1)
+    scene.lastTime = scene.lastTime + dt*EffectTimescale
 
     for _,note in ipairs(scene.chart.notes) do
         if note.laneTarget then note.lane = note.laneTarget end
