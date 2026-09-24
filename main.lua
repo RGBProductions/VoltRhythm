@@ -333,6 +333,9 @@ BloomStrengthModifier = 1
 BloomStrengthModifierTarget = 1
 BloomStrengthModifierSmoothing = 0
 
+NoteSpeedMods = {}
+ViewOffset = 0
+
 ScreenShader = love.graphics.newShader("shaders/screen.frag")
 ScreenShader:send("curveStrength", SystemSettings.screen_effects.screen_curvature*CurveModifier)
 ScreenShader:send("scanlineStrength", 1-SystemSettings.screen_effects.scanlines)

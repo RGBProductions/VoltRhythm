@@ -3,6 +3,8 @@ local scene = {}
 local rebinding = nil
 local rebindTime = 0
 
+SettingsColorSelector = nil
+
 SettingsChart = SettingsChart or {
     Note:new(TimeBPM(0, 60), 0, 0, "normal", {}),
     Note:new(TimeBPM(2, 60), 1, 0, "normal", {}),
@@ -526,6 +528,40 @@ local root = {
 }
 
 function scene.action(a)
+    if a == "*" then return end
+
+    if SettingsColorSelector then
+        if a == "back" then
+            SettingsColorSelector[1].write(SettingsColorSelector[5]+1)
+            SettingsColorSelector = nil
+        elseif a == "confirm" then
+            SettingsColorSelector[1].write(SettingsColorSelector[3] + SettingsColorSelector[4]*4 + 1)
+            SettingsColorSelector = nil
+        else
+            if a == "left" then
+                SettingsColorSelector[3] = (SettingsColorSelector[3] - 1) % 4
+            end
+            if a == "right" then
+                SettingsColorSelector[3] = (SettingsColorSelector[3] + 1) % 4
+            end
+            if a == "up" then
+                SettingsColorSelector[4] = (SettingsColorSelector[4] - 1) % 4
+            end
+            if a == "down" then
+                SettingsColorSelector[4] = (SettingsColorSelector[4] + 1) % 4
+            end
+            SettingsColorSelector[1].write(SettingsColorSelector[3] + SettingsColorSelector[4]*4 + 1)
+        end
+        local colorIndexes = Save.Read("note_colors") or {ColorID.LIGHT_RED, ColorID.YELLOW, ColorID.LIGHT_GREEN, ColorID.LIGHT_BLUE}
+        NoteColors = {
+            ColorTransitionTable[colorIndexes[1]],
+            ColorTransitionTable[colorIndexes[2]],
+            ColorTransitionTable[colorIndexes[3]],
+            ColorTransitionTable[colorIndexes[4]]
+        }
+        return
+    end
+
     if a == "back" then
         if #SettingsStack > 0 then
             local pop = table.remove(SettingsStack, #SettingsStack)
@@ -579,6 +615,10 @@ function scene.action(a)
             end
             if t == "action" then
                 cur.run()
+            end
+            if t == "color" then
+                local col = read()-1
+                SettingsColorSelector = {cur,SettingsSelection+1,col%4,math.floor(col/4),col}
             end
         end
         if a == "confirm" or a == "right" or a == "left" then
@@ -647,6 +687,7 @@ function scene.keypressed(k)
 end
 
 function scene.load(args)
+    SettingsColorSelector = nil
     if not args.stay then
         SettingsSelection = 0
         SettingsSelection2 = 0
@@ -870,7 +911,7 @@ function scene.draw()
                 love.graphics.setColor(TerminalColors[SettingsSelection == i-1 and ColorID.LIGHT_GRAY or ColorID.DARK_GRAY])
                 love.graphics.printf(tostring(text), itmX, itmY+32, 256, "center")
             end
-            if option.type == "number" or option.type == "color" then
+            if option.type == "number" then
                 love.graphics.setColor(TerminalColors[SettingsSelection == i-1 and ColorID.WHITE or ColorID.DARK_GRAY])
                 if value > (option.min or -math.huge) then love.graphics.print("◁", itmX+28, itmY+16) end
                 if value < (option.max or math.huge) then love.graphics.print("▷", itmX+220, itmY+16) end
@@ -921,6 +962,25 @@ function scene.draw()
         for _,particle in ipairs(Particles) do
             love.graphics.setColor(TerminalColors[particle.color])
             love.graphics.print(particle.char, particle.x-4, particle.y-8)
+        end
+    end
+
+    love.graphics.setColor(TerminalColors[ColorID.WHITE])
+    
+    if SettingsColorSelector then
+        local itmY = (SettingsColorSelector[2]-y)*80-16*5
+        local itmX = (128)/2+menuX+4
+
+        love.graphics.setColor(TerminalColors[ColorID.WHITE])
+        DrawBoxHalfWidth(20+itmX/8-1, itmY/16, 23, 12)
+        for Y = 0, 3 do
+            for X = 0, 3 do
+                local bx,by = (20+itmX/8-1+(X*6)+2.5)*8, (itmY/16+(Y*3)+2)*16
+                love.graphics.setColor(TerminalColors[(SettingsColorSelector[3] == X and SettingsColorSelector[4] == Y) and ColorID.WHITE or ColorID.DARK_GRAY])
+                DrawBoxHalfWidth(20+itmX/8-1+(X*6)+1, itmY/16+(Y*3)+1, 3, 1)
+                love.graphics.setColor(TerminalColors[X+Y*4+1])
+                love.graphics.rectangle("fill", bx, by, 16, 16)
+            end
         end
     end
 
