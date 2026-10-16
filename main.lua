@@ -28,7 +28,7 @@ require "save"
 json = require "json"
 texture = require "texture"
 
-Version = (require "version")()
+Version = json.decode(love.filesystem.read("version.json"))
 
 ChargeYield = 200
 XChargeYield = 50
