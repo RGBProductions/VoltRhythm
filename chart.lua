@@ -87,10 +87,11 @@ NoteTypes = {
                 pos = pos+math.sin(pos*8)*Waviness/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1))
                 endpos = endpos+math.sin(endpos*8)*Waviness/(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1))
             end
+            local dir = self.extra.dir or 0
             local drawPos = GetNoteCellY(pos, speed, (NoteSpeedMods[self.lane+1] or {})[1] or 1, ViewOffset+(ViewOffsetFreeze or 0), chartPos, chartHeight)
             local laneOffset = isEditor and 1 or math.max(0,math.min(1, (((pos-(ViewOffset+(ViewOffsetFreeze or 0)))*(speed*((NoteSpeedMods[self.lane+1] or {})[1] or 1)))-7)/4))
-            local visualLane = (self.visualLane or self.lane) - self.extra.dir*laneOffset
-            local symbol = isEditor and ((self.extra.dir >= 1 and "▷") or (self.extra.dir <= -1 and "◁") or "◇") or ((math.abs(visualLane-self.lane) <= 1/4 and "○") or (math.abs(visualLane-(self.lane-self.extra.dir)) <= 1/4 and (self.extra.dir >= 1 and "▷" or "◁")) or "◇")
+            local visualLane = (self.visualLane or self.lane) - dir*laneOffset
+            local symbol = isEditor and ((dir >= 1 and "▷") or (dir <= -1 and "◁") or "◇") or ((math.abs(visualLane-self.lane) <= 1/4 and "○") or (math.abs(visualLane-(self.lane-dir)) <= 1/4 and (dir >= 1 and "▷" or "◁")) or "◇")
             if useSteps then drawPos = math.floor(drawPos) end
 
             local r,g,b,a = love.graphics.getColor()
@@ -115,7 +116,7 @@ NoteTypes = {
                 local R,G,B,A = love.graphics.getColor()
                 love.graphics.setColor(r*R,g*G,b*B,a*A)
                 love.graphics.setFont(Font)
-                if self.extra.dir ~= 0 then love.graphics.print("¤", (chartX+self.lane*4)*8, math.floor(drawPos*16-8-(isEditor and 0 or 4))) end
+                if dir ~= 0 then love.graphics.print("¤", (chartX+self.lane*4)*8, math.floor(drawPos*16-8-(isEditor and 0 or 4))) end
                 love.graphics.setFont(NoteFont)
                 love.graphics.print(symbol, (chartX+visualLane*4)*8+4, math.floor(drawPos*16-8-(isEditor and 0 or 4)), 0, 1, 1, NoteFont:getWidth(symbol)/2)
             end
