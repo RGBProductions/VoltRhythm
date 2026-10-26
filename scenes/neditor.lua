@@ -1292,6 +1292,24 @@ local editorMenu = {
                 end
             },
             {
+                id = "play.play_from_here",
+                type = "action",
+                label = Localize("editor_menu_play_from_here"),
+                onclick = function()
+                    if not scene.chart then return true end
+                    shutoffMusic()
+                    scene.chart:sort()
+                    scene.chart:recalculateCharge()
+                    SavedEditorTime = scene.chartTimeTemp
+                    SavedEditorZoom = scene.zoom
+                    Autoplay = false
+                    Showcase = false
+                    SceneManager.Transition("scenes/game", {songData = scene.songData, difficulty = scene.difficulty, isEditor = true, startTime = scene.chartTimeTemp})
+                    SetCursor()
+                    return true
+                end
+            },
+            {
                 id = "play.auto",
                 type = "action",
                 label = Localize("editor_menu_autoplay"),

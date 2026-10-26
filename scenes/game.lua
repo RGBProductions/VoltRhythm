@@ -169,15 +169,20 @@ function scene.load(args)
         scene.difficulty = args.difficulty
         scene.chart = scene.songData:loadChart(args.difficulty or "easy")
         if scene.chart then
-            scene.chart.time = args.startTime or SixteenthsToSeconds(-16,scene.chart.bpm)
+            scene.chart.time = (args.startTime or (SixteenthsToSeconds(-16,scene.chart.bpm)+1)) - 1
         end
     end
     scene.masquerade = args.masquerade or scene.difficulty or "hidden"
+    scene.startFadeTime = 0
     if scene.chart then
         scene.song = Assets.Source(scene.chart.song)
         if scene.song then
             scene.song:setVolume(SystemSettings.song_volume)
-            scene.song:seek(args.startTime or 0, "seconds")
+            scene.song:seek(math.max(0, scene.chart.time), "seconds")
+            if scene.chart.time >= 0 then
+                scene.song:setVolume(0)
+                scene.song:play()
+            end
         end
         scene.video = Assets.Video(scene.chart.video)
         scene.background = Assets.Background(scene.chart.background) or defaultBg
@@ -186,6 +191,19 @@ function scene.load(args)
         end
         scene.chart:recalculateCharge()
         scene.chart:resetAllNotes()
+        if args.startTime then
+            for _,note in ipairs(scene.chart.notes) do
+                if note.time <= args.startTime then
+                    note.destroyed = true
+                end
+            end
+            for _,effect in ipairs(scene.chart.effects) do
+                if effect.time <= args.startTime then
+                    effect.destroyed = true
+                end
+            end
+            scene.startFadeTime = 1
+        end
     end
     scene.modifiers = args.modifiers or {}
     scene.chargeGate = args.chargeGate or 0.8
@@ -520,7 +538,11 @@ function scene.update(dt)
                 end
             end
         end
-        if scene.song then scene.song:setPitch(EffectTimescale) end
+        if scene.song then
+            scene.startFadeTime = math.max(0, scene.startFadeTime - dt*EffectTimescale)
+            scene.song:setPitch(EffectTimescale)
+            scene.song:setVolume(SystemSettings.song_volume * (1 - scene.startFadeTime))
+        end
         if scene.video then scene.video:getSource():setPitch(EffectTimescale) end
     end
 

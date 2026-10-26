@@ -252,6 +252,7 @@
     "editor_menu_comment": "COMMENT",
     "editor_menu_play": "PLAY",
     "editor_menu_playtest": "PLAYTEST",
+    "editor_menu_play_from_here": "PLAY FROM HERE",
     "editor_menu_autoplay": "AUTOPLAY",
     "editor_menu_showcase": "SHOWCASE",
     "editor_menu_hot_reload": "HOT RELOAD",
