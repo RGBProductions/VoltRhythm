@@ -1449,7 +1449,7 @@ local scrollbarX = 472
 
 function scene.load(args)
     scene.chart = nil
-    scene.audioOffset = Save.Read("audio_offset") or 0
+    scene.audioOffset = SystemSettings.audio_offset or 0
     scene.songData = args.songData
     scene.difficulty = args.difficulty
 

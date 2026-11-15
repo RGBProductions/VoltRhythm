@@ -51,10 +51,10 @@ function SceneManager.LoadScene(fn, args)
             end
         end
     end
-    local s,r = pcall(love.mouse.getSystemCursor,"arrow")
-    if s then
-        love.mouse.setCursor(r)
-    end
+    -- local s,r = pcall(love.mouse.getSystemCursor,"arrow")
+    -- if s then
+    --     love.mouse.setCursor(r)
+    -- end
 end
 
 function SceneManager.Transition(fn, args)
