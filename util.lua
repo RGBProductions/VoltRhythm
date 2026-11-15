@@ -44,6 +44,14 @@ function ReadableTime(s)
     return m .. ":" .. ("0"):rep(2-#s)..s
 end
 
+function ReadableTimeCenti(s)
+    local cs = math.floor(math.max(0, s)*100) % 100
+    s = math.floor(math.max(0, s))
+    local m = tostring(math.floor(s/60))
+    s = tostring(s % 60)
+    return m .. ":" .. ("0"):rep(2-#s)..s .. "." .. cs
+end
+
 function SixteenthsToSeconds(t,bpm)
     return 15*t/bpm
 end
@@ -57,4 +65,18 @@ function GetNoteCellY(time, speed, laneMod, offset, chartY, chartHeight, upscrol
         return chartY + 2 + (time * laneMod + offset) * speed
     end
     return chartY + chartHeight - (time * laneMod + offset) * speed
+end
+
+function ScreenToDisplay(x,y)
+    local curveStrength = SystemSettings.enable_screen_effects and SystemSettings.screen_effects.screen_curvature*CurveModifier:get() or 0
+    local s = math.min(love.graphics.getWidth()/Display:getWidth(), love.graphics.getHeight()/Display:getHeight())
+    x = x - (love.graphics.getWidth()-Display:getWidth()*s)/2
+    y = y - (love.graphics.getHeight()-Display:getHeight()*s)/2
+    local u,v = x/(Display:getWidth()*s), y/(Display:getHeight()*s)
+    local cx,cy = 2*u-1, 2*v-1
+    local cl = math.sqrt(cx*cx+cy*cy)
+    local cf = math.sqrt(1+curveStrength*cl*cl)/math.sqrt(1+curveStrength)
+    local crx,cry = cx*cf,cy*cf
+    local U,V = (crx+1)/2, (cry+1)/2
+    return U*640, V*480
 end

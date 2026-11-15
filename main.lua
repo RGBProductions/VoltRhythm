@@ -192,14 +192,38 @@ Cursor = nil
 CursorX = 0
 CursorY = 0
 
-function SetCursor(cursor,x,y)
+Cursors = {
+    none = {nil, love.mouse.newCursor("images/cursor/arrow.png", 0, 0)},
+    arrow = {{love.graphics.newImage("images/cursor/arrow.png"), 0, 0}, love.mouse.newCursor("images/cursor/arrow.png", 0, 0)},
+    crosshair = {{love.graphics.newImage("images/cursor/crosshair.png"), 4, 4}, love.mouse.newCursor("images/cursor/crosshair.png", 8, 8)},
+    pointer = {{love.graphics.newImage("images/cursor/pointer.png"), 2, 0}, love.mouse.newCursor("images/cursor/pointer.png", 4, 0)},
+    text = {{love.graphics.newImage("images/cursor/text.png"), 3, 5}, love.mouse.newCursor("images/cursor/text.png", 6, 10)},
+    note_normal = {{love.graphics.newImage("images/cursor/note_normal.png"), 4, 4}, love.mouse.newCursor("images/cursor/note_normal.png", 8, 8)},
+    note_swap = {{love.graphics.newImage("images/cursor/note_swap.png"), 4, 4}, love.mouse.newCursor("images/cursor/note_swap.png", 8, 8)},
+    note_merge = {{love.graphics.newImage("images/cursor/note_merge.png"), 4, 4}, love.mouse.newCursor("images/cursor/note_merge.png", 8, 8)},
+    note_mine = {{love.graphics.newImage("images/cursor/note_mine.png"), 4, 4}, love.mouse.newCursor("images/cursor/note_mine.png", 8, 8)},
+    note_warning = {{love.graphics.newImage("images/cursor/note_warning.png"), 4, 4}, love.mouse.newCursor("images/cursor/note_warning.png", 8, 8)},
+    effect = {{love.graphics.newImage("images/cursor/effect.png"), 4, 4}, love.mouse.newCursor("images/cursor/effect.png", 8, 8)},
+    bpm_change = {{love.graphics.newImage("images/cursor/bpm_change.png"), 4, 4}, love.mouse.newCursor("images/cursor/bpm_change.png", 8, 8)},
+    comment = {{love.graphics.newImage("images/cursor/comment.png"), 4, 4}, love.mouse.newCursor("images/cursor/comment.png", 8, 8)}
+}
+
+function SetCursor(cursor)
     if not Cursor and cursor then
         MouseX = 320
         MouseY = 240
     end
     Cursor = cursor
-    CursorX = x or 0
-    CursorY = y or 0
+    CursorX = ((cursor or {})[1] or {})[2] or 0
+    CursorY = ((cursor or {})[1] or {})[3] or 0
+
+    if SystemSettings.use_system_pointer then
+        local s,r = pcall(love.mouse.setCursor, (cursor or Cursors.none)[2])
+        if not s then
+            print("Cursor failed; using arrow instead")
+            love.mouse.setCursor(Cursors.none[2])
+        end
+    end
 end
 
 NoteFontOptions = {"dots", "bars"}
@@ -235,6 +259,7 @@ SystemSettings = {
     vsync = true,
     discord_rpc_level = RPCLevels.FULL,
     language = nil,
+    use_system_pointer = false,
     screen_effects = {
         screen_curvature = 0.5,
         scanlines = 0.5,
@@ -253,6 +278,7 @@ if love.filesystem.getInfo("settings.json") then
     end
 end
 
+SetCursor(Cursors.none)
 love.window.setVSync(SystemSettings.vsync and 1 or 0)
 
 if SystemSettings.language then
@@ -321,7 +347,7 @@ function love.resize(w,h)
     Partial = love.graphics.newCanvas(w,h)
 end
 
-love.mouse.setRelativeMode(true)
+love.mouse.setRelativeMode(not SystemSettings.use_system_pointer)
 
 Particles = {}
 
@@ -557,7 +583,11 @@ function love.keypressed(k)
         Borders.Retrieve()
     end
     if k == "f5" then
-        love.mouse.setRelativeMode(not love.mouse.getRelativeMode())
+        SystemSettings.use_system_pointer = not SystemSettings.use_system_pointer
+        love.mouse.setRelativeMode(not SystemSettings.use_system_pointer)
+        if Cursor and Cursor[2] then
+            love.mouse.setCursor(Cursor[2])
+        end
     end
     if k == "f11" then
         love.window.setFullscreen(not love.window.getFullscreen())
@@ -620,8 +650,12 @@ MouseY = Display:getHeight()/2
 function love.mousemoved(x,y,dx,dy)
     local s = math.min(love.graphics.getWidth()/Display:getWidth(), love.graphics.getHeight()/Display:getHeight())
     local omx,omy = MouseX,MouseY
-    MouseX = math.max(0,math.min(Display:getWidth(), MouseX + dx))
-    MouseY = math.max(0,math.min(Display:getHeight(), MouseY + dy))
+    if SystemSettings.use_system_pointer then
+        MouseX,MouseY = ScreenToDisplay(love.mouse.getPosition())
+    else
+        MouseX = math.max(0,math.min(Display:getWidth(), MouseX + dx))
+        MouseY = math.max(0,math.min(Display:getHeight(), MouseY + dy))
+    end
     SceneManager.MouseMoved(MouseX,MouseY,MouseX-omx,MouseY-omy)
 end
 
@@ -728,9 +762,9 @@ function love.draw()
     if (border or {}).script and not SuppressBorder and border.script.draw then border.script.draw() end
     love.graphics.setColor(1,1,1)
     DrawText(Version.name .. " v" .. Version.version .. (SystemSettings.show_fps and (" - " .. love.timer.getFPS() .. " FPS") or ""), 16, 480-16-16)
-    if Cursor then
+    if not SystemSettings.use_system_pointer and Cursor and Cursor[1] and Cursor[1][1] then
         love.graphics.setFont(LegacyFont)
-        love.graphics.print(Cursor, MouseX-CursorX, MouseY-CursorY)
+        love.graphics.draw(Cursor[1][1], MouseX-CursorX, MouseY-CursorY, 0, 0.5, 0.5)
         love.graphics.setFont(Font)
     end
 

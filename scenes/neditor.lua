@@ -1180,7 +1180,7 @@ local editorMenu = {
                 type = "action",
                 label = Localize("editor_menu_select"),
                 onclick = function()
-                    SetCursor("🮰", 0, 0)
+                    SetCursor(Cursors.arrow)
                     scene.placementMode = placementModes.select
                     return true
                 end
@@ -1190,7 +1190,7 @@ local editorMenu = {
                 type = "action",
                 label = Localize("note_normal"),
                 onclick = function()
-                    SetCursor("○", 4, 8)
+                    SetCursor(Cursors.note_normal)
                     scene.placementMode = placementModes.normal
                     return true
                 end
@@ -1200,7 +1200,7 @@ local editorMenu = {
                 type = "action",
                 label = Localize("note_swap"),
                 onclick = function()
-                    SetCursor("◇", 4, 8)
+                    SetCursor(Cursors.note_swap)
                     scene.placementMode = placementModes.swap
                     return true
                 end
@@ -1210,7 +1210,7 @@ local editorMenu = {
                 type = "action",
                 label = Localize("note_merge"),
                 onclick = function()
-                    SetCursor("▥", 4, 8)
+                    SetCursor(Cursors.note_merge)
                     scene.placementMode = placementModes.merge
                     return true
                 end
@@ -1220,7 +1220,7 @@ local editorMenu = {
                 type = "action",
                 label = Localize("note_mine"),
                 onclick = function()
-                    SetCursor("☓", 4, 8)
+                    SetCursor(Cursors.note_mine)
                     scene.placementMode = placementModes.mine
                     return true
                 end
@@ -1230,7 +1230,7 @@ local editorMenu = {
                 type = "action",
                 label = Localize("note_warning"),
                 onclick = function()
-                    SetCursor("⚠", 4, 8)
+                    SetCursor(Cursors.note_warning)
                     scene.placementMode = placementModes.warning
                     return true
                 end
@@ -1240,17 +1240,17 @@ local editorMenu = {
                 type = "action",
                 label = Localize("editor_menu_bpm_change"),
                 onclick = function()
-                    SetCursor("▷", 4, 8)
+                    SetCursor(Cursors.bpm_change)
                     scene.placementMode = placementModes.bpm
                     return true
                 end
             },
             {
-                id = "note.bpm",
+                id = "note.effect",
                 type = "action",
                 label = Localize("editor_menu_effect"),
                 onclick = function()
-                    SetCursor("¤", 4, 8)
+                    SetCursor(Cursors.effect)
                     scene.placementMode = placementModes.effect
                     return true
                 end
@@ -1260,7 +1260,7 @@ local editorMenu = {
                 type = "action",
                 label = Localize("editor_menu_comment"),
                 onclick = function()
-                    SetCursor("!", 4, 8)
+                    SetCursor(Cursors.comment)
                     scene.placementMode = placementModes.comment
                     return true
                 end
@@ -1507,7 +1507,7 @@ function scene.load(args)
         hoistHistory(scene.songData.path, scene.songData.name)
     end
 
-    SetCursor("🮰", 0, 0)
+    SetCursor(Cursors.arrow)
 
     love.keyboard.setTextInput(true)
     love.keyboard.setKeyRepeat(true)
@@ -2118,6 +2118,7 @@ function scene.draw()
         end
 
         DrawText(Localize("editor_zoom", math.floor(zoom*1000)/1000), scrollbarX+24, 96)
+        DrawText(ReadableTimeCenti(scene.chartTimeTemp), scrollbarX+24, 112)
 
         love.graphics.setColor(TerminalColors[ColorID.YELLOW])
         for _,comment in ipairs(comments) do
