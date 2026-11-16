@@ -174,6 +174,7 @@ function scene.load(args)
     end
     scene.masquerade = args.masquerade or scene.difficulty or "hidden"
     scene.startFadeTime = 0
+    scene.startTime = args.startTime
     if scene.chart then
         scene.song = Assets.Source(scene.chart.song)
         if scene.song then
@@ -309,7 +310,7 @@ function Restart()
     if scene.preventRestart then return end
     if scene.song then scene.song:stop() end
     scene.chart:resetAllNotes()
-    SceneManager.Transition("scenes/game", {songData = scene.songData, scorePrefix = scene.scorePrefix, difficulty = scene.difficulty, isEditor = scene.isEditor, forced = scene.forced, chargeGate = scene.chargeGate, from = scene.from, next = scene.next})
+    SceneManager.Transition("scenes/game", {songData = scene.songData, scorePrefix = scene.scorePrefix, difficulty = scene.difficulty, isEditor = scene.isEditor, forced = scene.forced, chargeGate = scene.chargeGate, startTime = scene.startTime, from = scene.from, next = scene.next})
 end
 
 function Exit()
