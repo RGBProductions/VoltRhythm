@@ -49,7 +49,7 @@ function ReadableTimeCenti(s)
     s = math.floor(math.max(0, s))
     local m = tostring(math.floor(s/60))
     s = tostring(s % 60)
-    return m .. ":" .. ("0"):rep(2-#s)..s .. "." .. cs
+    return m .. ":" .. ("0"):rep(2-#s)..s .. "." .. ("0"):rep(2-#tostring(cs))..cs
 end
 
 function SixteenthsToSeconds(t,bpm)
