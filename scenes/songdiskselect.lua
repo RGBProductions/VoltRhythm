@@ -91,30 +91,40 @@ function scene.draw()
         local ochargepTxt = math.floor(ochargep*100) .. "%"
         local xchargepTxt = math.floor(xchargep*100) .. "%"
 
-        local mx = math.max(utf8.len(chargeTxt),utf8.len(ochargeTxt),utf8.len(xchargeTxt))
+        local labelCharge = Localize("score_charge")
+        local labelOvercharge = Localize("score_overcharge")
+        local labelXCharge = Localize("score_xcharge")
 
-        DrawText("┌────────────────────────────────────────────┬──────┬───────┐", 15*8,  8*16)
-        DrawText("│                                            │      │       │", 15*8,  9*16)
-        DrawText("├────────────────────────────────────────────┼──────┼───────┤", 15*8, 10*16)
-        DrawText("│                                            │      │       │", 15*8, 11*16)
-        DrawText("├────────────────────────────────────────────┼──────┼───────┤", 15*8, 12*16)
-        DrawText("│                                            │      │       │", 15*8, 13*16)
-        DrawText("└────────────────────────────────────────────┴──────┴───────┘", 15*8, 14*16)
+        local mx = math.max(Font:getWidth(labelCharge),Font:getWidth(labelOvercharge),Font:getWidth(labelXCharge))
 
-        DrawText(Localize("score_charge"), 4*8,  9*16, 10*8, "right")
-        DrawText(Localize("score_overcharge"), 4*8,  11*16, 10*8, "right")
-        DrawText(Localize("score_xcharge"), 4*8,  13*16, 10*8, "right")
+        local barX = math.ceil((mx + 40) / 8)
+        local barW = 59-barX
+
+        local line = ("─"):rep(barW)
+        local space = (" "):rep(barW)
+
+        DrawText("┌" .. line  .. "┬──────┬───────┐", barX*8,  8*16)
+        DrawText("│" .. space .. "│      │       │", barX*8,  9*16)
+        DrawText("├" .. line  .. "┼──────┼───────┤", barX*8, 10*16)
+        DrawText("│" .. space .. "│      │       │", barX*8, 11*16)
+        DrawText("├" .. line  .. "┼──────┼───────┤", barX*8, 12*16)
+        DrawText("│" .. space .. "│      │       │", barX*8, 13*16)
+        DrawText("└" .. line  .. "┴──────┴───────┘", barX*8, 14*16)
+
+        DrawText(labelCharge, 4*8,  9*16, mx, "right")
+        DrawText(labelOvercharge, 4*8,  11*16, mx, "right")
+        DrawText(labelXCharge, 4*8,  13*16, mx, "right")
         
         love.graphics.setColor(TerminalColors[ColorID.LIGHT_GREEN])
-        DrawText(("█"):rep(44*chargep), 16*8, 9*16)
-        local ocChunks = math.floor(44*ochargep)
+        DrawText(("█"):rep(barW*chargep), (barX+1)*8, 9*16)
+        local ocChunks = math.floor(barW*ochargep)
         for i = 1, ocChunks do
             local chunkColor = (math.floor(-love.timer.getTime()*#OverchargeColors)+i-1)%#OverchargeColors
             love.graphics.setColor(TerminalColors[OverchargeColors[chunkColor+1]])
-            DrawText("█", (15+i)*8, 11*16)
+            DrawText("█", (barX+i)*8, 11*16)
         end
         love.graphics.setColor(TerminalColors[ColorID.MAGENTA])
-        DrawText(("█"):rep(44*xchargep), 16*8, 13*16)
+        DrawText(("█"):rep(barW*xchargep), (barX+1)*8, 13*16)
         love.graphics.setColor(TerminalColors[ColorID.WHITE])
         DrawText(chargeTxt, (69)*8, 9*16, 5*8, "right")
         DrawText(ochargeTxt, (69)*8, 11*16, 5*8, "right")
