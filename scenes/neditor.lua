@@ -1609,6 +1609,7 @@ function scene.draw()
         love.graphics.print(tab.label, tabPosition, 32)
         tabPosition = tabPosition + 8*(utf8.len(tab.label)+4)
     end
+    love.graphics.setColor(TerminalColors[ColorID.WHITE])
 
     if scene.difficulty then
         local level = scene.songData:getLevel(scene.difficulty)
