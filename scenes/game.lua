@@ -499,7 +499,7 @@ function scene.update(dt)
         if c ~= c then chargeAmount = 0 end
         if SystemSettings.discord_rpc_level > RPCLevels.PLAYING then
             if SystemSettings.discord_rpc_level == RPCLevels.FULL then
-                Discord.setActivity("Playing " .. ((scene.songData.spoiler or scene.chart.spoiler) and "a song" or scene.songData.name), SongDifficulty[scene.difficulty].name .. ((scene.songData.spoiler or scene.chart.spoiler) and "" or " " .. scene.songData:getLevel(scene.difficulty)) .. " - " .. chargeAmount .. " ¤ - " .. ReadableTime(scene.chart.time))
+                Discord.setActivity("Playing " .. ((scene.songData.spoiler or scene.chart.spoiler) and "a song" or scene.songData.name), SongDifficulty[scene.difficulty].name .. ((scene.songData.spoiler or scene.chart.spoiler) and "" or " " .. scene.songData:getLevelDisplay(scene.difficulty)) .. " - " .. chargeAmount .. " ¤ - " .. ReadableTime(scene.chart.time))
             elseif SystemSettings.discord_rpc_level == RPCLevels.PARTIAL then
                 Discord.setActivity("Playing a song")
             end
@@ -903,7 +903,7 @@ function scene.draw()
     love.graphics.setColor(r1*BoardBrightness:get(),g1*BoardBrightness:get(),b1*BoardBrightness:get(),a1)
     -- Text Displays
     if not HideTitlebar then
-        local level = scene.songData:getLevel(scene.difficulty)
+        local level = scene.songData:getLevelDisplay(scene.difficulty)
         local fullText = scene.songData.name .. (scene.chart.hideDifficulty and "" or (" - " .. SongDifficulty[scene.masquerade].name .. (level ~= nil and (" " .. level) or "")))
         DrawText("┌─" .. ("─"):rep(utf8.len(fullText)) .. "─┐\n│ " .. (" "):rep(utf8.len(fullText)) .. " │\n└─" .. ("─"):rep(utf8.len(fullText)) .. "─┘", ((80-(utf8.len(fullText)+4))/2)*8, 1*16)
         DrawText(scene.songData.name .. (scene.chart.hideDifficulty and "" or " - "), ((80-(utf8.len(fullText)+4))/2 + 2)*8, 2*16)
