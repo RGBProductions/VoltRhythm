@@ -623,14 +623,14 @@ function scene.draw()
             if p >= -1.5 and p <= 1.5 and ((SongSelectOvervoltMode and (diff == "overvolt" or diff == "hidden")) or (not SongSelectOvervoltMode and not (diff == "overvolt" or diff == "hidden"))) then
                 local difficultyLevel = 0
                 if selected.songData then
-                    difficultyLevel = selected.songData:getLevel(diff)
+                    difficultyLevel = selected.songData:getLevelDisplay(diff)
                 end
                 love.graphics.setColor(index == SongSelectDifficulty and {1,1,1} or {0.5,0.5,0.5})
                 PrintDifficulty(592,368 - p*16,diff,difficultyLevel,"right")
                 if data then
                     local hasEffects = #((data:loadChart(diff or "easy") or {}).effects or {}) ~= 0
                     if hasEffects then
-                        local x = 592 - (Font:getWidth(Localize("difficulty_"..diff) .. (difficultyLevel ~= nil and (" " .. (difficultyLevel or 0)) or "")) + 24)
+                        local x = 592 - (Font:getWidth(Localize("difficulty_"..diff) .. (difficultyLevel ~= nil and (" " .. (difficultyLevel or "?")) or "")) + 24)
                         DrawText("✨", x, 368 - p*16)
                     end
                 end

@@ -1015,6 +1015,7 @@ end
 ---@field bpm number
 ---@field charts {easy: chartdata|Chart?, medium: chartdata|Chart?, hard: chartdata|Chart?, extreme: chartdata|Chart?, overvolt: chartdata|Chart?}
 ---@field levels {easy: number, medium: number, hard: number, extreme: number, overvolt: number}
+---@field levelDisplays {easy: string, medium: string, hard: string, extreme: string, overvolt: string}
 ---@field lyrics {easy: Lyrics?, medium: Lyrics?, hard: Lyrics?, extreme: Lyrics?, overvolt: Lyrics?, main: Lyrics?}
 ---@field emblem string?
 ---@field linkedTo string?
@@ -1025,7 +1026,7 @@ end
 SongData = {}
 SongData.__index = SongData
 
----@alias chartdata {path: string, level: number, charter: string}
+---@alias chartdata {path: string, level: number, levelDisplay?: number|string, charter: string}
 
 function LoadSongData(path)
     local infoPath = path.."/info.json"
@@ -1054,6 +1055,7 @@ function LoadSongData(path)
 
     songData.charts = songInfo.charts
     songData.levels = {}
+    songData.levelDisplays = {}
     songData.lyrics = {}
     songData.emblem = songInfo.emblem
     local S,mainlyrics = pcall(json.decode, love.filesystem.read(path.."/lyrics.json"))
@@ -1061,7 +1063,8 @@ function LoadSongData(path)
         songData.lyrics.main = Lyrics:new(mainlyrics, path)
     end
     for name,chart in pairs(songData.charts or {}) do
-        songData.levels[name] = chart.level
+        songData.levels[name] = math.floor(tonumber(chart.level) or 0)
+        songData.levelDisplays[name] = tostring(chart.levelDisplay or chart.level or "?")
         local s,lyrics = pcall(json.decode, love.filesystem.read(path.."/"..name.."-lyrics.json"))
         if s then
             songData.lyrics[name] = Lyrics:new(lyrics)
@@ -1071,7 +1074,7 @@ function LoadSongData(path)
     return songData
 end
 
-function SongData:new(name,author,bpm,song,songPreview,charts,levels,lyrics,emblem)
+function SongData:new(name,author,bpm,song,songPreview,charts,levels,levelDisplays,lyrics,emblem)
     local songData = setmetatable({}, self)
     songData.name = name or "Song"
     songData.author = author or "Composer"
@@ -1080,10 +1083,12 @@ function SongData:new(name,author,bpm,song,songPreview,charts,levels,lyrics,embl
     songData.songPreview = songPreview or {0,math.huge}
     songData.charts = charts or {}
     songData.levels = levels or {}
+    songData.levelDisplays = levelDisplays or {}
     songData.lyrics = lyrics or {}
     songData.emblem = emblem
     for chartname,chart in pairs(charts or {}) do
-        songData.levels[chartname] = songData.levels[chartname] or chart.level
+        songData.levels[chartname] = math.floor(tonumber(songData.levels[chartname] or chart.level) or 0)
+        songData.levelDisplays[chartname] = songData.levelDisplays[chartname] or tostring(chart.levelDisplay or chart.level or "?")
     end
     return songData
 end
@@ -1159,6 +1164,10 @@ end
 
 function SongData:getLevel(difficulty)
     return self.levels[difficulty]
+end
+
+function SongData:getLevelDisplay(difficulty)
+    return self.levelDisplays[difficulty]
 end
 
 function SongData:getCharter(difficulty)
