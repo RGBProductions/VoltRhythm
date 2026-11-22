@@ -19,7 +19,7 @@ local notes = {"normal", "swap", "merge", "mine", "warning"}
 local function updateDiscord()
     if SystemSettings.discord_rpc_level > RPCLevels.PLAYING then
         if SystemSettings.discord_rpc_level == RPCLevels.FULL and scene.songData then
-            Discord.setActivity("Editing " .. scene.songData.name .. " by " .. scene.songData.author, scene.chart == nil and "No chart loaded" or (SongDifficulty[scene.difficulty].name .. " - " .. (scene.songData:getLevel(scene.difficulty) or "?")))
+            Discord.setActivity("Editing " .. scene.songData.name .. " by " .. scene.songData.author, scene.chart == nil and "No chart loaded" or (SongDifficulty[scene.difficulty].name .. " - " .. (scene.songData:getLevelDisplay(scene.difficulty) or "?")))
         else
             Discord.setActivity("In chart editor")
         end
@@ -886,43 +886,75 @@ local editorMenu = {
                 onclick = function()
                     if not scene.songData then return true end
                     local difficulties = {
-                        "easy", "medium", "hard", "extreme", "overvolt"
+                        "easy", "medium", "hard", "extreme", "overvolt", "hidden"
                     }
                     local difficultyBaseLevels = {
-                        easy = 1, medium = 6, hard = 11, extreme = 16, overvolt = 21
+                        easy = 1, medium = 6, hard = 11, extreme = 16, overvolt = 21, hidden = 0
                     }
                     local dialog = {
-                        width = 25,
-                        height = 19,
+                        width = 29,
+                        height = 22,
                         title = Localize("editor_dialog_difficulties_title"),
                         contents = {
-                            DialogButton:new(128, 240, 128, 16, Localize("editor_action_close"), function ()
+                            DialogButton:new(128+32, 288, 128, 16, Localize("editor_action_close"), function ()
                                 table.remove(scene.dialogs, 1)
                             end)
                         }
                     }
+                    local function constantToStr(level)
+                        return tostring(level)
+                    end
                     for i,difficulty in ipairs(difficulties) do
                         local hasDifficulty = scene.songData:hasLevel(difficulty)
-                        local level = hasDifficulty and scene.songData:getLevel(difficulty) or ""
+                        local level = hasDifficulty and scene.songData:getLevel(difficulty) or 0
+                        local levelDisplay = hasDifficulty and scene.songData:getLevelDisplay(difficulty) or ""
                         local difficultyLabel = DialogDifficulty:new(16,48*(i-1),128,difficulty,nil,"left")
 
+                        if levelDisplay == tostring(math.floor(level)) then
+                            levelDisplay = ""
+                        end
+                        
+                        local levelDisplayInput
                         local levelInput = DialogInput:new(96,48*(i-1),32,16,Localize("editor_label_level"),4,nil,function(self)
                             EditorDirty = true
-                            scene.songData.levels[difficulty] = tonumber(self.content) or self.content
-                            scene.songData.charts[difficulty].level = tonumber(self.content) or self.content
+                            if levelDisplay == tostring(math.floor(level)) then
+                                levelDisplay = ""
+                                scene.songData.levelDisplays[difficulty] = nil
+                                levelDisplayInput.content = ""
+                            end
+                            level = tonumber(self.content) or 0
+                            local str = constantToStr(tonumber(self.content) or 0)
+                            self.content = str
+                            scene.songData.levels[difficulty] = level
+                            scene.songData.charts[difficulty].level = level
                     
                             updateDiscord()
                         end)
-                        levelInput.content = tostring(level)
+                        levelInput.content = constantToStr(level)
 
-                        local charterInput = DialogInput:new(216,48*(i-1),160,16,Localize("editor_label_chart_designer"),20,nil,function(self)
+                        levelDisplayInput = DialogInput:new(96+40,48*(i-1),56,16,Localize("editor_label_name"),7,nil,function(self)
+                            EditorDirty = true
+                            levelDisplay = self.content or tostring(math.floor(tonumber(levelInput.content) or 0))
+                            scene.songData.levelDisplays[difficulty] = levelDisplay
+                            if levelDisplay == tostring(math.floor(level)) then
+                                scene.songData.levelDisplays[difficulty] = nil
+                                self.content = ""
+                            end
+                    
+                            updateDiscord()
+                        end)
+                        levelDisplayInput.content = levelDisplay
+                        local displayQuoteL = DialogLabel:new(128,48*(i-1),72,'"',"left")
+                        local displayQuoteR = DialogLabel:new(128,48*(i-1),72,'"',"right")
+
+                        local charterInput = DialogInput:new(216+64,48*(i-1),160,16,Localize("editor_label_chart_designer"),20,nil,function(self)
                             (scene.songData.charts[difficulty] or {}).charter = self.content
                         end)
                         charterInput.content = (scene.songData.charts[difficulty] or {}).charter or ""
 
                         local addButton
                         local removeButton
-                        local editButton = DialogButton:new(152,48*(i-1),16,16,"E",function()
+                        local editButton = DialogButton:new(152+64,48*(i-1),16,16,"E",function()
                             scene.difficulty = difficulty
                             scene.chart = scene.songData:loadChart(difficulty)
                             if scene.chart then scene.lastRating = scene.chart:getDifficulty() end
@@ -931,7 +963,7 @@ local editorMenu = {
 
                             table.remove(scene.dialogs, 1)
                         end)
-                        removeButton = DialogButton:new(184,48*(i-1),16,16,"-",function()
+                        removeButton = DialogButton:new(184+64,48*(i-1),16,16,"-",function()
                             local removedialog = {
                                 title = Localize("editor_dialog_remove_title", Localize("difficulty_"..difficulty)),
                                 width = 16,
@@ -953,6 +985,9 @@ local editorMenu = {
                                         table.remove(dialog.contents, table.index(dialog.contents, removeButton))
                                         table.remove(dialog.contents, table.index(dialog.contents, editButton))
                                         table.remove(dialog.contents, table.index(dialog.contents, levelInput))
+                                        table.remove(dialog.contents, table.index(dialog.contents, levelDisplayInput))
+                                        table.remove(dialog.contents, table.index(dialog.contents, displayQuoteL))
+                                        table.remove(dialog.contents, table.index(dialog.contents, displayQuoteR))
                                         table.remove(dialog.contents, table.index(dialog.contents, charterInput))
                                         table.insert(dialog.contents, addButton)
 
@@ -962,21 +997,33 @@ local editorMenu = {
                             }
                             table.insert(scene.dialogs, 1, removedialog)
                         end)
-                        addButton = DialogButton:new(184,48*(i-1),16,16,"+",function()
+                        addButton = DialogButton:new(184+64,48*(i-1),16,16,"+",function()
                             EditorDirty = true
                             local chart = scene.songData:newChart(difficulty, difficultyBaseLevels[difficulty])
-                            levelInput.content = tostring(scene.songData:getLevel(difficulty))
+                            level = scene.songData:getLevel(difficulty) or 0
+                            levelDisplay = scene.songData:getLevelDisplay(difficulty)
+                            if levelDisplay == tostring(math.floor(level)) then
+                                levelDisplay = ""
+                            end
+                            levelInput.content = constantToStr(level)
+                            levelDisplayInput.content = levelDisplay
                             table.remove(dialog.contents, table.index(dialog.contents, addButton))
                             table.insert(dialog.contents, levelInput)
+                            table.insert(dialog.contents, displayQuoteL)
+                            table.insert(dialog.contents, displayQuoteR)
+                            table.insert(dialog.contents, levelDisplayInput)
                             table.insert(dialog.contents, charterInput)
                             table.insert(dialog.contents, editButton)
                             table.insert(dialog.contents, removeButton)
                         end)
 
-                        table.insert(dialog.contents, DialogBox:new(8,48*(i-1),128,16))
+                        table.insert(dialog.contents, DialogBox:new(8,48*(i-1),128+8*8,16))
                         table.insert(dialog.contents, difficultyLabel)
                         if hasDifficulty then
                             table.insert(dialog.contents, levelInput)
+                            table.insert(dialog.contents, displayQuoteL)
+                            table.insert(dialog.contents, displayQuoteR)
+                            table.insert(dialog.contents, levelDisplayInput)
                             table.insert(dialog.contents, charterInput)
                             table.insert(dialog.contents, editButton)
                             table.insert(dialog.contents, removeButton)
@@ -2173,7 +2220,7 @@ function scene.draw()
     end
 
     if scene.difficulty then
-        local level = scene.songData:getLevel(scene.difficulty)
+        local level = scene.songData:getLevelDisplay(scene.difficulty)
         DrawText(scene.songData.name, 0, 400, 568, "right")
         if EditorDirty then
             love.graphics.setColor(TerminalColors[ColorID.LIGHT_RED])
