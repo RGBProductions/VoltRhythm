@@ -56,7 +56,7 @@ function scene.load(args)
     SongDisk.RecalculateScores()
 
     if SystemSettings.discord_rpc_level == RPCLevels.FULL then
-        Discord.setActivity("Finished " .. scene.songData.name, SongDifficulty[scene.difficulty].name .. " " .. scene.songData:getLevel(scene.difficulty) .. " - " .. scene.charge+scene.overcharge .. " ¤")
+        Discord.setActivity("Finished " .. scene.songData.name, SongDifficulty[scene.difficulty].name .. " " .. scene.songData:getLevelDisplay(scene.difficulty) .. " - " .. scene.charge+scene.overcharge .. " ¤")
         Discord.updatePresence()
     end
 end
@@ -169,7 +169,7 @@ function scene.draw()
     local artistName = scene.songData.author
     local difficulty = SongDifficulty[scene.difficulty or "easy"].name or scene.difficulty:upper()
     local difficultyColor = SongDifficulty[scene.difficulty or "easy"].color or TerminalColors[ColorID.WHITE]
-    local level = scene.songData:getLevel(scene.difficulty or "easy")
+    local level = scene.songData:getLevelDisplay(scene.difficulty or "easy")
     -- local combinedDifficultyString = difficulty .. " " .. level
     love.graphics.setColor(1,1,1)
     love.graphics.draw(scene.cover, 272, 192, 0, 96/scene.cover:getWidth(), 96/scene.cover:getHeight())
