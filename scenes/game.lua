@@ -175,6 +175,8 @@ function scene.load(args)
     scene.masquerade = args.masquerade or scene.difficulty or "hidden"
     scene.startFadeTime = 0
     scene.startTime = args.startTime
+    Charge = 0
+    NotesDestroyed = 0
     if scene.chart then
         scene.song = Assets.Source(scene.chart.song)
         if scene.song then
@@ -195,6 +197,11 @@ function scene.load(args)
         if args.startTime then
             for _,note in ipairs(scene.chart.notes) do
                 if note.time <= args.startTime then
+                    local t = NoteTypes[note.type]
+                    if t and t.calculateCharge then
+                        Charge = Charge + t.calculateCharge(note)
+                    end
+                    NotesDestroyed = NotesDestroyed + 1
                     note.destroyed = true
                 end
             end
@@ -214,7 +221,6 @@ function scene.load(args)
     scene.bpmChangeBeats = 0
     scene.bpm = scene.chart.bpm
     scene.beatCount = SecondsToSixteenths(scene.chart.time - scene.bpmChangeTime, scene.bpm) / 4 + scene.bpmChangeBeats
-    NotesDestroyed = 0
     scene.nextComment = 1
     scene.comment = nil
     local colorIndexes = Save.Read("note_colors") or {ColorID.LIGHT_RED, ColorID.YELLOW, ColorID.LIGHT_GREEN, ColorID.LIGHT_BLUE}
@@ -230,7 +236,6 @@ function scene.load(args)
     Input.ReadBinds()
     HitOffset = 0
     RealHits = 0
-    Charge = 0
     Potential = 0
     Hits = 0
     Accuracy = 0
