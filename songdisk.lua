@@ -51,6 +51,14 @@ local fullLibrary = scaffold("FULL LIBRARY", "images/songdisk/full_library.png")
 fullLibrary.unscored = true
 
 function SongDisk.AddSongs(disk, songs, songSource, addToFL)
+    if type(disk.name) ~= "string" then
+        print("Invalid song disk (name is missing or malformed, should be string)")
+        return false
+    end
+    if type(songs) ~= "table" then
+        print("Invalid song disk " .. disk.name .. " (songs is missing or malformed, should be array)")
+        return false
+    end
     for _,song in ipairs(songs) do
         local songData = LoadSongData(songSource .. "/" .. song.song)
         if songData then
@@ -110,6 +118,7 @@ function SongDisk.AddSongs(disk, songs, songSource, addToFL)
             print("Invalid song in disk '" .. disk.name .. "': '" .. song.song .. "'")
         end
     end
+    return true
 end
 
 function SongDisk.Load(path, songSource)
@@ -120,7 +129,7 @@ function SongDisk.Load(path, songSource)
 
     local disk = scaffold(data.name, data.icon)
 
-    SongDisk.AddSongs(disk, data.songs, songSource, true)
+    if not SongDisk.AddSongs(disk, data.songs, songSource, true) then return end
 
     table.insert(SongDisk.Disks, disk)
     SongDisk.Disks[disk.name] = disk
@@ -130,7 +139,10 @@ function SongDisk.LoadAll()
     local items = love.filesystem.getDirectoryItems("songdisk") or {}
     table.sort(items)
     for _,itm in ipairs(items) do
-        SongDisk.Load("songdisk/" .. itm, "songs")
+        local s,r = pcall(SongDisk.Load, "songdisk/" .. itm, "songs")
+        if not s then
+            print("Song disk loading failure for " .. itm .. ": " .. r)
+        end
     end
     if #SongDisk.Disks > 1 then
         table.insert(SongDisk.Disks, fullLibrary)

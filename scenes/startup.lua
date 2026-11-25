@@ -131,7 +131,10 @@ local function handle()
         end
         if t == "run" then
             runCo = coroutine.create(d.func)
-            coroutine.resume(runCo)
+            local out = {coroutine.resume(runCo)}
+            if not out[1] then
+                print("Startup task failed! " .. out[2])
+            end
         end
     end
 end
@@ -141,7 +144,10 @@ handle()
 function scene.update(dt)
     timer = timer + dt
     if runCo and coroutine.status(runCo) ~= "dead" then
-        coroutine.resume(runCo)
+        local out = {coroutine.resume(runCo)}
+        if not out[1] then
+            print("Startup task failed! " .. out[2])
+        end
     else
         runCo = nil
         if not accepting[1] and not reading[1] and timer >= ((opening[index] or {}).duration or 0) then
