@@ -12,27 +12,47 @@ function SongDisk.Retrieve()
         local foundC = false
         for _,data in ipairs(disks) do
             if data.name == disk.name then
-                for _,section in ipairs(disk.sections) do
-                    local foundS = false
-                    for _,section2 in ipairs(data.sections) do
-                        if section2.name == section.name then
-                            for _,song in ipairs(section.songs) do
-                                table.insert(section2.songs, song)
+                if type(disk.sections) == "table" then
+                    for _,section in ipairs(disk.sections) do
+                        if type(section.name) == "string" and type(section.songs) == "table" then
+                            local foundS = false
+                            for _,section2 in ipairs(data.sections) do
+                                if section2.name == section.name then
+                                    for _,song in ipairs(section.songs) do
+                                        table.insert(section2.songs, song)
+                                    end
+                                    foundS = true
+                                    break
+                                end
                             end
-                            foundS = true
-                            break
+                            if not foundS then
+                                table.insert(data.sections, section)
+                            end
                         end
                     end
-                    if not foundS then
-                        table.insert(data.sections, section)
-                    end
+                    foundC = true
+                    break
                 end
-                foundC = true
-                break
             end
         end
         if not foundC then
-            table.insert(disks, disk)
+            local valid = true
+            if type(disk.name) ~= "string" or type(disk.sections) ~= "table" then
+                valid = false
+            else
+                local hasValidSec = false
+                for _,section in ipairs(disk.sections) do
+                    if type(section.name) == "string" and type(section.songs) == "table" then
+                        hasValidSec = true
+                    end
+                end
+                if not hasValidSec then
+                    valid = false
+                end
+            end
+            if valid then
+                table.insert(disks, disk)
+            end
         end
     end
     local full_library = {
@@ -45,24 +65,28 @@ function SongDisk.Retrieve()
         local s,r = pcall(json.decode, love.filesystem.read("songdisk/" .. file))
         if s then
             for _,disk in ipairs(r) do
-                l(disk)
-                for _,section in ipairs(disk.sections) do
-                    local sec = {name = section.name, songs = {}}
-                    for _,song in ipairs(section.songs) do
-                        if not inFullLibrary[song.song] then
-                            table.insert(sec.songs, song)
-                            local songData = LoadSongData((disk.source or "songs") .. "/" .. song.song)
-                            SongDisk.AllSongNames[song.song] = (songData or {}).name or song.song
-                            inFullLibrary[song.song] = song
-                        else
-                            for _,difficulty in ipairs(song.difficulties) do
-                                if not table.index(inFullLibrary[song.song].difficulties, difficulty) then
-                                    table.insert(inFullLibrary[song.song].difficulties, difficulty)
+                if type(disk.name) == "string" and type(disk.sections) == "table" then
+                    l(disk)
+                    for _,section in ipairs(disk.sections) do
+                        if type(section.name) == "string" and type(section.songs) == "table" then
+                            local sec = {name = section.name, songs = {}}
+                            for _,song in ipairs(section.songs) do
+                                if not inFullLibrary[song.song] then
+                                    table.insert(sec.songs, song)
+                                    local songData = LoadSongData((disk.source or "songs") .. "/" .. song.song)
+                                    SongDisk.AllSongNames[song.song] = (songData or {}).name or song.song
+                                    inFullLibrary[song.song] = song
+                                else
+                                    for _,difficulty in ipairs(song.difficulties) do
+                                        if not table.index(inFullLibrary[song.song].difficulties, difficulty) then
+                                            table.insert(inFullLibrary[song.song].difficulties, difficulty)
+                                        end
+                                    end
                                 end
                             end
+                            table.insert(full_library.sections, sec)
                         end
                     end
-                    table.insert(full_library.sections, sec)
                 end
             end
         end
@@ -124,9 +148,9 @@ function SongDisk.GetChargeMetrics(disk)
         potentialXCharge = 0
     }
     if not disk then return metrics end
-    for s,section in ipairs(disk.sections) do
-        for S,song in ipairs(section.songs) do
-            for _,name in ipairs(song.difficulties) do
+    for s,section in ipairs(disk.sections or {}) do
+        for S,song in ipairs(section.songs or {}) do
+            for _,name in ipairs(song.difficulties or {}) do
                 metrics.potentialCharge = metrics.potentialCharge + 160*ChargeValues[name].charge
                 metrics.potentialOvercharge = metrics.potentialOvercharge + 40*ChargeValues[name].charge
                 metrics.potentialXCharge = metrics.potentialXCharge + 50*ChargeValues[name].xcharge
@@ -165,8 +189,8 @@ function SongDisk.Load(disk)
     if not disk then return metrics end
     local lastPosition = 0
     local lastOVPosition = 0
-    for s,section in ipairs(disk.sections) do
-        for S,song in ipairs(section.songs) do
+    for s,section in ipairs(disk.sections or {}) do
+        for S,song in ipairs(section.songs or {}) do
             metrics.songCount = metrics.songCount + 1
             section.songs[S] = {
                 name = song.song,
@@ -226,9 +250,9 @@ function SongDisk.GetTotalProgress()
     }
     for _,disk in pairs(disks) do
         if not disk.unscored then
-            for s,section in ipairs(disk.sections) do
-                for S,song in ipairs(section.songs) do
-                    for _,name in ipairs(song.difficulties) do
+            for s,section in ipairs(disk.sections or {}) do
+                for S,song in ipairs(section.songs or {}) do
+                    for _,name in ipairs(song.difficulties or {}) do
                         scores.potentialCharge = scores.potentialCharge + 160*ChargeValues[name].charge
                         scores.potentialOvercharge = scores.potentialOvercharge + 40*ChargeValues[name].charge
                         scores.potentialXCharge = scores.potentialXCharge + 50*ChargeValues[name].xcharge
@@ -263,9 +287,9 @@ function SongDisk.GetScores(disk)
     if disk.unscored then
         return scores
     end
-    for s,section in ipairs(disk.sections) do
-        for S,song in ipairs(section.songs) do
-            for _,name in ipairs(song.difficulties) do
+    for s,section in ipairs(disk.sections or {}) do
+        for S,song in ipairs(section.songs or {}) do
+            for _,name in ipairs(song.difficulties or {}) do
                 scores.potentialCharge = scores.potentialCharge + 160*ChargeValues[name].charge
                 scores.potentialOvercharge = scores.potentialOvercharge + 40*ChargeValues[name].charge
                 scores.potentialXCharge = scores.potentialXCharge + 50*ChargeValues[name].xcharge
