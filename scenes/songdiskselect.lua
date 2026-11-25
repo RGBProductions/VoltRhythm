@@ -46,7 +46,7 @@ function scene.action(a)
         scene.scores = SongDisk.GetScores(scene.campaign)
         CampaignViewTarget = CampaignViewTarget + 1
     end
-    if a == "confirm" then
+    if a == "confirm" and scene.campaign then
         SceneManager.Transition("scenes/songselect", {campaign = options[SongDiskSelectIndex][1], source = "songdiskselect", destination = "game"})
     end
     if a == "back" then
@@ -64,7 +64,7 @@ function scene.draw()
     DrawBoxHalfWidth(2, 1, 74, 3)
     love.graphics.draw(songdiskselectText, 320, 32, 0, 2, 2, songdiskselectText:getWidth()/2, 0)
 
-    if not scene.campaign.unscored then
+    if scene.campaign and not scene.campaign.unscored then
         local charge = scene.scores.totalCharge
         local ocharge = scene.scores.totalOvercharge
         local xcharge = scene.scores.totalXCharge
@@ -108,31 +108,35 @@ function scene.draw()
         love.graphics.printf(xchargepTxt, (67-utf8.len(xchargepTxt))*8, 13*16, utf8.len(xchargepTxt)*8, "right")
     end
 
-    for i = CampaignViewTarget-2, CampaignViewTarget+2 do
-        local option = options[i%#options+1]
+    if #options > 0 then
+        for i = CampaignViewTarget-2, CampaignViewTarget+2 do
+            local option = options[i%#options+1]
 
-        local x = 320+(i-CampaignView)*192
-        local y = 272
+            local x = 320+(i-CampaignView)*192
+            local y = 272
 
-        local I = math.abs(CampaignViewTarget-i)
-        love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
-        if I == 0 then
-            love.graphics.setColor(TerminalColors[ColorID.WHITE])
-        end
+            local I = math.abs(CampaignViewTarget-i)
+            love.graphics.setColor(TerminalColors[ColorID.DARK_GRAY])
+            if I == 0 then
+                love.graphics.setColor(TerminalColors[ColorID.WHITE])
+            end
 
-        local width = math.floor(lerp(28, 7, math.abs(CampaignView-i)))
-        DrawBoxHalfWidth(math.floor(x/8-width/2), y/16-1, width, 3)
-        if width > 8 then
-            love.graphics.print("┬\n│\n│\n│\n┴", math.floor(x/8-width/2 + 8)*8, y-16)
-        end
-        if I < 2 then
-            love.graphics.draw(option[2], math.floor(x/8-width/2)*8+12, y, 0, math.min(48,math.floor(width)*8)/48, 1)
-        end
+            local width = math.floor(lerp(28, 7, math.abs(CampaignView-i)))
+            DrawBoxHalfWidth(math.floor(x/8-width/2), y/16-1, width, 3)
+            if width > 8 then
+                love.graphics.print("┬\n│\n│\n│\n┴", math.floor(x/8-width/2 + 8)*8, y-16)
+            end
+            if I < 2 then
+                love.graphics.draw(option[2], math.floor(x/8-width/2)*8+12, y, 0, math.min(48,math.floor(width)*8)/48, 1)
+            end
 
-        if I < 1 then
-            local w,wrap = Font:getWrap(option[1], (width-10)*8)
-            love.graphics.printf(option[1], math.floor((x-32)/8)*8, y+16-(8*(#wrap-1)), 144, "center")
+            if I < 1 then
+                local w,wrap = Font:getWrap(option[1], (width-10)*8)
+                love.graphics.printf(option[1], math.floor((x-32)/8)*8, y+16-(8*(#wrap-1)), 144, "center")
+            end
         end
+    else
+        love.graphics.printf("- NO DISKS AVAILABLE -", 0, 288, 640, "center")
     end
 
     local x = 320-4-(#options-1)/2*16
